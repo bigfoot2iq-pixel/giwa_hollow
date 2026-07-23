@@ -1,26 +1,159 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* GIWA palette — deep near-black surfaces + mint-teal accent */
+  --primary: #0c1512;        /* dark green-black: buttons, icons */
+  --accent-glow: #7ff5cf;    /* light mint glow */
+  --accent-warm: #2ee6a6;    /* GIWA mint-teal accent */
+  --litecoin: #0c1512;       /* dark surface — chain badges */
+  --dark-blue: #0f1a16;      /* dark surface */
+  --light-blue: #5eead4;     /* teal secondary accent */
+  --dark-navy: #0c1512;      /* dark: card/overlay backgrounds */
+  --muted-blue: #8aa79a;     /* muted sage-teal: secondary text */
+  --background: #07100d;     /* page background (dark) */
+  --foreground: #eef4f1;     /* page foreground (light) */
+
+  /* Semantic text colors for dark backgrounds */
+  --text-primary: #eef4f1;   /* off-white: headings, primary values */
+  --text-secondary: #c3d0ca; /* lighter: body text, descriptions */
+  --text-tertiary: #8fa39b;  /* muted: labels, placeholders */
 }
 
 @theme inline {
+  --color-primary: #0c1512;
+  --color-accent-glow: #7ff5cf;
+  --color-accent-warm: #2ee6a6;
+  --color-litecoin: #0c1512;
+  --color-dark-blue: #0f1a16;
+  --color-light-blue: #5eead4;
+  --color-dark-navy: #0c1512;
+  --color-muted-blue: #8aa79a;
+  --color-text-primary: #eef4f1;
+  --color-text-secondary: #c3d0ca;
+  --color-text-tertiary: #8fa39b;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-plus-jakarta), sans-serif;
+  --font-display: var(--font-space-grotesk), sans-serif;
+  --font-header: var(--font-space-grotesk), sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #07100d;
+  background-attachment: fixed;
+  color: #eef4f1;
+  font-family: var(--font-plus-jakarta), sans-serif;
+  min-height: 100vh;
+}
+
+.font-display {
+  font-family: var(--font-space-grotesk), sans-serif;
+}
+
+.font-header {
+  font-family: var(--font-space-grotesk), sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Glow utility for accent elements */
+.glow-teal {
+  box-shadow: 0 0 24px rgba(46, 230, 166, 0.35);
+}
+
+.text-gradient-rh {
+  background: linear-gradient(120deg, #2ee6a6 0%, #5eead4 50%, #7ff5cf 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Replaces the class previously injected by the Google Fonts <link> */
+.material-symbols-outlined {
+  font-family: var(--font-material-symbols);
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+.ui-container {
+  background-color: rgba(12, 21, 18, 0.88);
+  border: 1px solid rgba(46, 230, 166, 0.1);
+  backdrop-filter: blur(12px);
+}
+
+/* Multi-step form transition */
+@keyframes stepIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-step {
+  animation: stepIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.container {
+  width: 100%;
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(46, 230, 166, 0.25);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(46, 230, 166, 0.4);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+
+  .ui-container {
+    border-width: 1px;
+  }
+}
+
+/* Prevent text selection on touch controls */
+.touch-none {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scrolling for mobile */
+@media (max-width: 768px) {
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
 }
