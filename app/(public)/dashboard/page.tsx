@@ -132,7 +132,7 @@ export default function DashboardPage() {
         {FEATURES.map((f) => (
           <div
             key={f.title}
-            className={`ui-container rounded-2xl p-5 lg:p-6 ${f.wide ? "sm:col-span-2 lg:col-span-1" : ""}`}
+            className={`ui-container rounded-2xl p-5 lg:p-6 ${"wide" in f && f.wide ? "sm:col-span-2 lg:col-span-1" : ""}`}
           >
             <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-accent-warm/15 text-accent-warm">
               <span className="material-symbols-outlined" style={{ fontSize: 24 }}>{f.icon}</span>

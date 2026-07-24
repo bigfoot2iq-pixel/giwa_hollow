@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useConfig } from 'wagmi'
+import { useQueryClient } from '@tanstack/react-query'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { formatEther, maxUint256 } from 'viem'
 import { THE_HOLLOW_GAME_ADDRESS, THE_HOLLOW_GAME_ABI } from '@/lib/contracts/theHollowGame'
@@ -38,6 +39,7 @@ const TOKEN_SYMBOL = 'HOLLOW'
 export function usePayToPlay(): UsePayToPlayReturn {
   const { address } = useAccount()
   const config = useConfig()
+  const queryClient = useQueryClient()
   const [error, setError] = useState<string | null>(null)
   const [step, setStep] = useState<PayStep>('idle')
 
@@ -82,15 +84,27 @@ export function usePayToPlay(): UsePayToPlayReturn {
     hash: txHash,
   })
 
-  // payToPlay burns HOLLOW. Once the tx confirms, refresh the shared balance
-  // (and allowance) query so the header total updates without a page reload.
-  // Header reads the same balanceOf queryKey, so refetching here refreshes it too.
+  // payToPlay spends HOLLOW. Once the tx confirms, refresh this hook's own
+  // balance/allowance reads, then invalidate every other balanceOf observer
+  // (e.g. the header total, which builds its own queryKey) so the whole UI
+  // updates without a page reload.
   useEffect(() => {
-    if (isSuccess) {
-      refetchBalance()
-      refetchAllowance()
-    }
-  }, [isSuccess, refetchBalance, refetchAllowance])
+    if (!isSuccess) return
+
+    refetchBalance()
+    refetchAllowance()
+
+    // Header uses a separate useReadContract instance; its queryKey doesn't
+    // necessarily match ours, so refetching locally won't touch it. Invalidate
+    // any wagmi balanceOf read to force those observers to refetch too.
+    queryClient.invalidateQueries({
+      predicate: (query) => {
+        const key = query.queryKey as unknown[]
+        const params = key?.[1] as { functionName?: string } | undefined
+        return key?.[0] === 'readContract' && params?.functionName === 'balanceOf'
+      },
+    })
+  }, [isSuccess, refetchBalance, refetchAllowance, queryClient])
 
   const playPriceFormatted = playPrice
     ? `${formatEther(playPrice)} ${TOKEN_SYMBOL}`
