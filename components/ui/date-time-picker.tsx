@@ -78,10 +78,10 @@ export function DateTimePicker({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between rounded border border-[#0c1512]/10 bg-dark-navy px-4 py-3 text-left transition-colors hover:border-[#0c1512]/20 focus:outline-none focus:ring-1 focus:ring-[#0c1512]"
+        className="flex w-full items-center justify-between rounded border border-[#edeef1] bg-dark-navy px-4 py-3 text-left transition-colors hover:border-[#d6d8db] focus:outline-none focus:ring-1 focus:ring-[#0062df]"
       >
         <span className={cn("flex items-center gap-2", sel ? "text-text-primary" : "text-muted-blue")}>
-          <Calendar className="h-4 w-4 text-[#0c1512]" />
+          <Calendar className="h-4 w-4 text-[#0062df]" />
           {sel ? format(sel, "PP 'at' p") : placeholder}
         </span>
         <ChevronRight
@@ -90,13 +90,13 @@ export function DateTimePicker({
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 z-20 mb-2 w-full rounded border border-[#0c1512]/10 bg-[#0c1512] p-3 shadow-2xl animate-step">
+        <div className="absolute bottom-full left-0 z-20 mb-2 w-full rounded border border-[#edeef1] bg-[#ffffff] p-3 shadow-2xl animate-step">
           {/* Month navigation */}
           <div className="mb-2 flex items-center justify-between">
             <button
               type="button"
               onClick={() => setView((v) => subMonths(v, 1))}
-              className="rounded p-1 text-muted-blue transition-colors hover:bg-[#0c1512]/5 hover:text-text-primary"
+              className="rounded p-1 text-muted-blue transition-colors hover:bg-[#f4f5f7] hover:text-text-primary"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -104,7 +104,7 @@ export function DateTimePicker({
             <button
               type="button"
               onClick={() => setView((v) => addMonths(v, 1))}
-              className="rounded p-1 text-muted-blue transition-colors hover:bg-[#0c1512]/5 hover:text-text-primary"
+              className="rounded p-1 text-muted-blue transition-colors hover:bg-[#f4f5f7] hover:text-text-primary"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -135,12 +135,12 @@ export function DateTimePicker({
                   className={cn(
                     "flex h-8 w-8 items-center justify-center rounded text-xs transition-colors",
                     isSel
-                      ? "bg-[#0c1512] font-bold text-[#2ee6a6]"
+                      ? "bg-[#0062df] font-bold text-[#ffffff]"
                       : disabled
                         ? "cursor-not-allowed text-muted-blue/25"
-                        : "text-text-primary hover:bg-[#0c1512]/10",
+                        : "text-text-primary hover:bg-[#f4f5f7]",
                     !isSel && outside && !disabled && "text-muted-blue/50",
-                    !isSel && !disabled && isToday && "ring-1 ring-inset ring-[#0c1512]/40"
+                    !isSel && !disabled && isToday && "ring-1 ring-inset ring-[#0062df]/40"
                   )}
                 >
                   {day.getDate()}
@@ -150,18 +150,18 @@ export function DateTimePicker({
           </div>
 
           {/* Time + confirm */}
-          <div className="mt-3 flex items-center gap-2 border-t border-[#0c1512]/10 pt-3">
-            <Clock className="h-4 w-4 shrink-0 text-[#0c1512]" />
+          <div className="mt-3 flex items-center gap-2 border-t border-[#edeef1] pt-3">
+            <Clock className="h-4 w-4 shrink-0 text-[#0062df]" />
             <input
               type="time"
               value={time}
               onChange={(e) => emit(sel ?? new Date(), e.target.value)}
-              className="flex-1 rounded border border-[#0c1512]/10 bg-dark-navy px-3 py-2 text-sm text-text-primary [color-scheme:dark] focus:outline-none focus:ring-1 focus:ring-[#0c1512]"
+              className="flex-1 rounded border border-[#edeef1] bg-dark-navy px-3 py-2 text-sm text-text-primary [color-scheme:light] focus:outline-none focus:ring-1 focus:ring-[#0062df]"
             />
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="rounded bg-[#0c1512] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-text-primary transition-all hover:brightness-125"
+              className="rounded bg-[#0062df] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-[#ffffff] transition-all hover:brightness-125"
             >
               Done
             </button>

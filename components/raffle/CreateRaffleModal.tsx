@@ -357,7 +357,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
   }
 
   const inputClass =
-    "w-full bg-dark-navy border border-white/10 rounded px-4 py-3 text-text-primary placeholder-muted-blue focus:outline-none focus:ring-1 focus:ring-[#2ee6a6]";
+    "w-full bg-dark-navy border border-black/10 rounded px-4 py-3 text-text-primary placeholder-muted-blue focus:outline-none focus:ring-1 focus:ring-[#0062df]";
   const labelClass =
     "text-[10px] font-bold uppercase text-muted-blue tracking-widest block mb-2";
 
@@ -377,7 +377,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm">
       <div className="ui-container my-8 w-full max-w-2xl rounded">
-        <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-black/10 bg-black/5 px-6 py-4">
           <div>
             <h3 className="text-lg font-header text-text-primary">Create Your Raffle</h3>
             {status !== "success" && (
@@ -396,7 +396,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
         </div>
 
         {status !== "success" && (
-          <div className="flex items-start border-b border-white/10 px-6 py-5">
+          <div className="flex items-start border-b border-black/10 px-6 py-5">
             {STEPS.map((st, i) => {
               const done = i < step;
               const active = i === step;
@@ -413,10 +413,10 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
                     <span
                       className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm font-bold transition-all ${
                         done
-                          ? "border-transparent bg-[#0c1512] text-[#2ee6a6]"
+                          ? "border-transparent bg-[#ffffff] text-[#0062df]"
                           : active
-                            ? "border-[#2ee6a6] bg-[#2ee6a6]/10 text-[#2ee6a6] ring-4 ring-[#2ee6a6]/10"
-                            : "border-white/10 bg-white/5 text-muted-blue"
+                            ? "border-[#0062df] bg-[#0062df]/10 text-[#0062df] ring-4 ring-[#0062df]/10"
+                            : "border-black/10 bg-black/5 text-muted-blue"
                       }`}
                     >
                       {done ? (
@@ -436,7 +436,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
                   {i < LAST_STEP && (
                     <div
                       className={`mt-[18px] h-px flex-1 transition-colors ${
-                        i < step ? "bg-[#2ee6a6]" : "bg-white/10"
+                        i < step ? "bg-[#0062df]" : "bg-black/10"
                       }`}
                     />
                   )}
@@ -457,7 +457,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
             </p>
             <button
               onClick={onClose}
-              className="rounded bg-[#0c1512] border border-white/10 px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-text-primary transition-all hover:brightness-125"
+              className="rounded bg-[#ffffff] border border-black/10 px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-text-primary transition-all hover:brightness-125"
             >
               Done
             </button>
@@ -503,7 +503,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
                       <img
                         src={imageUrl}
                         alt="Raffle preview"
-                        className="mt-3 h-32 w-full rounded border border-white/10 object-cover"
+                        className="mt-3 h-32 w-full rounded border border-black/10 object-cover"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).style.display = "none";
                         }}
@@ -516,18 +516,18 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
               {step === 1 && (
                 <>
                   <p className="text-sm text-muted-blue">
-                    Set how players spend GIWA to enter and how big the pool can get.
+                    Set how players spend HOLLOW to enter and how big the pool can get.
                   </p>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div>
-                      <label className={labelClass}>Entry Cost (GIWA)</label>
+                      <label className={labelClass}>Entry Cost (HOLLOW)</label>
                       <input
                         type="number"
                         className={inputClass}
                         value={tokensRequired}
                         onChange={(e) => setTokensRequired(e.target.value)}
                       />
-                      <p className="mt-1.5 text-[11px] text-muted-blue/70">GIWA per entry.</p>
+                      <p className="mt-1.5 text-[11px] text-muted-blue/70">HOLLOW per entry.</p>
                     </div>
                     <div>
                       <label className={labelClass}>Max Entries / User</label>
@@ -565,8 +565,8 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
                           onClick={() => setPrizeKind(kind)}
                           className={`rounded border px-4 py-3 text-xs font-bold uppercase tracking-widest transition-all ${
                             prizeKind === kind
-                              ? "border-[#2ee6a6] bg-[#2ee6a6]/10 text-text-primary"
-                              : "border-white/10 bg-white/5 text-muted-blue hover:text-text-primary"
+                              ? "border-[#0062df] bg-[#0062df]/10 text-text-primary"
+                              : "border-black/10 bg-black/5 text-muted-blue hover:text-text-primary"
                           }`}
                         >
                           {kind === "erc20" ? "ERC20 Token" : "NFT (ERC721)"}
@@ -603,7 +603,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
                           <button
                             type="button"
                             onClick={() => removeSlot(i)}
-                            className="rounded bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-blue hover:bg-white/10"
+                            className="rounded bg-black/5 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-blue hover:bg-black/10"
                           >
                             Remove
                           </button>
@@ -613,7 +613,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
                     <button
                       type="button"
                       onClick={addSlot}
-                      className="rounded bg-white/5 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-blue hover:bg-white/10"
+                      className="rounded bg-black/5 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-blue hover:bg-black/10"
                     >
                       {isNft ? "Add Token ID" : "Add Prize"}
                     </button>
@@ -624,10 +624,10 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
                     <DateTimePicker value={endDate} onChange={setEndDate} />
                   </div>
 
-                  <div className="rounded border border-white/10 bg-white/5 p-3 text-xs text-muted-blue">
+                  <div className="rounded border border-black/10 bg-black/5 p-3 text-xs text-muted-blue">
                     You escrow the prize now
                     {isNft ? " (you'll approve the raffle contract to hold your NFTs)" : ""}. Entrants
-                    pay GIWA (sent to you). The raffle ends automatically after the close date, when
+                    pay HOLLOW (sent to you). The raffle ends automatically after the close date, when
                     the owner&apos;s settler draws winners.
                   </div>
                 </>
@@ -646,7 +646,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
                   type="button"
                   onClick={goBack}
                   disabled={busy}
-                  className="flex items-center gap-1.5 rounded border border-white/10 bg-white/5 px-5 py-3 text-xs font-bold uppercase tracking-widest text-muted-blue transition-all hover:text-text-primary disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded border border-black/10 bg-black/5 px-5 py-3 text-xs font-bold uppercase tracking-widest text-muted-blue transition-all hover:text-text-primary disabled:opacity-50"
                 >
                   <span className="material-symbols-outlined text-[18px]">arrow_back</span>
                   Back
@@ -656,7 +656,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
               {step < LAST_STEP ? (
                 <button
                   type="submit"
-                  className="ml-auto flex items-center gap-1.5 rounded bg-[#0c1512] border border-white/10 px-6 py-3 text-xs font-bold uppercase tracking-widest text-text-primary transition-all hover:brightness-125"
+                  className="ml-auto flex items-center gap-1.5 rounded bg-[#ffffff] border border-black/10 px-6 py-3 text-xs font-bold uppercase tracking-widest text-text-primary transition-all hover:brightness-125"
                 >
                   Continue
                   <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
@@ -665,7 +665,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
                 <button
                   type="submit"
                   disabled={busy}
-                  className="ml-auto flex items-center justify-center gap-2 rounded bg-[#0c1512] border border-white/10 px-6 py-3 text-xs font-bold uppercase tracking-[0.15em] text-text-primary shadow-[0_0_20px_rgba(12,21,18,0.15)] transition-all hover:brightness-125 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="ml-auto flex items-center justify-center gap-2 rounded bg-[#ffffff] border border-black/10 px-6 py-3 text-xs font-bold uppercase tracking-[0.15em] text-text-primary shadow-[0_0_20px_rgba(26, 36, 52,0.15)] transition-all hover:brightness-125 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {busy && (
                     <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">

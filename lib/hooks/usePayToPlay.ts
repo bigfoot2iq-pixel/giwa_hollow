@@ -1,162 +1,195 @@
 "use client"
 
-import { useState, useCallback, useEffect } from 'react'
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { formatEther } from 'viem'
+import { useCallback, useEffect, useState } from 'react'
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useConfig } from 'wagmi'
+import { waitForTransactionReceipt } from '@wagmi/core'
+import { formatEther, maxUint256 } from 'viem'
 import { THE_HOLLOW_GAME_ADDRESS, THE_HOLLOW_GAME_ABI } from '@/lib/contracts/theHollowGame'
+import { contracts, HollowTokenABI } from '@/lib/contracts'
+
+type PayStep = 'idle' | 'approving' | 'paying'
 
 interface UsePayToPlayReturn {
   // Read state
   playPrice: bigint | undefined
   playPriceFormatted: string
-  playPriceUsd: string
-  ethPrice: number | null
+  balance: bigint | undefined
+  hasEnoughBalance: boolean
+  needsApproval: boolean
+
   isLoadingPrice: boolean
-  
+
   // Write state
   pay: () => Promise<`0x${string}` | null>
+  step: PayStep
   isPaying: boolean
   isConfirming: boolean
   txHash: `0x${string}` | undefined
   isSuccess: boolean
   error: string | null
-  
+
   // Utils
   refetch: () => void
   reset: () => void
 }
 
+const TOKEN_SYMBOL = 'HOLLOW'
+
 export function usePayToPlay(): UsePayToPlayReturn {
+  const { address } = useAccount()
+  const config = useConfig()
   const [error, setError] = useState<string | null>(null)
-  const [ethPrice, setEthPrice] = useState<number | null>(null)
-  const [isLoadingEthPrice, setIsLoadingEthPrice] = useState(true)
+  const [step, setStep] = useState<PayStep>('idle')
 
-  // Fetch ETH price from CoinGecko
-  useEffect(() => {
-    const fetchEthPrice = async () => {
-      try {
-        const response = await fetch(
-          'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
-        )
-        const data = await response.json()
-        setEthPrice(data.ethereum.usd)
-      } catch (err) {
-        console.error('Failed to fetch ETH price:', err)
-        // Fallback price if API fails
-        setEthPrice(3500)
-      } finally {
-        setIsLoadingEthPrice(false)
-      }
-    }
-
-    fetchEthPrice()
-    // Refresh price every 60 seconds
-    const interval = setInterval(fetchEthPrice, 60000)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Read play price from contract
-  const { 
-    data: playPrice, 
-    isLoading: isLoadingContractPrice,
-    refetch 
+  // Play price (token wei) from the game contract
+  const {
+    data: playPrice,
+    isLoading: isLoadingPrice,
+    refetch: refetchPrice,
   } = useReadContract({
     address: THE_HOLLOW_GAME_ADDRESS,
     abi: THE_HOLLOW_GAME_ABI,
     functionName: 'getPlayPrice',
   })
 
-  // Write contract
-  const { 
+  // Player's GIWA balance
+  const { data: balance, refetch: refetchBalance } = useReadContract({
+    address: contracts.hollowToken.address,
+    abi: HollowTokenABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: { enabled: !!address },
+  })
+
+  // Player's standing allowance to the game contract
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    address: contracts.hollowToken.address,
+    abi: HollowTokenABI,
+    functionName: 'allowance',
+    args: address ? [address, THE_HOLLOW_GAME_ADDRESS] : undefined,
+    query: { enabled: !!address },
+  })
+
+  // Write + wait for the payToPlay tx (the hash session creation is keyed off)
+  const {
     data: txHash,
     writeContractAsync,
-    isPending: isPaying,
-    reset: resetWrite
+    isPending,
+    reset: resetWrite,
   } = useWriteContract()
 
-  // Wait for transaction confirmation
-  const { 
-    isLoading: isConfirming,
-    isSuccess 
-  } = useWaitForTransactionReceipt({
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
   })
 
-  // Format price for display in ETH
+  // payToPlay burns HOLLOW. Once the tx confirms, refresh the shared balance
+  // (and allowance) query so the header total updates without a page reload.
+  // Header reads the same balanceOf queryKey, so refetching here refreshes it too.
+  useEffect(() => {
+    if (isSuccess) {
+      refetchBalance()
+      refetchAllowance()
+    }
+  }, [isSuccess, refetchBalance, refetchAllowance])
+
   const playPriceFormatted = playPrice
-    ? `${formatEther(playPrice)} ETH`
+    ? `${formatEther(playPrice)} ${TOKEN_SYMBOL}`
     : '...'
 
-  // Calculate USD price
-  const playPriceUsd = (() => {
-    if (!playPrice || !ethPrice) return '...'
-    const coinAmount = parseFloat(formatEther(playPrice))
-    const usdAmount = coinAmount * ethPrice
-    // Format based on amount
-    if (usdAmount < 0.01) {
-      return `$${usdAmount.toFixed(4)}`
-    } else if (usdAmount < 1) {
-      return `$${usdAmount.toFixed(3)}`
-    } else {
-      return `$${usdAmount.toFixed(2)}`
-    }
-  })()
+  const hasEnoughBalance =
+    playPrice !== undefined && balance !== undefined ? balance >= playPrice : true
 
-  const isLoadingPrice = isLoadingContractPrice || isLoadingEthPrice
+  const needsApproval =
+    playPrice !== undefined && allowance !== undefined ? allowance < playPrice : false
 
-  // Pay to play function
+  // Approve (once, infinite) if needed, then payToPlay.
   const pay = useCallback(async (): Promise<`0x${string}` | null> => {
+    if (!address) {
+      setError('Wallet not connected')
+      return null
+    }
     if (!playPrice) {
       setError('Unable to fetch play price')
+      return null
+    }
+    if (balance !== undefined && balance < playPrice) {
+      setError(`Not enough ${TOKEN_SYMBOL}. Claim tokens first.`)
       return null
     }
 
     setError(null)
 
     try {
+      // 1. Ensure the game contract can pull GIWA. Approve max once so future
+      //    plays are a single tx.
+      const currentAllowance = (allowance as bigint | undefined) ?? 0n
+      if (currentAllowance < playPrice) {
+        setStep('approving')
+        const approveHash = await writeContractAsync({
+          address: contracts.hollowToken.address,
+          abi: HollowTokenABI,
+          functionName: 'approve',
+          args: [THE_HOLLOW_GAME_ADDRESS, maxUint256],
+        })
+        await waitForTransactionReceipt(config, { hash: approveHash })
+        await refetchAllowance()
+      }
+
+      // 2. Pay to play.
+      setStep('paying')
       const hash = await writeContractAsync({
         address: THE_HOLLOW_GAME_ADDRESS,
         abi: THE_HOLLOW_GAME_ABI,
         functionName: 'payToPlay',
-        value: playPrice,
       })
 
       return hash
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Transaction failed'
-      
-      // Parse common errors
-      if (message.includes('User rejected')) {
+
+      if (message.includes('User rejected') || message.includes('User denied')) {
         setError('Transaction cancelled')
       } else if (message.includes('insufficient funds')) {
-        setError('Insufficient funds')
+        setError('Insufficient funds for gas')
+      } else if (message.toLowerCase().includes('transfer amount exceeds balance')) {
+        setError(`Not enough ${TOKEN_SYMBOL}. Claim tokens first.`)
       } else {
         setError(message)
       }
-      
-      return null
-    }
-  }, [playPrice, writeContractAsync])
 
-  // Reset state
+      return null
+    } finally {
+      setStep('idle')
+    }
+  }, [address, playPrice, balance, allowance, writeContractAsync, config, refetchAllowance])
+
+  const refetch = useCallback(() => {
+    refetchPrice()
+    refetchBalance()
+    refetchAllowance()
+  }, [refetchPrice, refetchBalance, refetchAllowance])
+
   const reset = useCallback(() => {
     setError(null)
+    setStep('idle')
     resetWrite()
   }, [resetWrite])
 
   return {
     playPrice,
     playPriceFormatted,
-    playPriceUsd,
-    ethPrice,
+    balance,
+    hasEnoughBalance,
+    needsApproval,
     isLoadingPrice,
     pay,
-    isPaying,
+    step,
+    isPaying: isPending,
     isConfirming,
     txHash,
     isSuccess,
     error,
     refetch,
-    reset
+    reset,
   }
 }

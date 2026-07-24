@@ -221,7 +221,7 @@ export default function MultiWalletConnect() {
 
                     <button
                       onClick={handleDisconnect}
-                      className="w-full flex items-center space-x-3 px-6 py-3 text-left text-primary hover:text-[#2ee6a6] hover:bg-gradient-to-r hover:from-dark-blue/10 hover:to-dark-navy/10 transition-all duration-200 group"
+                      className="w-full flex items-center space-x-3 px-6 py-3 text-left text-primary hover:text-[#0062df] hover:bg-gradient-to-r hover:from-dark-blue/10 hover:to-dark-navy/10 transition-all duration-200 group"
                     >
                       <div className="w-8 h-8 rounded-lg bg-dark-blue/20 flex items-center justify-center group-hover:bg-dark-blue/30 transition-colors">
                         <LogOut size={16} className="text-primary" />

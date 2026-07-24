@@ -2,17 +2,12 @@ import pkg from "hardhat";
 const { ethers, run } = pkg;
 
 // ── Constructor arguments ──────────────────────────────────────────
-const HOLLOW_TOKEN_NAME = "Hollow Token";
+const HOLLOW_TOKEN_NAME = "The Hollow";
 const HOLLOW_TOKEN_SYMBOL = "HOLLOW";
-const INITIAL_CLAIM_COOLDOWN = 86_400;
+const INITIAL_CLAIM_AMOUNT = ethers.parseEther("1"); // 1 HOLLOW per claim
+const INITIAL_CLAIM_FEE = 0n; // free by default; admin can raise
+const INITIAL_CLAIM_COOLDOWN = 43_200; // 12 hours
 const WATCHDOG_ADDRESS = process.env.WATCHDOG_ADDRESS;
-
-const CATEGORIES = [
-  { name: "Bronze", amount: ethers.parseEther("50"), fee: ethers.parseEther("0.0001") },
-  { name: "Silver", amount: ethers.parseEther("100"), fee: ethers.parseEther("0.0005") },
-  { name: "Gold", amount: ethers.parseEther("200"), fee: ethers.parseEther("0.001") },
-  { name: "Platinum", amount: ethers.parseEther("500"), fee: ethers.parseEther("0.005") },
-];
 
 async function verifyContract(address: string, constructorArguments: unknown[]) {
   console.log(`\nVerifying ${address} on GIWA Explorer...`);
@@ -52,23 +47,17 @@ async function main() {
   const hollowToken = await HollowToken.deploy(
     HOLLOW_TOKEN_NAME,
     HOLLOW_TOKEN_SYMBOL,
+    INITIAL_CLAIM_AMOUNT,
+    INITIAL_CLAIM_FEE,
     INITIAL_CLAIM_COOLDOWN,
   );
   await hollowToken.waitForDeployment();
   const hollowAddress = await hollowToken.getAddress();
   console.log(`✅ HollowToken deployed to: ${hollowAddress}`);
 
-  console.log("Setting categories...");
-  for (let i = 0; i < CATEGORIES.length; i++) {
-    const c = CATEGORIES[i];
-    console.log(`  Setting category ${i}: ${c.name}...`);
-    await (await hollowToken.setCategory(i, c.name, c.amount, c.fee)).wait();
-  }
-  console.log("✅ Categories set.");
-
-  // ── 2. Deploy RobinhoodRaffles ─────────────────────────────────────
-  console.log("\nDeploying RobinhoodRaffles...");
-  const RobinhoodRaffles = await ethers.getContractFactory("RobinhoodRaffles");
+  // ── 2. Deploy HollowRaffles ─────────────────────────────────────
+  console.log("\nDeploying HollowRaffles...");
+  const RobinhoodRaffles = await ethers.getContractFactory("HollowRaffles");
   const robinhoodRaffles = await RobinhoodRaffles.deploy(
     hollowAddress,
     watchdog,
@@ -85,6 +74,8 @@ async function main() {
   await verifyContract(hollowAddress, [
     HOLLOW_TOKEN_NAME,
     HOLLOW_TOKEN_SYMBOL,
+    INITIAL_CLAIM_AMOUNT,
+    INITIAL_CLAIM_FEE,
     INITIAL_CLAIM_COOLDOWN,
   ]);
   await verifyContract(rafflesAddress, [hollowAddress, watchdog]);

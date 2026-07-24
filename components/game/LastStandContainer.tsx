@@ -19,9 +19,11 @@ export default function LastStandContainer() {
   // Contract interaction
   const {
     playPriceFormatted,
-    playPriceUsd,
+    hasEnoughBalance,
+    needsApproval,
     isLoadingPrice,
     pay,
+    step,
     isPaying,
     isConfirming,
     txHash,
@@ -111,7 +113,7 @@ export default function LastStandContainer() {
               {session && (
                 <div className="text-left sm:text-right">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-blue mb-1">Session Expires</p>
-                  <p className="text-sm text-[#2ee6a6]">{formatExpiryTime(session.expiresAt)}</p>
+                  <p className="text-sm text-[#0062df]">{formatExpiryTime(session.expiresAt)}</p>
                 </div>
               )}
             </div>
@@ -151,7 +153,7 @@ export default function LastStandContainer() {
                   return (
                     <button
                       onClick={openConnectModal}
-                      className="px-6 sm:px-8 py-3 sm:py-4 bg-[#0c1512] border border-white/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all inline-flex items-center gap-2"
+                      className="px-6 sm:px-8 py-3 sm:py-4 bg-[#ffffff] border border-black/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all inline-flex items-center gap-2"
                     >
                       <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
                       Connect Wallet
@@ -164,7 +166,7 @@ export default function LastStandContainer() {
         ) : (
           // Pay to Play / Session Selection
           <div className="text-center py-12 sm:py-16">
-            <span className="material-symbols-outlined text-[#2ee6a6] text-5xl sm:text-6xl mb-4 sm:mb-6 block">swords</span>
+            <span className="material-symbols-outlined text-[#0062df] text-5xl sm:text-6xl mb-4 sm:mb-6 block">swords</span>
             <h3 className="text-xl sm:text-2xl font-header text-text-primary mb-2">The Hollow</h3>
             <p className="text-muted-blue mb-6 sm:mb-8 text-sm sm:text-base">Last Stand Mode</p>
 
@@ -172,7 +174,7 @@ export default function LastStandContainer() {
               {/* Session Status */}
               {isSessionLoading ? (
                 <div className="flex items-center justify-center gap-2 text-muted-blue py-4">
-                  <div className="w-4 h-4 border-2 border-white/20 border-t-[#2ee6a6] rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-black/20 border-t-[#0062df] rounded-full animate-spin"></div>
                   <span>Checking session...</span>
                 </div>
               ) : hasActiveSession && session ? (
@@ -190,7 +192,7 @@ export default function LastStandContainer() {
 
                   <button
                     onClick={handleStartWithSession}
-                    className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-[#0c1512] border border-white/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all"
+                    className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-[#ffffff] border border-black/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all"
                   >
                     <span className="material-symbols-outlined text-sm mr-2 inline-block">play_arrow</span>
                     Continue Playing
@@ -205,12 +207,28 @@ export default function LastStandContainer() {
                     </div>
                   )}
 
+                  {/* Play cost in HOLLOW */}
+                  <div className="ui-container p-4 rounded bg-black/5 border border-black/10">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-blue mb-1">Play Cost</p>
+                    <p className="text-lg font-display font-bold text-text-primary">
+                      {isLoadingPrice ? '...' : playPriceFormatted}
+                    </p>
+                    {!hasEnoughBalance && (
+                      <p className="text-[11px] text-red-400 mt-1">Not enough HOLLOW — claim tokens below.</p>
+                    )}
+                  </div>
+
                   <button
                     onClick={handlePayToPlay}
-                    disabled={isPaying || isConfirming || isCreatingSession || isLoadingPrice}
-                    className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-[#0c1512] border border-white/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isPaying || isConfirming || isCreatingSession || isLoadingPrice || step !== 'idle' || !hasEnoughBalance}
+                    className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-[#ffffff] border border-black/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isPaying ? (
+                    {step === 'approving' ? (
+                      <>
+                        <span className="inline-block w-4 h-4 border-2 border-dark-navy border-t-transparent rounded-full animate-spin mr-2"></span>
+                        Approving HOLLOW...
+                      </>
+                    ) : isPaying ? (
                       <>
                         <span className="inline-block w-4 h-4 border-2 border-dark-navy border-t-transparent rounded-full animate-spin mr-2"></span>
                         Confirm in Wallet...
@@ -228,7 +246,7 @@ export default function LastStandContainer() {
                       ) : (
                         <>
                           <span className="material-symbols-outlined text-sm mr-2 inline-block">payments</span>
-                          {hasPlayedBefore ? 'Replay' : 'Pay To Play'}
+                          {needsApproval ? 'Approve & Pay' : hasPlayedBefore ? 'Replay' : 'Pay To Play'}
                         </>
                       )}
                   </button>
@@ -237,14 +255,23 @@ export default function LastStandContainer() {
                     One payment = one game round until you lose
                   </p>
 
-                  {/* Faucet link — paying costs gas */}
-                  <Link
-                    href="/faucet"
-                    className="flex items-center justify-center gap-2 text-xs font-bold text-[#2ee6a6] transition-opacity hover:opacity-80"
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>water_drop</span>
-                    Need gas? Get testnet tokens
-                  </Link>
+                  {/* Get HOLLOW to pay, plus native gas for the tx */}
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+                    <Link
+                      href="/claim"
+                      className="flex items-center justify-center gap-2 text-xs font-bold text-[#0062df] transition-opacity hover:opacity-80"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>redeem</span>
+                      Need HOLLOW? Claim tokens
+                    </Link>
+                    <Link
+                      href="/faucet"
+                      className="flex items-center justify-center gap-2 text-xs font-bold text-[#0062df] transition-opacity hover:opacity-80"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>water_drop</span>
+                      Need gas? Get testnet ETH
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
@@ -255,22 +282,22 @@ export default function LastStandContainer() {
       {/* Game Features */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <div className="ui-container p-4 sm:p-5 lg:p-6 rounded text-center">
-          <span className="material-symbols-outlined text-[#2ee6a6] text-3xl sm:text-4xl mb-2 sm:mb-3 block">swords</span>
+          <span className="material-symbols-outlined text-[#0062df] text-3xl sm:text-4xl mb-2 sm:mb-3 block">swords</span>
           <h4 className="text-text-primary font-bold mb-1 sm:mb-2 text-xs sm:text-sm lg:text-base">Charged Attacks</h4>
           <p className="text-[10px] sm:text-xs lg:text-sm text-muted-blue">Hold to unleash powerful slashes</p>
         </div>
         <div className="ui-container p-4 sm:p-5 lg:p-6 rounded text-center">
-          <span className="material-symbols-outlined text-[#2ee6a6] text-3xl sm:text-4xl mb-2 sm:mb-3 block">favorite</span>
+          <span className="material-symbols-outlined text-[#0062df] text-3xl sm:text-4xl mb-2 sm:mb-3 block">favorite</span>
           <h4 className="text-text-primary font-bold mb-1 sm:mb-2 text-xs sm:text-sm lg:text-base">3 Lives System</h4>
           <p className="text-[10px] sm:text-xs lg:text-sm text-muted-blue">Every hit counts - survive!</p>
         </div>
         <div className="ui-container p-4 sm:p-5 lg:p-6 rounded text-center">
-          <span className="material-symbols-outlined text-[#2ee6a6] text-3xl sm:text-4xl mb-2 sm:mb-3 block">target</span>
+          <span className="material-symbols-outlined text-[#0062df] text-3xl sm:text-4xl mb-2 sm:mb-3 block">target</span>
           <h4 className="text-text-primary font-bold mb-1 sm:mb-2 text-xs sm:text-sm lg:text-base">Perfect Dodge</h4>
           <p className="text-[10px] sm:text-xs lg:text-sm text-muted-blue">Time it right for slow-mo</p>
         </div>
         <div className="ui-container p-4 sm:p-5 lg:p-6 rounded text-center">
-          <span className="material-symbols-outlined text-[#2ee6a6] text-3xl sm:text-4xl mb-2 sm:mb-3 block">emoji_events</span>
+          <span className="material-symbols-outlined text-[#0062df] text-3xl sm:text-4xl mb-2 sm:mb-3 block">emoji_events</span>
           <h4 className="text-text-primary font-bold mb-1 sm:mb-2 text-xs sm:text-sm lg:text-base">Wave Survival</h4>
           <p className="text-[10px] sm:text-xs lg:text-sm text-muted-blue">How long can you last?</p>
         </div>

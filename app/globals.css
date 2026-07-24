@@ -1,36 +1,80 @@
 @import "tailwindcss";
 
 :root {
-  /* GIWA palette — deep near-black surfaces + mint-teal accent */
-  --primary: #0c1512;        /* dark green-black: buttons, icons */
-  --accent-glow: #7ff5cf;    /* light mint glow */
-  --accent-warm: #2ee6a6;    /* GIWA mint-teal accent */
-  --litecoin: #0c1512;       /* dark surface — chain badges */
-  --dark-blue: #0f1a16;      /* dark surface */
-  --light-blue: #5eead4;     /* teal secondary accent */
-  --dark-navy: #0c1512;      /* dark: card/overlay backgrounds */
-  --muted-blue: #8aa79a;     /* muted sage-teal: secondary text */
-  --background: #07100d;     /* page background (dark) */
-  --foreground: #eef4f1;     /* page foreground (light) */
+  /* ── Upbit palette (light) ───────────────────────────────────────── */
+  --theme-colors-point_sub: #0062df;
+  --theme-colors-point_main: #003597;
+  --theme-colors-bg: #ffffff;
+  --theme-colors-bg_header: #d6d8db;
+  --theme-colors-bg_title: #f4f5f7;
+  --theme-colors-bg_btn_primary: #003597;
+  --theme-colors-bg_btn_secondary: #565d6a;
+  --theme-colors-bg_btn_tertiary: #f5f9ff;
+  --theme-colors-bg_list: #fafafa;
+  --theme-colors-bg_list_header: #fafafa;
+  --theme-colors-bg_list_hover: #f4f5f7;
+  --theme-colors-font_1: #1a2434;
+  --theme-colors-font_2: #565d6a;
+  --theme-colors-font_3: #8e929b;
+  --theme-colors-font_alert: #dd3c44;
+  --theme-colors-font_white: #ffffff;
+  --theme-colors-font_up: #dd3c44;
+  --theme-colors-font_down: #1375ec;
+  --theme-colors-font_btn_tertiary: #004cad;
+  --theme-colors-font_btn_dim: #ffffff;
+  --theme-colors-dim: #bec1c6;
+  --theme-colors-line_dark: #d6d8db;
+  --theme-colors-line_light: #edeef1;
+  --theme-colors-graph_bg_up: rgba(221, 60, 68, 0.08);
+  --theme-colors-graph_bg_down: rgba(19, 117, 236, 0.08);
+  --theme-colors-graph_bg_up_hover: rgba(221, 60, 68, 0.16);
+  --theme-colors-graph_bg_down_hover: rgba(19, 117, 236, 0.16);
+  --theme-colors-graph_up: rgba(221, 60, 68, 0.15);
+  --theme-colors-graph_down: rgba(19, 117, 236, 0.15);
+  --theme-colors-graph_up_hover: rgba(221, 60, 68, 0.23);
+  --theme-colors-graph_down_hover: rgba(19, 117, 236, 0.23);
+  --theme-colors-spinner_bg: #003597;
+  --theme-colors-spinner_spin_bg: rgba(0, 53, 151, 0.2);
+  --theme-colors-strong_font: #1a2434;
+  --theme-colors-md_bg: #ffffff;
+  --theme-colors-textfield_error_border: #dd3c44;
+  --theme-colors-top_bar: #003597;
+  --theme-colors-accent_main: #003597;
+  --theme-colors-green: #1da581;
+  --theme-colors-orange: #e97415;
+  --theme-colors-red: #dd3c44;
+  --theme-colors-star_yellow: #ffa800;
 
-  /* Semantic text colors for dark backgrounds */
-  --text-primary: #eef4f1;   /* off-white: headings, primary values */
-  --text-secondary: #c3d0ca; /* lighter: body text, descriptions */
-  --text-tertiary: #8fa39b;  /* muted: labels, placeholders */
+  /* ── Semantic tokens (remapped from GIWA dark → Upbit light) ──────── */
+  --primary: #003597;        /* primary buttons / icons  (point_main) */
+  --accent-glow: #4c8dff;    /* light blue glow */
+  --accent-warm: #0062df;    /* main accent            (point_sub) */
+  --litecoin: #003597;       /* chain badges */
+  --dark-blue: #f4f5f7;      /* light title surface */
+  --light-blue: #1375ec;     /* secondary blue accent */
+  --dark-navy: #ffffff;      /* card / overlay surface */
+  --muted-blue: #565d6a;     /* secondary text (font_2) */
+  --background: #f4f5f7;      /* page background (light gray) */
+  --foreground: #1a2434;     /* page foreground (dark) */
+
+  /* Semantic text colors for light backgrounds */
+  --text-primary: #1a2434;   /* headings / primary values (font_1) */
+  --text-secondary: #565d6a; /* body text                 (font_2) */
+  --text-tertiary: #8e929b;  /* labels / placeholders     (font_3) */
 }
 
 @theme inline {
-  --color-primary: #0c1512;
-  --color-accent-glow: #7ff5cf;
-  --color-accent-warm: #2ee6a6;
-  --color-litecoin: #0c1512;
-  --color-dark-blue: #0f1a16;
-  --color-light-blue: #5eead4;
-  --color-dark-navy: #0c1512;
-  --color-muted-blue: #8aa79a;
-  --color-text-primary: #eef4f1;
-  --color-text-secondary: #c3d0ca;
-  --color-text-tertiary: #8fa39b;
+  --color-primary: var(--primary);
+  --color-accent-glow: var(--accent-glow);
+  --color-accent-warm: var(--accent-warm);
+  --color-litecoin: var(--litecoin);
+  --color-dark-blue: var(--dark-blue);
+  --color-light-blue: var(--light-blue);
+  --color-dark-navy: var(--dark-navy);
+  --color-muted-blue: var(--muted-blue);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-plus-jakarta), sans-serif;
@@ -39,9 +83,9 @@
 }
 
 body {
-  background: #07100d;
+  background: #f4f5f7;
   background-attachment: fixed;
-  color: #eef4f1;
+  color: #1a2434;
   font-family: var(--font-plus-jakarta), sans-serif;
   min-height: 100vh;
 }
@@ -57,11 +101,11 @@ body {
 
 /* Glow utility for accent elements */
 .glow-teal {
-  box-shadow: 0 0 24px rgba(46, 230, 166, 0.35);
+  box-shadow: 0 0 24px rgba(0, 98, 223, 0.25);
 }
 
 .text-gradient-rh {
-  background: linear-gradient(120deg, #2ee6a6 0%, #5eead4 50%, #7ff5cf 100%);
+  background: linear-gradient(120deg, #003597 0%, #0062df 50%, #4c8dff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -83,8 +127,8 @@ body {
 }
 
 .ui-container {
-  background-color: rgba(12, 21, 18, 0.88);
-  border: 1px solid rgba(46, 230, 166, 0.1);
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 53, 151, 0.1);
   backdrop-filter: blur(12px);
 }
 
@@ -119,16 +163,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(0, 0, 0, 0.04);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(46, 230, 166, 0.25);
+  background: rgba(0, 98, 223, 0.25);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(46, 230, 166, 0.4);
+  background: rgba(0, 98, 223, 0.4);
 }
 
 /* Mobile optimizations */

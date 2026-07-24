@@ -2,19 +2,17 @@ import pkg from "hardhat";
 const { ethers } = pkg;
 
 async function main() {
-  const HollowToken = await ethers.getContractAt(
-    "HollowToken",
-    "0xf3dC2ea554d015bcd8e815A7C2eF29340636D4f8"
-  );
-
-  for (let i = 0; i < 4; i++) {
-    const name = await HollowToken.getCategoryName(i);
-    const amount = await HollowToken.getCategoryAmount(i);
-    const fee = await HollowToken.getCategoryFee(i);
-    console.log(`Category ${i}: name="${name}", amount=${ethers.formatEther(amount)}, fee=${ethers.formatEther(fee)} ETH`);
+  const address = process.env.NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS;
+  if (!address || !ethers.isAddress(address)) {
+    throw new Error("Set NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS in .env.local");
   }
 
-  console.log("\nCooldown:", (await HollowToken.claimCooldown()).toString(), "seconds");
+  const HollowToken = await ethers.getContractAt("HollowToken", address);
+
+  console.log("Token:", address);
+  console.log("Claim Amount:", ethers.formatEther(await HollowToken.claimAmount()), "HOLLOW");
+  console.log("Claim Fee:", ethers.formatEther(await HollowToken.claimFee()), "ETH");
+  console.log("Cooldown:", (await HollowToken.claimCooldown()).toString(), "seconds");
   console.log("Owner:", await HollowToken.owner());
 }
 

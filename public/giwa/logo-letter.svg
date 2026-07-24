@@ -1,4 +1,15 @@
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GIWA">
-  <rect width="32" height="32" rx="8" fill="#0c1512"/>
-  <path d="M22 12.5 C20.7 10.4 18.6 9 16 9 C11.6 9 8.5 12.4 8.5 16 C8.5 19.6 11.6 23 16 23 C19.4 23 22 20.8 22 17.5 L22 16 L16.5 16" stroke="#2ee6a6" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GIWA Hollow">
+  <defs>
+    <linearGradient id="giwaTile" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0062df"/>
+      <stop offset="1" stop-color="#003597"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="url(#giwaTile)"/>
+  <!-- katana threaded through the hollow -->
+  <path d="M8 24 L24 8" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M8 20 L12 24" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+  <!-- hollow ring -->
+  <circle cx="16" cy="16" r="6.5" stroke="#ffffff" stroke-width="3.5" fill="none"/>
+  <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="7.25" fill="none" stroke="#ffffff" stroke-opacity="0.18"/>
 </svg>

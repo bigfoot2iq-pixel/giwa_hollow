@@ -73,7 +73,7 @@ export function RafflesExplorer({ scope, title, showCreate = false, emptyHint }:
         {showCreate && isConnected && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#0c1512] border border-white/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all shadow-[0_0_20px_rgba(12,21,18,0.15)]"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#ffffff] border border-black/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all shadow-[0_0_20px_rgba(26, 36, 52,0.15)]"
           >
             <span className="material-symbols-outlined text-base">add</span>
             Create Raffle
@@ -83,9 +83,9 @@ export function RafflesExplorer({ scope, title, showCreate = false, emptyHint }:
 
       {/* Timing explainer */}
       {scope === "community" && (
-      <div className="ui-container rounded border border-[#2ee6a6]/20 bg-gradient-to-r from-[#2ee6a6]/10 to-transparent p-3 sm:p-4">
+      <div className="ui-container rounded border border-[#0062df]/20 bg-gradient-to-r from-[#0062df]/10 to-transparent p-3 sm:p-4">
         <div className="flex items-start gap-3">
-          <span className="material-symbols-outlined text-[#2ee6a6] text-xl shrink-0">schedule</span>
+          <span className="material-symbols-outlined text-[#0062df] text-xl shrink-0">schedule</span>
           <div className="space-y-1">
             <p className="text-xs sm:text-sm font-bold text-text-primary uppercase tracking-widest">
               How raffle timing works
@@ -107,7 +107,7 @@ export function RafflesExplorer({ scope, title, showCreate = false, emptyHint }:
       )}
 
       {/* Filter Tabs */}
-      <div className="flex overflow-x-auto border-b border-white/10 gap-4 sm:gap-6 lg:gap-8 mb-6 lg:mb-8 pb-px">
+      <div className="flex overflow-x-auto border-b border-black/10 gap-4 sm:gap-6 lg:gap-8 mb-6 lg:mb-8 pb-px">
         {statusFilters.map((status) => (
           <button
             key={status.value}

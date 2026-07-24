@@ -1,10 +1,19 @@
 <svg width="240" height="64" viewBox="0 0 240 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GIWA Hollow">
-  <rect width="240" height="64" rx="12" fill="#0c1512"/>
-  <!-- roof-tile mark (giwa = Korean roof tile) -->
-  <g transform="translate(16 18)">
-    <path d="M2 26 C2 12 8 4 15 4 C22 4 28 12 28 26" stroke="#2ee6a6" stroke-width="4" fill="none" stroke-linecap="round"/>
-    <path d="M12 26 C12 18 13 13 15 13 C17 13 18 18 18 26" stroke="#7ff5cf" stroke-width="3" fill="none" stroke-linecap="round"/>
-  </g>
-  <text x="58" y="41" font-family="'Space Grotesk','Segoe UI',sans-serif" font-size="26" font-weight="700" letter-spacing="1" fill="#eef4f1">GIWA</text>
-  <text x="140" y="41" font-family="'Space Grotesk','Segoe UI',sans-serif" font-size="26" font-weight="700" letter-spacing="1" fill="#2ee6a6">Hollow</text>
+  <defs>
+    <linearGradient id="giwaTile" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0062df"/>
+      <stop offset="1" stop-color="#003597"/>
+    </linearGradient>
+  </defs>
+  <!-- icon tile -->
+  <rect x="8" y="8" width="48" height="48" rx="12" fill="url(#giwaTile)"/>
+  <rect x="8.75" y="8.75" width="46.5" height="46.5" rx="11.25" fill="none" stroke="#ffffff" stroke-opacity="0.18"/>
+  <!-- katana threaded through the hollow -->
+  <path d="M20 44 L44 20" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M20 38 L26 44" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  <!-- hollow ring -->
+  <circle cx="32" cy="32" r="10" stroke="#ffffff" stroke-width="5" fill="none"/>
+  <!-- wordmark -->
+  <text x="70" y="41" font-family="'Space Grotesk','Segoe UI',sans-serif" font-size="25" font-weight="700" letter-spacing="0.5" fill="#1a2434">GIWA</text>
+  <text x="150" y="41" font-family="'Space Grotesk','Segoe UI',sans-serif" font-size="25" font-weight="700" letter-spacing="0.5" fill="#0062df">Hollow</text>
 </svg>

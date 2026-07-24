@@ -268,13 +268,13 @@ export const RobinhoodRafflesABI = [
       },
       {
         "indexed": false,
-        "internalType": "enum RobinhoodRaffles.RaffleState",
+        "internalType": "enum HollowRaffles.RaffleState",
         "name": "oldState",
         "type": "uint8"
       },
       {
         "indexed": false,
-        "internalType": "enum RobinhoodRaffles.RaffleState",
+        "internalType": "enum HollowRaffles.RaffleState",
         "name": "newState",
         "type": "uint8"
       }
@@ -344,6 +344,25 @@ export const RobinhoodRafflesABI = [
     "inputs": [
       {
         "indexed": false,
+        "internalType": "uint256",
+        "name": "oldFee",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newFee",
+        "type": "uint256"
+      }
+    ],
+    "name": "UserRaffleFeeUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "address",
         "name": "oldWatchdog",
         "type": "address"
@@ -374,7 +393,7 @@ export const RobinhoodRafflesABI = [
   {
     "inputs": [
       {
-        "internalType": "enum RobinhoodRaffles.PrizeType",
+        "internalType": "enum HollowRaffles.PrizeType",
         "name": "prizeType_",
         "type": "uint8"
       },
@@ -456,7 +475,7 @@ export const RobinhoodRafflesABI = [
   {
     "inputs": [
       {
-        "internalType": "enum RobinhoodRaffles.PrizeType",
+        "internalType": "enum HollowRaffles.PrizeType",
         "name": "prizeType_",
         "type": "uint8"
       },
@@ -490,7 +509,7 @@ export const RobinhoodRafflesABI = [
   {
     "inputs": [
       {
-        "internalType": "enum RobinhoodRaffles.PrizeType",
+        "internalType": "enum HollowRaffles.PrizeType",
         "name": "prizeType_",
         "type": "uint8"
       },
@@ -635,7 +654,7 @@ export const RobinhoodRafflesABI = [
     "name": "getRaffleInfo",
     "outputs": [
       {
-        "internalType": "enum RobinhoodRaffles.PrizeType",
+        "internalType": "enum HollowRaffles.PrizeType",
         "name": "prizeType",
         "type": "uint8"
       },
@@ -650,7 +669,7 @@ export const RobinhoodRafflesABI = [
         "type": "uint256"
       },
       {
-        "internalType": "enum RobinhoodRaffles.RaffleState",
+        "internalType": "enum HollowRaffles.RaffleState",
         "name": "state",
         "type": "uint8"
       },
@@ -703,7 +722,7 @@ export const RobinhoodRafflesABI = [
     "name": "getRaffleState",
     "outputs": [
       {
-        "internalType": "enum RobinhoodRaffles.RaffleState",
+        "internalType": "enum HollowRaffles.RaffleState",
         "name": "",
         "type": "uint8"
       }
@@ -856,7 +875,7 @@ export const RobinhoodRafflesABI = [
     "name": "raffles",
     "outputs": [
       {
-        "internalType": "enum RobinhoodRaffles.PrizeType",
+        "internalType": "enum HollowRaffles.PrizeType",
         "name": "prizeType",
         "type": "uint8"
       },
@@ -866,7 +885,7 @@ export const RobinhoodRafflesABI = [
         "type": "address"
       },
       {
-        "internalType": "enum RobinhoodRaffles.RaffleState",
+        "internalType": "enum HollowRaffles.RaffleState",
         "name": "state",
         "type": "uint8"
       },
@@ -958,6 +977,19 @@ export const RobinhoodRafflesABI = [
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "newFee",
+        "type": "uint256"
+      }
+    ],
+    "name": "setUserRaffleFee",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "newOwner",
         "type": "address"
@@ -990,6 +1022,19 @@ export const RobinhoodRafflesABI = [
   },
   {
     "inputs": [],
+    "name": "userRaffleFee",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "watchdog",
     "outputs": [
       {
@@ -1002,4 +1047,3 @@ export const RobinhoodRafflesABI = [
     "type": "function"
   }
 ] as const;
-

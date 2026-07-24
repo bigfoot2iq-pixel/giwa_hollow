@@ -278,7 +278,7 @@ export default function RaffleDetailPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/admin">
-            <button className="p-2 bg-white/5 hover:bg-white/10 text-[#2ee6a6] rounded transition-all border border-white/10">
+            <button className="p-2 bg-black/5 hover:bg-black/10 text-[#0062df] rounded transition-all border border-black/10">
               <span className="material-symbols-outlined">arrow_back</span>
             </button>
           </Link>
@@ -315,7 +315,7 @@ export default function RaffleDetailPage() {
               ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
               : status === "pending"
               ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-              : "bg-white/5 text-muted-blue border-white/10"
+              : "bg-black/5 text-muted-blue border-black/10"
           }`}>
             {status}
           </span>
@@ -360,21 +360,21 @@ export default function RaffleDetailPage() {
 
       {/* Prizes */}
       <div className="ui-container rounded overflow-hidden">
-        <div className="px-6 py-4 border-b border-white/10">
+        <div className="px-6 py-4 border-b border-black/10">
           <h3 className="text-xl font-header text-text-primary">Prizes</h3>
         </div>
         {prizes.length > 0 ? (
           <table className="w-full text-left border-collapse">
-            <thead className="bg-white/5 border-b border-white/10">
+            <thead className="bg-black/5 border-b border-black/10">
               <tr>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Type</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Token Address</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Amount/ID</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10">
+            <tbody className="divide-y divide-black/10">
               {prizes.map((prize) => (
-                <tr key={prize.id} className="hover:bg-white/5 transition-colors">
+                <tr key={prize.id} className="hover:bg-black/5 transition-colors">
                   <td className="px-6 py-5">
                     <span className="text-sm text-text-primary uppercase">{prize.prize_type}</span>
                   </td>
@@ -398,19 +398,19 @@ export default function RaffleDetailPage() {
       {/* Winners */}
       {winners.length > 0 && (
         <div className="ui-container rounded overflow-hidden">
-          <div className="px-6 py-4 border-b border-white/10">
+          <div className="px-6 py-4 border-b border-black/10">
             <h3 className="text-xl font-header text-text-primary">Winners</h3>
           </div>
           <table className="w-full text-left border-collapse">
-            <thead className="bg-white/5 border-b border-white/10">
+            <thead className="bg-black/5 border-b border-black/10">
               <tr>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Wallet Address</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Won At</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10">
+            <tbody className="divide-y divide-black/10">
               {winners.map((winner) => (
-                <tr key={winner.id} className="hover:bg-white/5 transition-colors">
+                <tr key={winner.id} className="hover:bg-black/5 transition-colors">
                   <td className="px-6 py-5">
                     <span className="text-sm text-text-primary font-mono">{winner.wallet_address}</span>
                   </td>
@@ -426,11 +426,11 @@ export default function RaffleDetailPage() {
 
       {/* Manual End Raffle */}
       <div className="ui-container rounded overflow-hidden">
-        <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-black/10 flex items-center justify-between">
           <h3 className="text-xl font-header text-text-primary">Manual End Raffle</h3>
           <button
             onClick={() => setShowManualEnd((prev) => !prev)}
-            className="px-4 py-2 bg-white/5 hover:bg-white/10 text-text-primary text-sm font-bold rounded uppercase tracking-widest transition-all border border-white/10"
+            className="px-4 py-2 bg-black/5 hover:bg-black/10 text-text-primary text-sm font-bold rounded uppercase tracking-widest transition-all border border-black/10"
           >
             {showManualEnd ? "Hide" : "Configure"}
           </button>
@@ -451,7 +451,7 @@ export default function RaffleDetailPage() {
                     placeholder="0x... wallet address"
                     value={participant.address}
                     onChange={(e) => updateParticipant(index, "address", e.target.value)}
-                    className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded text-text-primary text-sm font-mono placeholder:text-text-primary/20 focus:outline-none focus:border-text-primary/30"
+                    className="flex-1 px-4 py-3 bg-black/5 border border-black/10 rounded text-text-primary text-sm font-mono placeholder:text-text-primary/20 focus:outline-none focus:border-text-primary/30"
                   />
                   <input
                     type="number"
@@ -459,7 +459,7 @@ export default function RaffleDetailPage() {
                     placeholder="Tickets"
                     value={participant.tickets}
                     onChange={(e) => updateParticipant(index, "tickets", parseInt(e.target.value) || 0)}
-                    className="w-28 px-4 py-3 bg-white/5 border border-white/10 rounded text-text-primary text-sm font-mono placeholder:text-text-primary/20 focus:outline-none focus:border-text-primary/30"
+                    className="w-28 px-4 py-3 bg-black/5 border border-black/10 rounded text-text-primary text-sm font-mono placeholder:text-text-primary/20 focus:outline-none focus:border-text-primary/30"
                   />
                   {manualParticipants.length > 1 && (
                     <button
@@ -477,7 +477,7 @@ export default function RaffleDetailPage() {
             <div className="flex items-center justify-between pt-2">
               <button
                 onClick={addParticipantRow}
-                className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-text-primary text-sm font-bold rounded uppercase tracking-widest transition-all border border-white/10"
+                className="flex items-center gap-2 px-4 py-2 bg-black/5 hover:bg-black/10 text-text-primary text-sm font-bold rounded uppercase tracking-widest transition-all border border-black/10"
               >
                 <span className="material-symbols-outlined text-lg">add</span>
                 Add Participant
@@ -497,21 +497,21 @@ export default function RaffleDetailPage() {
 
       {/* Entries */}
       <div className="ui-container rounded overflow-hidden">
-        <div className="px-6 py-4 border-b border-white/10">
+        <div className="px-6 py-4 border-b border-black/10">
           <h3 className="text-xl font-header text-text-primary">Entries ({entries.length})</h3>
         </div>
         {entries.length > 0 ? (
           <table className="w-full text-left border-collapse">
-            <thead className="bg-white/5 border-b border-white/10">
+            <thead className="bg-black/5 border-b border-black/10">
               <tr>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Wallet Address</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Tokens Spent</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Entry Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10">
+            <tbody className="divide-y divide-black/10">
               {entries.map((entry) => (
-                <tr key={entry.id} className="hover:bg-white/5 transition-colors">
+                <tr key={entry.id} className="hover:bg-black/5 transition-colors">
                   <td className="px-6 py-5">
                     <span className="text-sm text-text-primary font-mono">{entry.wallet_address}</span>
                   </td>

@@ -47,39 +47,19 @@ export function useHollowBalance(address: `0x${string}` | undefined) {
   });
 }
 
-export function useCategoryAmount(categoryId: number) {
+export function useClaimAmount() {
   return useReadContract({
     address: contracts.hollowToken.address,
     abi: HollowTokenABI,
-    functionName: "getCategoryAmount",
-    args: [categoryId],
-    query: {
-      enabled: categoryId >= 0 && categoryId < 4,
-    },
+    functionName: "claimAmount",
   });
 }
 
-export function useCategoryFee(categoryId: number) {
+export function useClaimFee() {
   return useReadContract({
     address: contracts.hollowToken.address,
     abi: HollowTokenABI,
-    functionName: "getCategoryFee",
-    args: [categoryId],
-    query: {
-      enabled: categoryId >= 0 && categoryId < 4,
-    },
-  });
-}
-
-export function useCategoryName(categoryId: number) {
-  return useReadContract({
-    address: contracts.hollowToken.address,
-    abi: HollowTokenABI,
-    functionName: "getCategoryName",
-    args: [categoryId],
-    query: {
-      enabled: categoryId >= 0 && categoryId < 4,
-    },
+    functionName: "claimFee",
   });
 }
 
@@ -90,12 +70,12 @@ export function useClaimTokens() {
     hash,
   });
 
-  const claimTokens = (categoryId: number, fee: bigint) => {
+  const claimTokens = (fee: bigint) => {
     writeContract({
       address: contracts.hollowToken.address,
       abi: HollowTokenABI,
       functionName: "claimTokens",
-      args: [categoryId],
+      args: [],
       value: fee,
       gas: 500000n,
     });

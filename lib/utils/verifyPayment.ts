@@ -14,10 +14,11 @@ export type PaymentVerification = {
  * Verify on-chain that `txHash` is a real, successful payToPlay payment made by
  * `wallet` to the TheHollowGame contract.
  *
- * Trust model: the contract enforces `msg.value >= playPrice` and only emits
- * PlayPurchased on success, so a mined tx to the contract with a PlayPurchased
- * event for `wallet` is sufficient proof of payment. Replay of a valid hash is
- * blocked separately by the UNIQUE constraint on game_sessions.tx_hash.
+ * Trust model: the contract pulls `playPrice` GIWA via transferFrom and only
+ * emits PlayPurchased on success, so a mined tx to the contract with a
+ * PlayPurchased event for `wallet` is sufficient proof of payment. Replay of a
+ * valid hash is blocked separately by the UNIQUE constraint on
+ * game_sessions.tx_hash.
  */
 export async function verifyPayment(
   txHash: string,

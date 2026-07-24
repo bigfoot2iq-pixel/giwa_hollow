@@ -49,7 +49,7 @@ function formatPrizeAmount(amount: string): string {
 }
 
 export function RaffleCard({ raffle, basePath = "/raffles" }: RaffleCardProps) {
-  const [tokenSymbol, setTokenSymbol] = useState<string>("GIWA");
+  const [tokenSymbol, setTokenSymbol] = useState<string>("HOLLOW");
   const [prizeLabel, setPrizeLabel] = useState<string>("");
 
   const isActive = raffle.status === "active";
@@ -112,7 +112,7 @@ export function RaffleCard({ raffle, basePath = "/raffles" }: RaffleCardProps) {
     <Link href={`${basePath}/${raffle.slug || raffle.id}`}>
       <div className={`ui-container rounded overflow-hidden flex flex-col group transition-transform hover:translate-y-[-4px] ${isEnded || backupRafflesThatAreEnded ? "opacity-50" : ""}`}>
         {/* Image */}
-        <div className={`h-72 overflow-hidden relative bg-dark-navy ${isNFT ? "" : "flex items-center justify-center border-b border-white/10"}`}>
+        <div className={`h-72 overflow-hidden relative bg-dark-navy ${isNFT ? "" : "flex items-center justify-center border-b border-black/10"}`}>
           {raffle.image_url ? (
             <Image
               alt={raffle.title}
@@ -136,14 +136,14 @@ export function RaffleCard({ raffle, basePath = "/raffles" }: RaffleCardProps) {
             />
           )}
           <div className="absolute top-3 left-3 flex gap-1.5">
-            <span className="bg-[#0c1512] text-[#2ee6a6] text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">
+            <span className="bg-[#ffffff] text-[#0062df] text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">
               Type: {typeLabel}
             </span>
             <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-widest ${
               isActive
                 ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                 : (isEnded || backupRafflesThatAreEnded)
-                ? "bg-white/10 text-muted-blue border border-white/10"
+                ? "bg-black/10 text-muted-blue border border-black/10"
                 : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
             }`}>
               {raffle.status === "active" ? "Live" : raffle.status === "pending" ? "Upcoming" : "Ended"}
@@ -165,9 +165,9 @@ export function RaffleCard({ raffle, basePath = "/raffles" }: RaffleCardProps) {
           )}
 
           {(isActive || isEnded || backupRafflesThatAreEnded) && raffle.end_date && (
-            <div className={`mb-3 p-2.5 rounded border ${isActive ? "bg-gradient-to-r from-white/10 to-transparent border-white/20" : "bg-white/5 border-white/10"}`}>
+            <div className={`mb-3 p-2.5 rounded border ${isActive ? "bg-gradient-to-r from-black/10 to-transparent border-black/20" : "bg-black/5 border-black/10"}`}>
               <div className="flex items-center justify-between gap-2 mb-1">
-                <span className={`text-[8px] font-bold uppercase tracking-widest ${isActive ? "text-[#2ee6a6]" : "text-muted-blue"}`}>
+                <span className={`text-[8px] font-bold uppercase tracking-widest ${isActive ? "text-[#0062df]" : "text-muted-blue"}`}>
                   {isActive ? "Ends in" : "Ended"}
                 </span>
                 <span className="text-[9px] text-muted-blue">{formatDateTime(raffle.end_date)}</span>
@@ -206,20 +206,20 @@ export function RaffleCard({ raffle, basePath = "/raffles" }: RaffleCardProps) {
           </div>
 
           {/* 3. Prize hero — what you win (replaces price) */}
-          <div className="mt-auto pt-3 border-t border-white/10 flex items-end justify-between gap-2">
+          <div className="mt-auto pt-3 border-t border-black/10 flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-[8px] font-bold uppercase text-white/60 tracking-widest mb-0.5 flex items-center gap-1">
+              <p className="text-[8px] font-bold uppercase text-black/60 tracking-widest mb-0.5 flex items-center gap-1">
                 <span className="material-symbols-outlined text-[12px] leading-none">emoji_events</span>
                 You Win
               </p>
-              <p className="text-base font-display font-bold text-text-primary truncate drop-shadow-[0_0_12px_rgba(12,21,18,0.35)]">
+              <p className="text-base font-display font-bold text-text-primary truncate drop-shadow-[0_0_12px_rgba(26, 36, 52,0.35)]">
                 {displayPrize}
                 {extraPrizeCount > 0 && (
                   <span className="text-muted-blue text-[10px] font-bold ml-1 align-middle">+{extraPrizeCount} more</span>
                 )}
               </p>
             </div>
-            <button className="flex-shrink-0 px-3 py-1.5 bg-[#0c1512] border border-white/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-[9px] transition-all shadow-[0_0_15px_rgba(12,21,18,0.15)]">
+            <button className="flex-shrink-0 px-3 py-1.5 bg-[#ffffff] border border-black/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-[9px] transition-all shadow-[0_0_15px_rgba(26, 36, 52,0.15)]">
               {isActive ? "Enter" : "View"}
             </button>
           </div>

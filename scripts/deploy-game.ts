@@ -21,17 +21,28 @@ async function verifyContract(address: string, constructorArguments: unknown[]) 
 
 async function main() {
   const [deployer] = await ethers.getSigners();
+
+  // HollowToken (GIWA) address the game pulls payments in. Reuse the same
+  // token the raffles/faucet use.
+  const tokenAddress = process.env.NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS;
+  if (!tokenAddress || !ethers.isAddress(tokenAddress)) {
+    throw new Error(
+      "Set NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS to the deployed HollowToken address before deploying the game.",
+    );
+  }
+
   console.log("═══════════════════════════════════════════════════");
   console.log("  TheHollowGame Deployment (GIWA Sepolia)");
   console.log("═══════════════════════════════════════════════════");
   console.log("Deployer:", deployer.address);
   console.log("Balance:", ethers.formatEther(await ethers.provider.getBalance(deployer.address)), "ETH");
+  console.log("Payment token (GIWA):", tokenAddress);
   console.log("");
 
   // ── 1. Deploy TheHollowGame ───────────────────────────────────────
   console.log("Deploying TheHollowGame...");
   const TheHollowGame = await ethers.getContractFactory("TheHollowGame");
-  const game = await TheHollowGame.deploy();
+  const game = await TheHollowGame.deploy(tokenAddress);
   await game.waitForDeployment();
   const gameAddress = await game.getAddress();
   console.log(`✅ TheHollowGame deployed to: ${gameAddress}`);
@@ -41,7 +52,7 @@ async function main() {
   await new Promise((resolve) => setTimeout(resolve, 30_000));
 
   // ── 3. Verify TheHollowGame ─────────────────────────────────────
-  await verifyContract(gameAddress, []);
+  await verifyContract(gameAddress, [tokenAddress]);
 
   // ── Summary ─────────────────────────────────────────────────────
   console.log("\n═══════════════════════════════════════════════════");

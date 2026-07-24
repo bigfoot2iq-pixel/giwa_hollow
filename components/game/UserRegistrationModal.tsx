@@ -279,7 +279,7 @@ export default function UserRegistrationModal({
                 }`}
               >
                 {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/20 border-t-text-primary rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-black/20 border-t-text-primary rounded-full animate-spin" />
                 ) : (
                   <>
                     <CheckCircle size={18} />

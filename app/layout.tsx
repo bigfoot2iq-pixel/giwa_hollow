@@ -30,7 +30,7 @@ const materialSymbols = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "GIWA Raffles - Win Crypto Prizes",
+  title: "Hollow - Win Crypto Prizes",
   description: "Decentralized raffles platform on GIWA Sepolia. Enter raffles, win prizes!",
   icons: {
     icon: "/giwa/logo-letter.svg",
@@ -43,18 +43,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`dark ${plusJakarta.variable} ${spaceGrotesk.variable} ${materialSymbols.variable}`}>
+    <html lang="en" className={`${plusJakarta.variable} ${spaceGrotesk.variable} ${materialSymbols.variable}`}>
       <head />
       <body className="antialiased min-h-screen">
         <GiwaAmbientBackground />
         <GlobalLoader />
         <Toaster
-          theme="dark"
+          theme="light"
           toastOptions={{
             style: {
-              background: "#0c1512",
-              border: "1px solid rgba(46, 230, 166, 0.2)",
-              color: "#2ee6a6",
+              background: "#ffffff",
+              border: "1px solid rgba(0, 98, 223, 0.2)",
+              color: "#1a2434",
             },
           }}
         />

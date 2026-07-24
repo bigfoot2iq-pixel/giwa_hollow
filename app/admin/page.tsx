@@ -8,9 +8,8 @@ import { format } from "date-fns";
 import type { Raffle } from "@/lib/supabase";
 import {
   useClaimCooldown,
-  useCategoryAmount,
-  useCategoryFee,
-  useCategoryName,
+  useClaimAmount,
+  useClaimFee,
 } from "@/lib/hooks";
 import { contracts, HollowTokenABI, THE_HOLLOW_GAME_ADDRESS, THE_HOLLOW_GAME_ABI } from "@/lib/contracts";
 
@@ -214,7 +213,7 @@ export default function AdminDashboard() {
         <h2 className="text-5xl font-header text-foreground">Admin Dashboard</h2>
         <div className="flex items-center gap-3">
           <Link href="/admin/raffles/create">
-            <button className="px-6 py-3 bg-[#0c1512] hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(12,21,18,0.15)] border border-white/10 flex items-center gap-2">
+            <button className="px-6 py-3 bg-[#ffffff] hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(26, 36, 52,0.15)] border border-black/10 flex items-center gap-2">
               <span className="material-symbols-outlined text-lg">add</span>
               Create Raffle
             </button>
@@ -224,7 +223,7 @@ export default function AdminDashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="ui-container p-6 rounded border-l-4 border-[#2ee6a6]">
+        <div className="ui-container p-6 rounded border-l-4 border-[#0062df]">
           <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-2">Total Raffles</p>
           <p className="text-3xl font-display font-bold text-text-primary">{data?.stats?.total_raffles || 0}</p>
         </div>
@@ -243,9 +242,9 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-white/10">
+      <div className="flex gap-1 border-b border-black/10">
         {([
-          { id: "token", label: "GIWA Token Config" },
+          { id: "token", label: "HOLLOW Token Config" },
           { id: "game", label: "Game Config" },
           { id: "raffles", label: "Raffles" },
         ] as const).map((tab) => (
@@ -263,7 +262,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* GIWA Token Config */}
+      {/* HOLLOW Token Config */}
       {activeTab === "token" && <HollowTokenConfig />}
 
       {/* Game Play Fee Config */}
@@ -272,11 +271,11 @@ export default function AdminDashboard() {
       {/* Raffles Table */}
       {activeTab === "raffles" && (
       <div className="ui-container rounded overflow-hidden">
-        <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between gap-4 flex-wrap">
+        <div className="px-6 py-4 border-b border-black/10 flex items-center justify-between gap-4 flex-wrap">
           <h3 className="text-xl font-header text-text-primary">
             All Raffles {total > 0 && <span className="text-muted-blue text-sm font-normal">({total})</span>}
           </h3>
-          <div className="flex gap-1 bg-white/5 rounded p-1">
+          <div className="flex gap-1 bg-black/5 rounded p-1">
             {([
               { id: "all", label: "All" },
               { id: "platform", label: "Platform" },
@@ -287,8 +286,8 @@ export default function AdminDashboard() {
                 onClick={() => changeScope(s.id)}
                 className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded transition-all ${
                   scope === s.id
-                    ? "bg-[#0c1512] text-text-primary border border-white/10"
-                    : "text-muted-blue hover:text-[#2ee6a6]"
+                    ? "bg-[#ffffff] text-text-primary border border-black/10"
+                    : "text-muted-blue hover:text-[#0062df]"
                 }`}
               >
                 {s.label}
@@ -298,7 +297,7 @@ export default function AdminDashboard() {
         </div>
         {data?.raffles && data.raffles.length > 0 ? (
           <table className="w-full text-left border-collapse">
-            <thead className="bg-white/5 border-b border-white/10">
+            <thead className="bg-black/5 border-b border-black/10">
               <tr>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Title</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Source</th>
@@ -309,9 +308,9 @@ export default function AdminDashboard() {
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10">
+            <tbody className="divide-y divide-black/10">
               {data.raffles.map((raffle) => (
-                <tr key={raffle.id} className="hover:bg-white/5 transition-colors">
+                <tr key={raffle.id} className="hover:bg-black/5 transition-colors">
                   <td className="px-6 py-5">
                     <p className="font-bold text-text-primary">{raffle.title}</p>
                   </td>
@@ -319,7 +318,7 @@ export default function AdminDashboard() {
                     <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded border ${
                       raffle.is_community
                         ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
-                        : "bg-white/10 text-[#2ee6a6] border-[#2ee6a6]/20"
+                        : "bg-black/10 text-[#0062df] border-[#0062df]/20"
                     }`}>
                       {raffle.is_community ? "Community" : "Platform"}
                     </span>
@@ -330,7 +329,7 @@ export default function AdminDashboard() {
                         ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
                         : raffle.status === "pending"
                         ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                        : "bg-white/5 text-muted-blue border-white/10"
+                        : "bg-black/5 text-muted-blue border-black/10"
                     }`}>
                       {raffle.status}
                     </span>
@@ -373,7 +372,7 @@ export default function AdminDashboard() {
                         </button>
                       )}
                       <Link href={`/admin/raffles/${raffle.slug || raffle.id}`}>
-                        <button className="px-4 py-2 bg-white/5 hover:bg-white/10 text-text-primary text-xs font-bold rounded uppercase tracking-widest transition-all border border-white/10">
+                        <button className="px-4 py-2 bg-black/5 hover:bg-black/10 text-text-primary text-xs font-bold rounded uppercase tracking-widest transition-all border border-black/10">
                           Manage
                         </button>
                       </Link>
@@ -396,7 +395,7 @@ export default function AdminDashboard() {
           </div>
         )}
         {total > 0 && (
-          <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between gap-4 flex-wrap">
+          <div className="px-6 py-4 border-t border-black/10 flex items-center justify-between gap-4 flex-wrap">
             <p className="text-xs text-muted-blue uppercase tracking-widest">
               Showing {pageStart}–{pageEnd} of {total}
             </p>
@@ -404,14 +403,14 @@ export default function AdminDashboard() {
               <button
                 onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
                 disabled={!hasPrev || loading}
-                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-text-primary text-xs font-bold rounded uppercase tracking-widest transition-all border border-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-black/5 hover:bg-black/10 text-text-primary text-xs font-bold rounded uppercase tracking-widest transition-all border border-black/10 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Prev
               </button>
               <button
                 onClick={() => setOffset((o) => o + PAGE_SIZE)}
                 disabled={!hasNext || loading}
-                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-text-primary text-xs font-bold rounded uppercase tracking-widest transition-all border border-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-black/5 hover:bg-black/10 text-text-primary text-xs font-bold rounded uppercase tracking-widest transition-all border border-black/10 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Next
               </button>
@@ -424,26 +423,15 @@ export default function AdminDashboard() {
   );
 }
 
-function CategoryField({
-  categoryId,
-}: {
-  categoryId: number;
-}) {
-  const [name, setName] = useState("");
+function ClaimConfigField() {
   const [amount, setAmount] = useState("");
   const [fee, setFee] = useState("");
-  const [touched, setTouched] = useState(false);
 
-  const { data: currentName } = useCategoryName(categoryId);
-  const { data: currentAmount } = useCategoryAmount(categoryId);
-  const { data: currentFee } = useCategoryFee(categoryId);
+  const { data: currentAmount } = useClaimAmount();
+  const { data: currentFee } = useClaimFee();
 
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract();
   const { isLoading: confirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  useEffect(() => {
-    if (currentName !== undefined && !touched) setName(currentName as string);
-  }, [currentName, touched, name]);
 
   useEffect(() => {
     if (currentAmount !== undefined && !amount) setAmount(formatEther(currentAmount as bigint));
@@ -455,43 +443,48 @@ function CategoryField({
 
   const handleSave = () => {
     reset();
+    let amountWei: bigint;
+    let feeWei: bigint;
     try {
+      amountWei = parseEther(amount);
+      feeWei = parseEther(fee);
+    } catch {
+      alert("Invalid values");
+      return;
+    }
+    if (currentAmount !== undefined && amountWei !== (currentAmount as bigint)) {
       writeContract({
         address: contracts.hollowToken.address,
         abi: HollowTokenABI,
-        functionName: "setCategory",
-        args: [categoryId, name, parseEther(amount), parseEther(fee)],
+        functionName: "setClaimAmount",
+        args: [amountWei],
       });
-    } catch {
-      alert("Invalid values");
+    }
+    if (currentFee !== undefined && feeWei !== (currentFee as bigint)) {
+      writeContract({
+        address: contracts.hollowToken.address,
+        abi: HollowTokenABI,
+        functionName: "setClaimFee",
+        args: [feeWei],
+      });
     }
   };
 
   return (
-    <div className="space-y-4 p-5 rounded-xl border border-white/10 bg-white/5">
+    <div className="space-y-4 p-5 rounded-xl border border-black/10 bg-black/5 max-w-md">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-bold text-text-primary">Category {categoryId + 1}</h4>
+        <h4 className="text-sm font-bold text-text-primary">Claim Config</h4>
         {isSuccess && <span className="text-[10px] text-green-400 font-bold">Saved!</span>}
       </div>
       <div className="space-y-3">
         <div>
-          <label className="block text-[10px] text-muted-blue uppercase tracking-widest mb-1">Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => { setName(e.target.value); setTouched(true); }}
-            placeholder="e.g. Bronze, Silver, Gold, Platinum"
-            className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded text-text-primary text-sm focus:outline-none focus:border-[#2ee6a6]/50 placeholder-white/30"
-          />
-        </div>
-        <div>
-          <label className="block text-[10px] text-muted-blue uppercase tracking-widest mb-1">Mint Amount (GIWA)</label>
+          <label className="block text-[10px] text-muted-blue uppercase tracking-widest mb-1">Mint Amount (HOLLOW)</label>
           <input
             type="text"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="1000"
-            className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded text-text-primary text-sm focus:outline-none focus:border-[#2ee6a6]/50 placeholder-white/30"
+            placeholder="1"
+            className="w-full px-3 py-2.5 bg-black/5 border border-black/10 rounded text-text-primary text-sm focus:outline-none focus:border-[#0062df]/50 placeholder-black/30"
           />
         </div>
         <div>
@@ -500,17 +493,17 @@ function CategoryField({
             type="text"
             value={fee}
             onChange={(e) => setFee(e.target.value)}
-            placeholder="0.001"
-            className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded text-text-primary text-sm focus:outline-none focus:border-[#2ee6a6]/50 placeholder-white/30"
+            placeholder="0"
+            className="w-full px-3 py-2.5 bg-black/5 border border-black/10 rounded text-text-primary text-sm focus:outline-none focus:border-[#0062df]/50 placeholder-black/30"
           />
         </div>
       </div>
       <button
         onClick={handleSave}
         disabled={isPending || confirming}
-        className="w-full px-4 py-2.5 bg-[#0c1512] hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-white/10"
+        className="w-full px-4 py-2.5 bg-[#ffffff] hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-black/10"
       >
-        {isPending ? "Sign..." : confirming ? "Confirming..." : "Save Category"}
+        {isPending ? "Sign..." : confirming ? "Confirming..." : "Save Claim Config"}
       </button>
       {error && <p className="text-red-400 text-xs">{error.message.split("\n")[0]}</p>}
     </div>
@@ -561,19 +554,16 @@ function HollowTokenConfig() {
 
   return (
     <div className="ui-container rounded overflow-hidden">
-      <div className="px-6 py-4 border-b border-white/10">
-        <h3 className="text-xl font-header text-text-primary">GIWA Token Config</h3>
+      <div className="px-6 py-4 border-b border-black/10">
+        <h3 className="text-xl font-header text-text-primary">HOLLOW Token Config</h3>
         <p className="text-[11px] text-muted-blue mt-1">
-          Configure 4 claim categories. Each category has a name, mint amount, and fee (in ETH).
-          Users choose a category and pay the fee to mint tokens.
+          Set the mint amount and fee (in ETH) for a claim. Users pay the fee to mint tokens.
         </p>
       </div>
 
-      {/* Categories */}
-      <div className="p-6 border-b border-white/10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[0, 1, 2, 3].map((id) => (
-          <CategoryField key={id} categoryId={id} />
-        ))}
+      {/* Claim config */}
+      <div className="p-6 border-b border-black/10">
+        <ClaimConfigField />
       </div>
 
       {/* Claim cooldown */}
@@ -581,9 +571,9 @@ function HollowTokenConfig() {
         <div className="space-y-3 max-w-md">
           <div>
             <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-1">Claim Cooldown (seconds)</p>
-            <p className="text-[10px] text-muted-blue mb-1">Global window between claims — applies to all categories.</p>
+            <p className="text-[10px] text-muted-blue mb-1">Window between claims per address.</p>
             <p className="text-sm text-text-primary/60">
-              Current: <span className="text-[#2ee6a6] font-bold">{currentCooldown !== undefined ? `${Number(currentCooldown)}s (${formatCooldownDisplay(Number(currentCooldown))})` : "..."}</span>
+              Current: <span className="text-[#0062df] font-bold">{currentCooldown !== undefined ? `${Number(currentCooldown)}s (${formatCooldownDisplay(Number(currentCooldown))})` : "..."}</span>
             </p>
           </div>
           <div className="flex gap-2">
@@ -593,12 +583,12 @@ function HollowTokenConfig() {
               onChange={(e) => setCooldownInput(e.target.value)}
               placeholder="86400"
               min="0"
-              className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded text-text-primary text-sm focus:outline-none focus:border-[#2ee6a6]/50 placeholder-white/30"
+              className="flex-1 px-4 py-3 bg-black/5 border border-black/10 rounded text-text-primary text-sm focus:outline-none focus:border-[#0062df]/50 placeholder-black/30"
             />
             <button
               onClick={handleSetCooldown}
               disabled={cooldownPending || cooldownConfirming}
-              className="px-4 py-3 bg-[#0c1512] hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-white/10"
+              className="px-4 py-3 bg-[#ffffff] hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-black/10"
             >
               {cooldownPending ? "Sign..." : cooldownConfirming ? "Confirming..." : "Update"}
             </button>
@@ -617,8 +607,8 @@ function HollowTokenConfig() {
                 onClick={() => setCooldownInput(preset.value)}
                 className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded border transition-all ${
                   cooldownInput === preset.value
-                    ? "bg-white/10 text-[#2ee6a6] border-[#2ee6a6]/30"
-                    : "bg-white/5 text-muted-blue border-white/10 hover:bg-white/10"
+                    ? "bg-black/10 text-[#0062df] border-[#0062df]/30"
+                    : "bg-black/5 text-muted-blue border-black/10 hover:bg-black/10"
                 }`}
               >
                 {preset.label}
@@ -679,30 +669,30 @@ function GameConfig() {
 
   return (
     <div className="ui-container rounded overflow-hidden">
-      <div className="px-6 py-4 border-b border-white/10">
+      <div className="px-6 py-4 border-b border-black/10">
         <h3 className="text-xl font-header text-text-primary">Game Config</h3>
       </div>
       <div className="p-6">
         <div className="space-y-3 max-w-md">
           <div>
-            <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-1">Play Fee (ETH)</p>
+            <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-1">Play Fee (HOLLOW)</p>
             <p className="text-sm text-text-primary/60">
-              Current: <span className="text-[#2ee6a6] font-bold">{currentFee !== undefined ? formatEther(currentFee as bigint) : "..."} ETH</span>
+              Current: <span className="text-[#0062df] font-bold">{currentFee !== undefined ? formatEther(currentFee as bigint) : "..."} HOLLOW</span>
             </p>
-            <p className="text-[10px] text-muted-blue mt-1">Amount each player pays to play. Must be greater than 0.</p>
+            <p className="text-[10px] text-muted-blue mt-1">Amount of HOLLOW each player pays to play. Must be greater than 0.</p>
           </div>
           <div className="flex gap-2">
             <input
               type="text"
               value={feeInput}
               onChange={(e) => setFeeInput(e.target.value)}
-              placeholder="0.0001"
-              className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded text-text-primary text-sm focus:outline-none focus:border-[#2ee6a6]/50 placeholder-white/30"
+              placeholder="10"
+              className="flex-1 px-4 py-3 bg-black/5 border border-black/10 rounded text-text-primary text-sm focus:outline-none focus:border-[#0062df]/50 placeholder-black/30"
             />
             <button
               onClick={handleSetFee}
               disabled={feePending || feeConfirming}
-              className="px-4 py-3 bg-[#0c1512] hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-white/10"
+              className="px-4 py-3 bg-[#ffffff] hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-black/10"
             >
               {feePending ? "Sign..." : feeConfirming ? "Confirming..." : "Update"}
             </button>

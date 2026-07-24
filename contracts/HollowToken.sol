@@ -9,49 +9,48 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 
 contract HollowToken is ERC20, ERC20Burnable, Ownable, ReentrancyGuard, Pausable {
     uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10 ** 18;
-    uint8 public constant CATEGORY_COUNT = 4;
 
-    uint256[4] public categoryAmount;
-    uint256[4] public categoryFee;
-    string[4] public categoryName;
-
-    uint256 public claimCooldown;
+    // Single, admin-controlled claim config. No tiers.
+    uint256 public claimAmount; // tokens minted per claim (wei)
+    uint256 public claimFee;    // ETH required per claim (wei)
+    uint256 public claimCooldown; // seconds between claims per address
 
     mapping(address => uint256) public lastClaimTimestamp;
 
-    event TokensClaimed(address indexed claimer, uint8 indexed categoryId, uint256 amount, uint256 feePaid);
-    event CategoryUpdated(uint8 indexed categoryId, string name, uint256 amount, uint256 fee);
+    event TokensClaimed(address indexed claimer, uint256 amount, uint256 feePaid);
+    event ClaimAmountUpdated(uint256 oldAmount, uint256 newAmount);
+    event ClaimFeeUpdated(uint256 oldFee, uint256 newFee);
     event ClaimCooldownUpdated(uint256 oldCooldown, uint256 newCooldown);
     event FeesWithdrawn(address indexed to, uint256 amount);
 
     constructor(
         string memory name_,
         string memory symbol_,
+        uint256 claimAmount_,
+        uint256 claimFee_,
         uint256 claimCooldown_
     ) ERC20(name_, symbol_) Ownable(msg.sender) {
+        claimAmount = claimAmount_;
+        claimFee = claimFee_;
         claimCooldown = claimCooldown_;
     }
 
     // ─── Claiming ──────────────────────────────────────────────────────
 
-    function claimTokens(uint8 categoryId) external payable nonReentrant whenNotPaused {
-        require(categoryId < CATEGORY_COUNT, "Invalid category");
-        require(categoryAmount[categoryId] > 0, "Category disabled");
-        require(msg.value >= categoryFee[categoryId], "Insufficient fee");
+    function claimTokens() external payable nonReentrant whenNotPaused {
+        require(claimAmount > 0, "Claim disabled");
+        require(msg.value >= claimFee, "Insufficient fee");
         require(
             block.timestamp >= lastClaimTimestamp[msg.sender] + claimCooldown,
             "Cooldown not elapsed"
         );
-        require(
-            totalSupply() + categoryAmount[categoryId] <= MAX_SUPPLY,
-            "Max supply reached"
-        );
+        require(totalSupply() + claimAmount <= MAX_SUPPLY, "Max supply reached");
 
         lastClaimTimestamp[msg.sender] = block.timestamp;
-        _mint(msg.sender, categoryAmount[categoryId]);
+        _mint(msg.sender, claimAmount);
 
-        uint256 feePaid = categoryFee[categoryId];
-        emit TokensClaimed(msg.sender, categoryId, categoryAmount[categoryId], feePaid);
+        uint256 feePaid = claimFee;
+        emit TokensClaimed(msg.sender, claimAmount, feePaid);
 
         if (msg.value > feePaid) {
             (bool refunded, ) = msg.sender.call{value: msg.value - feePaid}("");
@@ -67,39 +66,16 @@ contract HollowToken is ERC20, ERC20Burnable, Ownable, ReentrancyGuard, Pausable
         return lastClaimTimestamp[account];
     }
 
-    function getCategoryAmount(uint8 categoryId) external view returns (uint256) {
-        require(categoryId < CATEGORY_COUNT, "Invalid category");
-        return categoryAmount[categoryId];
+    // ─── Admin: claim config ───────────────────────────────────────────
+
+    function setClaimAmount(uint256 newAmount) external onlyOwner {
+        emit ClaimAmountUpdated(claimAmount, newAmount);
+        claimAmount = newAmount;
     }
 
-    function getCategoryFee(uint8 categoryId) external view returns (uint256) {
-        require(categoryId < CATEGORY_COUNT, "Invalid category");
-        return categoryFee[categoryId];
-    }
-
-    function getCategoryName(uint8 categoryId) external view returns (string memory) {
-        require(categoryId < CATEGORY_COUNT, "Invalid category");
-        return categoryName[categoryId];
-    }
-
-    function getClaimAmount(uint8 categoryId) external view returns (uint256) {
-        require(categoryId < CATEGORY_COUNT, "Invalid category");
-        return categoryAmount[categoryId];
-    }
-
-    // ─── Admin: categories ─────────────────────────────────────────────
-
-    function setCategory(
-        uint8 categoryId,
-        string calldata name,
-        uint256 amount,
-        uint256 fee
-    ) external onlyOwner {
-        require(categoryId < CATEGORY_COUNT, "Invalid category");
-        categoryName[categoryId] = name;
-        categoryAmount[categoryId] = amount;
-        categoryFee[categoryId] = fee;
-        emit CategoryUpdated(categoryId, name, amount, fee);
+    function setClaimFee(uint256 newFee) external onlyOwner {
+        emit ClaimFeeUpdated(claimFee, newFee);
+        claimFee = newFee;
     }
 
     function setClaimCooldown(uint256 newCooldown) external onlyOwner {

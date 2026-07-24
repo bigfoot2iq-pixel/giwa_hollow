@@ -44,7 +44,7 @@ export default function RaffleDetailView() {
   const [data, setData] = useState<RaffleData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [entryTokenSymbol, setEntryTokenSymbol] = useState<string>("GIWA");
+  const [entryTokenSymbol, setEntryTokenSymbol] = useState<string>("HOLLOW");
   const [prizesWithMetadata, setPrizesWithMetadata] = useState<PrizeWithMetadata[]>([]);
 
   // Entries pagination state
@@ -276,14 +276,14 @@ export default function RaffleDetailView() {
                 />
               )}
               <div className="absolute top-4 left-4 flex gap-2">
-                <span className="bg-[#0c1512] text-[#2ee6a6] text-[10px] font-bold px-3 py-1 rounded uppercase tracking-widest">
+                <span className="bg-[#ffffff] text-[#0062df] text-[10px] font-bold px-3 py-1 rounded uppercase tracking-widest">
                   {prizeLabel}
                 </span>
                 <span className={`text-[10px] font-bold px-3 py-1 rounded uppercase tracking-widest ${raffle.status === "active"
                   ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                   : raffle.status === "pending"
                     ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                    : "bg-white/10 text-muted-blue border border-white/10"
+                    : "bg-black/10 text-muted-blue border border-black/10"
                   }`}>
                   {raffle.status}
                 </span>
@@ -301,7 +301,7 @@ export default function RaffleDetailView() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-blue tracking-widest mb-1">Entry Cost</p>
-                <p className="text-lg font-display font-bold text-[#2ee6a6]">{raffle.tokens_required} {entryTokenSymbol}</p>
+                <p className="text-lg font-display font-bold text-[#0062df]">{raffle.tokens_required} {entryTokenSymbol}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-blue tracking-widest mb-1">Max Entries / User</p>
@@ -333,14 +333,14 @@ export default function RaffleDetailView() {
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-blue tracking-widest mb-1">Prize</p>
-                <p className="text-sm font-bold text-[#2ee6a6]">{prizeInfoLabel}</p>
+                <p className="text-sm font-bold text-[#0062df]">{prizeInfoLabel}</p>
               </div>
             </div>
           </div>
 
           {/* Entries */}
           <div className="ui-container rounded overflow-hidden">
-            <div className="px-6 py-4 border-b border-white/10">
+            <div className="px-6 py-4 border-b border-black/10">
               <h3 className="text-xl font-header text-text-primary">Entries</h3>
               <p className="text-sm text-muted-blue mt-1">
                 {totalEntriesCount} entr{totalEntriesCount !== 1 ? 'ies' : 'y'} • {entriesCount} total entries
@@ -355,7 +355,7 @@ export default function RaffleDetailView() {
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
                       placeholder="Search by wallet address..."
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded text-text-primary placeholder-muted-blue focus:outline-none focus:border-[#2ee6a6]/50 transition-colors"
+                      className="w-full px-4 py-2 bg-black/5 border border-black/10 rounded text-text-primary placeholder-muted-blue focus:outline-none focus:border-[#0062df]/50 transition-colors"
                     />
                     {searchInput && (
                       <button
@@ -370,7 +370,7 @@ export default function RaffleDetailView() {
                   <button
                     type="submit"
                     disabled={entriesLoading}
-                    className="px-4 py-2 bg-[#0c1512] text-text-primary font-bold rounded border border-white/10 hover:brightness-125 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-4 py-2 bg-[#ffffff] text-text-primary font-bold rounded border border-black/10 hover:brightness-125 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     <span className="material-symbols-outlined text-lg">search</span>
                     Search
@@ -379,13 +379,13 @@ export default function RaffleDetailView() {
                 {walletSearch && (
                   <div className="mt-2 flex items-center gap-2 text-sm">
                     <span className="text-muted-blue">Filtering by:</span>
-                    <span className="px-2 py-1 bg-[#2ee6a6]/10 text-[#2ee6a6] rounded font-mono text-xs">
+                    <span className="px-2 py-1 bg-[#0062df]/10 text-[#0062df] rounded font-mono text-xs">
                       {walletSearch}
                     </span>
                     <button
                       type="button"
                       onClick={handleClearSearch}
-                      className="text-muted-blue hover:text-[#2ee6a6] transition-colors text-xs underline"
+                      className="text-muted-blue hover:text-[#0062df] transition-colors text-xs underline"
                     >
                       Clear filter
                     </button>
@@ -405,14 +405,14 @@ export default function RaffleDetailView() {
                             href={`https://katanascan.com/tx/${entry.tx_hash}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center justify-between p-4 bg-white/5 rounded border border-white/10 hover:bg-white/10 hover:border-[#2ee6a6]/30 transition-all group"
+                            className="flex items-center justify-between p-4 bg-black/5 rounded border border-black/10 hover:bg-black/10 hover:border-[#0062df]/30 transition-all group"
                           >
                             <div className="flex items-center gap-4">
-                              <div className="w-8 h-8 rounded-full bg-[#0c1512] flex items-center justify-center text-[#2ee6a6] text-sm font-bold">
+                              <div className="w-8 h-8 rounded-full bg-[#ffffff] flex items-center justify-center text-[#0062df] text-sm font-bold">
                                 {index + 1}
                               </div>
                               <div>
-                                <p className="font-mono text-text-primary text-sm group-hover:text-[#2ee6a6] transition-colors">
+                                <p className="font-mono text-text-primary text-sm group-hover:text-[#0062df] transition-colors">
                                   {entry.wallet_address.slice(0, 10)}...{entry.wallet_address.slice(-8)}
                                 </p>
                                 <p className="text-[10px] text-muted-blue mt-0.5">
@@ -421,10 +421,10 @@ export default function RaffleDetailView() {
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
-                              <span className="text-sm font-display font-bold text-[#2ee6a6]">
+                              <span className="text-sm font-display font-bold text-[#0062df]">
                                 {entry.entry_count} {entry.entry_count === 1 ? 'entry' : 'entries'}
                               </span>
-                              <span className="material-symbols-outlined text-muted-blue group-hover:text-[#2ee6a6] transition-colors text-lg">
+                              <span className="material-symbols-outlined text-muted-blue group-hover:text-[#0062df] transition-colors text-lg">
                                 open_in_new
                               </span>
                             </div>
@@ -439,7 +439,7 @@ export default function RaffleDetailView() {
                         <button
                           onClick={handleLoadMore}
                           disabled={entriesLoading}
-                          className="px-6 py-3 bg-[#0c1512] text-text-primary font-bold rounded border border-white/10 hover:brightness-125 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-6 py-3 bg-[#ffffff] text-text-primary font-bold rounded border border-black/10 hover:brightness-125 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {entriesLoading ? "Loading..." : "Load More"}
                         </button>
@@ -467,7 +467,7 @@ export default function RaffleDetailView() {
           <div className="ui-container rounded overflow-hidden sticky top-24">
             {raffle.status === "ended" ? (
               <>
-                <div className="px-6 py-4 border-b border-white/10 bg-white/5">
+                <div className="px-6 py-4 border-b border-black/10 bg-black/5">
                   <h3 className="text-xl font-header text-text-primary">Winners</h3>
                 </div>
                 <div className="p-6">
@@ -479,17 +479,17 @@ export default function RaffleDetailView() {
                             href={winner.distribution_tx_hash ? `https://katanascan.com/tx/${winner.distribution_tx_hash}` : "#"}
                             target={winner.distribution_tx_hash ? "_blank" : undefined}
                             rel={winner.distribution_tx_hash ? "noopener noreferrer" : undefined}
-                            className={`flex items-center justify-between p-4 bg-white/5 rounded border border-white/10 ${winner.distribution_tx_hash
-                              ? "hover:bg-white/10 hover:border-[#2ee6a6]/30 transition-all group cursor-pointer"
+                            className={`flex items-center justify-between p-4 bg-black/5 rounded border border-black/10 ${winner.distribution_tx_hash
+                              ? "hover:bg-black/10 hover:border-[#0062df]/30 transition-all group cursor-pointer"
                               : ""
                               }`}
                           >
                             <div className="flex items-center gap-4">
-                              <div className="w-8 h-8 rounded-full bg-[#0c1512] flex items-center justify-center text-[#2ee6a6] text-sm font-bold">
+                              <div className="w-8 h-8 rounded-full bg-[#ffffff] flex items-center justify-center text-[#0062df] text-sm font-bold">
                                 {index + 1}
                               </div>
                               <div>
-                                <p className={`font-mono text-text-primary text-sm ${winner.distribution_tx_hash ? "group-hover:text-[#2ee6a6] transition-colors" : ""}`}>
+                                <p className={`font-mono text-text-primary text-sm ${winner.distribution_tx_hash ? "group-hover:text-[#0062df] transition-colors" : ""}`}>
                                   {winner.wallet_address.slice(0, 10)}...{winner.wallet_address.slice(-8)}
                                 </p>
                                 {winner.distribution_tx_hash && (
@@ -500,7 +500,7 @@ export default function RaffleDetailView() {
                               </div>
                             </div>
                             {winner.distribution_tx_hash && (
-                              <span className="material-symbols-outlined text-muted-blue group-hover:text-[#2ee6a6] transition-colors text-lg">
+                              <span className="material-symbols-outlined text-muted-blue group-hover:text-[#0062df] transition-colors text-lg">
                                 open_in_new
                               </span>
                             )}
@@ -518,7 +518,7 @@ export default function RaffleDetailView() {
               </>
             ) : (
               <>
-                <div className="px-6 py-4 border-b border-white/10 bg-white/5">
+                <div className="px-6 py-4 border-b border-black/10 bg-black/5">
                   <h3 className="text-xl font-header text-text-primary">Enter Raffle</h3>
                 </div>
                 <div className="p-6">

@@ -163,7 +163,7 @@ export default function FaucetPage() {
 
       {/* Network details */}
       <div className="ui-container overflow-hidden rounded-2xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-6 py-5 sm:px-8">
+        <div className="flex items-center justify-between border-b border-black/10 px-6 py-5 sm:px-8">
           <h2 className="text-2xl font-header text-text-primary">Network Details</h2>
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-widest text-muted-blue">Chain ID</span>
@@ -173,9 +173,9 @@ export default function FaucetPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-px bg-white/5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-px bg-black/5 sm:grid-cols-2 lg:grid-cols-4">
           {DETAIL_ROWS.map((row) => (
-            <div key={row.label} className="flex flex-col gap-2 bg-white/[0.02] px-6 py-5 sm:px-8 lg:px-6">
+            <div key={row.label} className="flex flex-col gap-2 bg-black/[0.02] px-6 py-5 sm:px-8 lg:px-6">
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-blue">{row.label}</span>
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-accent-warm" style={{ fontSize: 20 }}>{row.icon}</span>
@@ -185,7 +185,7 @@ export default function FaucetPage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 gap-6 border-t border-white/10 px-6 py-6 sm:grid-cols-2 sm:px-8 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 border-t border-black/10 px-6 py-6 sm:grid-cols-2 sm:px-8 lg:grid-cols-3">
           <CopyRow label="Network Name" value={giwaSepolia.name} />
           <CopyRow label="RPC (HTTP)" value={RPC_HTTP} />
           <CopyRow label="Block Explorer" value={EXPLORER_URL} />

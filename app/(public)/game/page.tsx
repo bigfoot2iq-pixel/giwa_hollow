@@ -17,8 +17,8 @@ export default function GamePage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           <div className="flex items-center gap-2 lg:gap-3">
             <div className="flex gap-1">
-              <kbd className="px-2 lg:px-3 py-1 lg:py-2 bg-white/10 border border-white/20 rounded text-text-primary font-mono text-xs lg:text-sm">A</kbd>
-              <kbd className="px-2 lg:px-3 py-1 lg:py-2 bg-white/10 border border-white/20 rounded text-text-primary font-mono text-xs lg:text-sm">D</kbd>
+              <kbd className="px-2 lg:px-3 py-1 lg:py-2 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-xs lg:text-sm">A</kbd>
+              <kbd className="px-2 lg:px-3 py-1 lg:py-2 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-xs lg:text-sm">D</kbd>
             </div>
             <div>
               <p className="text-text-primary font-bold text-xs lg:text-sm">Move</p>
@@ -28,8 +28,8 @@ export default function GamePage() {
 
           <div className="flex items-center gap-2 lg:gap-3">
             <div className="flex gap-1">
-              <kbd className="px-2 lg:px-3 py-1 lg:py-2 bg-white/10 border border-white/20 rounded text-text-primary font-mono text-xs lg:text-sm">W</kbd>
-              <kbd className="px-2 lg:px-3 py-1 lg:py-2 bg-white/10 border border-white/20 rounded text-text-primary font-mono text-xs lg:text-sm">Space</kbd>
+              <kbd className="px-2 lg:px-3 py-1 lg:py-2 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-xs lg:text-sm">W</kbd>
+              <kbd className="px-2 lg:px-3 py-1 lg:py-2 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-xs lg:text-sm">Space</kbd>
             </div>
             <div>
               <p className="text-text-primary font-bold text-xs lg:text-sm">Jump</p>
@@ -38,7 +38,7 @@ export default function GamePage() {
           </div>
 
           <div className="flex items-center gap-2 lg:gap-3">
-            <kbd className="px-2 lg:px-3 py-1 lg:py-2 bg-white/10 border border-white/20 rounded text-text-primary font-mono text-xs lg:text-sm">J</kbd>
+            <kbd className="px-2 lg:px-3 py-1 lg:py-2 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-xs lg:text-sm">J</kbd>
             <div>
               <p className="text-text-primary font-bold text-xs lg:text-sm">Attack</p>
               <p className="text-muted-blue text-[10px] lg:text-xs">Hold for charged</p>
@@ -47,8 +47,8 @@ export default function GamePage() {
 
           <div className="flex items-center gap-2 lg:gap-3">
             <div className="flex gap-1">
-              <kbd className="px-2 lg:px-3 py-1 lg:py-2 bg-white/10 border border-white/20 rounded text-text-primary font-mono text-xs lg:text-sm">L</kbd>
-              <kbd className="px-2 lg:px-3 py-1 lg:py-2 bg-white/10 border border-white/20 rounded text-text-primary font-mono text-xs lg:text-sm">Shift</kbd>
+              <kbd className="px-2 lg:px-3 py-1 lg:py-2 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-xs lg:text-sm">L</kbd>
+              <kbd className="px-2 lg:px-3 py-1 lg:py-2 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-xs lg:text-sm">Shift</kbd>
             </div>
             <div>
               <p className="text-text-primary font-bold text-xs lg:text-sm">Dodge</p>

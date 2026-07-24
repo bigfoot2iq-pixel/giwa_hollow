@@ -25,8 +25,8 @@ async function main() {
   console.log("");
 
   // Deploy RobinhoodRaffles
-  console.log("Deploying RobinhoodRaffles...");
-  const RobinhoodRaffles = await ethers.getContractFactory("RobinhoodRaffles");
+  console.log("Deploying HollowRaffles...");
+  const RobinhoodRaffles = await ethers.getContractFactory("HollowRaffles");
   const robinhoodRaffles = await RobinhoodRaffles.deploy(
     HOLLOW_TOKEN_ADDRESS,
     WATCHDOG_ADDRESS,

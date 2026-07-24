@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { formatEther } from "viem";
@@ -11,9 +11,8 @@ import {
   useClaimTokens,
   useClaimCooldown,
   useGetLastClaimTimestamp,
-  useCategoryAmount,
-  useCategoryFee,
-  useCategoryName,
+  useClaimAmount,
+  useClaimFee,
   formatTokenBalance
 } from "@/lib/hooks";
 
@@ -43,83 +42,26 @@ function isUserRejection(error: Error): boolean {
   return /user rejected|user denied|rejected the request/i.test(msg);
 }
 
-function CategoryCard({
-  categoryId,
-  selected,
-  onSelect,
-  disabled,
-}: {
-  categoryId: number;
-  selected: boolean;
-  onSelect: () => void;
-  disabled: boolean;
-}) {
-  const { data: name } = useCategoryName(categoryId);
-  const { data: amount } = useCategoryAmount(categoryId);
-  const { data: fee } = useCategoryFee(categoryId);
-
-  const amountValue = amount as bigint | undefined;
-  const feeValue = fee as bigint | undefined;
-  const isEnabled = amountValue !== undefined && amountValue > 0n;
-
-  return (
-    <button
-      onClick={onSelect}
-      disabled={disabled || !isEnabled}
-      className={`w-full text-left p-4 sm:p-5 rounded-xl border transition-all ${
-        selected
-          ? "bg-[#2ee6a6]/10 border-[#2ee6a6]/40 shadow-[0_0_25px_rgba(46,230,166,0.15)]"
-          : "bg-white/5 border-white/10 hover:border-[#2ee6a6]/30 hover:bg-[#2ee6a6]/5"
-      } ${!isEnabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm sm:text-base font-bold text-text-primary truncate">
-          {name || `Category ${categoryId + 1}`}
-        </h3>
-        {selected && (
-          <span className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest rounded bg-[#2ee6a6] text-[#0c1512]">
-            Selected
-          </span>
-        )}
-      </div>
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] text-muted-blue uppercase tracking-widest">Mint Amount</span>
-          <span className="text-sm font-display font-bold text-text-primary">
-            {amountValue !== undefined ? formatTokenBalance(amountValue) : "..."}
-            <span className="text-[10px] text-muted-blue ml-1">GIWA</span>
-          </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] text-muted-blue uppercase tracking-widest">Fee</span>
-          <span className="text-sm font-display font-bold text-[#2ee6a6]">
-            {feeValue !== undefined ? formatEther(feeValue) : "..."}
-            <span className="text-[10px] text-muted-blue ml-1">ETH</span>
-          </span>
-        </div>
-      </div>
-    </button>
-  );
-}
-
 export default function ClaimPage() {
   const { address, isConnected } = useAccount();
   const queryClient = useQueryClient();
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
   const { data: canClaim, isLoading: isCheckingClaim } = useCanClaim(address);
   const { data: lastClaimTimestamp } = useGetLastClaimTimestamp(address);
   const { data: claimCooldown } = useClaimCooldown();
+  const { data: claimAmount } = useClaimAmount();
+  const { data: claimFee } = useClaimFee();
   const { claimTokens, isPending, isConfirming, isSuccess, error, reset } = useClaimTokens();
 
-  const { data: selectedFee } = useCategoryFee(selectedCategory ?? 0);
+  const amountValue = claimAmount as bigint | undefined;
+  const feeValue = claimFee as bigint | undefined;
 
   const cooldownSeconds = claimCooldown ? Number(claimCooldown) : 43200; // 12h default until on-chain value loads
   const cooldownLabel = formatCooldownLabel(cooldownSeconds);
 
   const handleClaim = () => {
-    if (selectedCategory === null) {
-      toast.warning("Please select a category first.");
+    if (feeValue === undefined) {
+      toast.error("Fee not loaded yet.");
       return;
     }
 
@@ -136,13 +78,7 @@ export default function ClaimPage() {
       }
     }
 
-    const fee = selectedFee as bigint | undefined;
-    if (fee === undefined) {
-      toast.error("Fee not loaded yet.");
-      return;
-    }
-
-    claimTokens(selectedCategory, fee);
+    claimTokens(feeValue);
   };
 
   useEffect(() => {
@@ -167,115 +103,118 @@ export default function ClaimPage() {
   }, [error, reset]);
 
   const isProcessing = isPending || isConfirming;
+  const onCooldown = canClaim === false;
+
+  const utilities = [
+    { icon: "swap_horiz", text: "HOLLOW is fully tradable — transfer and exchange freely." },
+    { icon: "confirmation_number", text: "Create and join raffles using HOLLOW tokens." },
+    { icon: "redeem", text: "Unlock free mints and exclusive drops." },
+    { icon: "sports_esports", text: "Play games and compete on the leaderboard." },
+  ];
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 lg:gap-8 px-4 py-6 lg:py-8">
+    <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 py-8 lg:py-12">
       <div className="w-full max-w-5xl">
-        <div className="ui-container p-6 sm:p-8 lg:p-12 rounded w-full">
-          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-            {/* Left Side - Category Selection */}
-            <div className="flex-1 space-y-4 lg:space-y-6">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#0c1512] rounded-xl flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(12,21,18,0.2)]">
-                <span className="material-symbols-outlined text-[#2ee6a6]" style={{ fontSize: 40 }}>redeem</span>
+        <div className="ui-container rounded-2xl p-6 sm:p-8 lg:p-10 w-full">
+          <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
+            {/* Left Side - Claim */}
+            <div className="flex flex-1 flex-col">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-accent-warm/15">
+                  <span className="material-symbols-outlined text-accent-warm" style={{ fontSize: 24 }}>redeem</span>
+                </div>
+                <h1 className="text-2xl font-header text-text-primary sm:text-3xl">Claim HOLLOW Tokens</h1>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-header mb-2 text-text-primary">Claim GIWA Tokens</h1>
-              <p className="text-muted-blue text-sm sm:text-base mb-6 max-w-md">
-                Choose a category, pay the fee, and mint GIWA tokens. Tokens are transferable and unlock raffles and future drops.
+              <p className="mb-6 max-w-md text-sm text-muted-blue sm:text-base">
+                Pay the fee and mint HOLLOW tokens. Tokens are transferable and unlock raffles and future drops.
               </p>
 
-              {/* Category Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                {[0, 1, 2, 3].map((id) => (
-                  <CategoryCard
-                    key={id}
-                    categoryId={id}
-                    selected={selectedCategory === id}
-                    onSelect={() => setSelectedCategory(id)}
-                    disabled={isProcessing}
-                  />
-                ))}
+              {/* Claim summary — stat tiles */}
+              <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4">
+                <div className="rounded-xl border border-black/10 p-4">
+                  <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-blue">You Receive</span>
+                  <span className="mt-2 block font-display text-xl font-bold text-text-primary sm:text-2xl">
+                    {amountValue !== undefined ? formatTokenBalance(amountValue) : "…"}
+                    <span className="ml-1.5 text-xs font-semibold text-muted-blue">HOLLOW</span>
+                  </span>
+                </div>
+                <div className="rounded-xl border border-black/10 p-4">
+                  <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-blue">Mint Fee</span>
+                  <span className="mt-2 block font-display text-xl font-bold text-accent-warm sm:text-2xl">
+                    {feeValue !== undefined ? formatEther(feeValue) : "…"}
+                    <span className="ml-1.5 text-xs font-semibold text-muted-blue">ETH</span>
+                  </span>
+                </div>
               </div>
 
               {/* Claim / Connect Wallet Button */}
-              {isConnected ? (
-                <button
-                  onClick={handleClaim}
-                  disabled={isProcessing || selectedCategory === null}
-                  className="w-full py-4 sm:py-5 bg-[#0c1512] hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-[0.2em] text-xs sm:text-sm transition-all shadow-[0_0_30px_rgba(12,21,18,0.15)] disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isPending ? "Confirm in Wallet..." : isConfirming ? "Claiming..." : "Claim Tokens"}
-                </button>
-              ) : (
-                <ConnectButton.Custom>
-                  {({ openConnectModal, openChainModal, chain, mounted }) => {
-                    if (!mounted) return null;
-                    if (chain?.unsupported) {
+              <div className="mt-auto">
+                {isConnected ? (
+                  <button
+                    onClick={handleClaim}
+                    disabled={isProcessing || isCheckingClaim || onCooldown}
+                    className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-accent-warm text-sm font-bold uppercase tracking-[0.15em] text-background transition-all hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100 disabled:active:scale-100"
+                  >
+                    {isProcessing ? (
+                      <span className="material-symbols-outlined animate-spin" style={{ fontSize: 20 }}>progress_activity</span>
+                    ) : (
+                      <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{onCooldown ? "schedule" : "bolt"}</span>
+                    )}
+                    {isPending ? "Confirm in Wallet…" : isConfirming ? "Claiming…" : onCooldown ? "Cooldown Active" : "Claim Tokens"}
+                  </button>
+                ) : (
+                  <ConnectButton.Custom>
+                    {({ openConnectModal, openChainModal, chain, mounted }) => {
+                      if (!mounted) return null;
+                      if (chain?.unsupported) {
+                        return (
+                          <button
+                            onClick={openChainModal}
+                            className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-red-500 text-sm font-bold uppercase tracking-[0.15em] text-white transition-all hover:brightness-110"
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>error</span>
+                            Wrong Network
+                          </button>
+                        );
+                      }
                       return (
                         <button
-                          onClick={openChainModal}
-                          className="w-full py-4 sm:py-5 bg-red-500 hover:bg-red-600 text-text-primary font-bold rounded uppercase tracking-[0.2em] text-xs sm:text-sm transition-all"
+                          onClick={openConnectModal}
+                          className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-accent-warm text-sm font-bold uppercase tracking-[0.15em] text-background transition-all hover:brightness-110 active:scale-[0.99]"
                         >
-                          Wrong Network
+                          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>account_balance_wallet</span>
+                          Connect Wallet
                         </button>
                       );
-                    }
-                    return (
-                      <button
-                        onClick={openConnectModal}
-                        className="w-full py-4 sm:py-5 bg-[#2ee6a6] hover:brightness-110 text-[#0c1512] font-bold rounded uppercase tracking-[0.2em] text-xs sm:text-sm transition-all flex items-center justify-center gap-2"
-                      >
-                        <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
-                        Connect Wallet
-                      </button>
-                    );
-                  }}
-                </ConnectButton.Custom>
-              )}
+                    }}
+                  </ConnectButton.Custom>
+                )}
 
-
+                <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-blue">
+                  <span className="material-symbols-outlined" style={{ fontSize: 15 }}>schedule</span>
+                  <span>
+                    Claim once every <span className="font-bold text-text-primary">{cooldownLabel}</span>
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Vertical Separator */}
-            <div className="hidden lg:block w-px bg-white/10"></div>
+            <div className="hidden w-px bg-black/10 lg:block" />
 
             {/* Right Side - Utility */}
-            <div className="lg:w-72 flex-shrink-0 flex items-center">
-              <div className="w-full space-y-4">
-                <h2 className="text-base sm:text-lg font-header text-center text-text-primary">GIWA Utility</h2>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#2ee6a6]/15 text-[#2ee6a6]">
-                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>swap_horiz</span>
+            <div className="flex-shrink-0 lg:w-72">
+              <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-muted-blue">HOLLOW Utility</h2>
+              <div className="space-y-3">
+                {utilities.map((u) => (
+                  <div key={u.icon} className="flex items-start gap-3">
+                    <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-accent-warm/15 text-accent-warm">
+                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{u.icon}</span>
                     </span>
-                    <p className="text-xs text-muted-blue">GIWA is fully tradable — transfer and exchange freely.</p>
+                    <p className="pt-1 text-xs leading-relaxed text-muted-blue">{u.text}</p>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#2ee6a6]/15 text-[#2ee6a6]">
-                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>confirmation_number</span>
-                    </span>
-                    <p className="text-xs text-muted-blue">Create and join raffles using GIWA tokens.</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#2ee6a6]/15 text-[#2ee6a6]">
-                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>redeem</span>
-                    </span>
-                    <p className="text-xs text-muted-blue">Unlock free mints and exclusive drops.</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#2ee6a6]/15 text-[#2ee6a6]">
-                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>sports_esports</span>
-                    </span>
-                    <p className="text-xs text-muted-blue">Play games and compete on the leaderboard.</p>
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-blue">
-                  <span className="material-symbols-outlined" style={{ fontSize: 15 }}>schedule</span>
-                  <span>
-                    Claim once every{" "}
-                    <span className="font-bold text-text-primary">{cooldownLabel}</span>
-                  </span>
-                </div>
+                ))}
               </div>
             </div>
           </div>

@@ -20,7 +20,7 @@ export function CountdownTimer({ endDate, className = "" }: CountdownTimerProps)
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <span className="material-symbols-outlined text-[#2ee6a6] text-sm animate-pulse">schedule</span>
+      <span className="material-symbols-outlined text-[#0062df] text-sm animate-pulse">schedule</span>
       <div className="flex items-center gap-1">
         {showDays && (
           <>
