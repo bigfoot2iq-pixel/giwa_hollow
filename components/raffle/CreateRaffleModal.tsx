@@ -457,7 +457,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
             </p>
             <button
               onClick={onClose}
-              className="rounded bg-[#ffffff] border border-black/10 px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-text-primary transition-all hover:brightness-125"
+              className="rounded bg-accent-warm px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-background transition-all hover:brightness-110"
             >
               Done
             </button>
@@ -516,18 +516,18 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
               {step === 1 && (
                 <>
                   <p className="text-sm text-muted-blue">
-                    Set how players spend HOLLOW to enter and how big the pool can get.
+                    Set how players spend ARIWA to enter and how big the pool can get.
                   </p>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div>
-                      <label className={labelClass}>Entry Cost (HOLLOW)</label>
+                      <label className={labelClass}>Entry Cost (ARIWA)</label>
                       <input
                         type="number"
                         className={inputClass}
                         value={tokensRequired}
                         onChange={(e) => setTokensRequired(e.target.value)}
                       />
-                      <p className="mt-1.5 text-[11px] text-muted-blue/70">HOLLOW per entry.</p>
+                      <p className="mt-1.5 text-[11px] text-muted-blue/70">ARIWA per entry.</p>
                     </div>
                     <div>
                       <label className={labelClass}>Max Entries / User</label>
@@ -627,7 +627,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
                   <div className="rounded border border-black/10 bg-black/5 p-3 text-xs text-muted-blue">
                     You escrow the prize now
                     {isNft ? " (you'll approve the raffle contract to hold your NFTs)" : ""}. Entrants
-                    pay HOLLOW (sent to you). The raffle ends automatically after the close date, when
+                    pay ARIWA (sent to you). The raffle ends automatically after the close date, when
                     the owner&apos;s settler draws winners.
                   </div>
                 </>
@@ -656,7 +656,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
               {step < LAST_STEP ? (
                 <button
                   type="submit"
-                  className="ml-auto flex items-center gap-1.5 rounded bg-[#ffffff] border border-black/10 px-6 py-3 text-xs font-bold uppercase tracking-widest text-text-primary transition-all hover:brightness-125"
+                  className="ml-auto flex items-center gap-1.5 rounded bg-accent-warm px-6 py-3 text-xs font-bold uppercase tracking-widest text-background transition-all hover:brightness-110"
                 >
                   Continue
                   <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
@@ -665,7 +665,7 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
                 <button
                   type="submit"
                   disabled={busy}
-                  className="ml-auto flex items-center justify-center gap-2 rounded bg-[#ffffff] border border-black/10 px-6 py-3 text-xs font-bold uppercase tracking-[0.15em] text-text-primary shadow-[0_0_20px_rgba(26, 36, 52,0.15)] transition-all hover:brightness-125 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="ml-auto flex items-center justify-center gap-2 rounded bg-accent-warm px-6 py-3 text-xs font-bold uppercase tracking-[0.15em] text-background shadow-[0_0_20px_rgba(0,98,223,0.25)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {busy && (
                     <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">

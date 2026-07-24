@@ -2,12 +2,12 @@
 
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { formatEther, parseEther } from "viem";
-import { contracts, HollowTokenABI } from "@/lib/contracts";
+import { contracts, AriwaTokenABI } from "@/lib/contracts";
 
 export function useTokenBalance(address: `0x${string}` | undefined) {
   return useReadContract({
-    address: contracts.hollowToken.address,
-    abi: HollowTokenABI,
+    address: contracts.ariwaToken.address,
+    abi: AriwaTokenABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
     query: {
@@ -18,8 +18,8 @@ export function useTokenBalance(address: `0x${string}` | undefined) {
 
 export function useTokenAllowance(owner: `0x${string}` | undefined, spender: `0x${string}`) {
   return useReadContract({
-    address: contracts.hollowToken.address,
-    abi: HollowTokenABI,
+    address: contracts.ariwaToken.address,
+    abi: AriwaTokenABI,
     functionName: "allowance",
     args: owner ? [owner, spender] : undefined,
     query: {
@@ -37,8 +37,8 @@ export function useApproveTokens() {
 
   const approve = async (spender: `0x${string}`, amount: bigint) => {
     writeContract({
-      address: contracts.hollowToken.address,
-      abi: HollowTokenABI,
+      address: contracts.ariwaToken.address,
+      abi: AriwaTokenABI,
       functionName: "approve",
       args: [spender, amount],
       gas: 100000n,

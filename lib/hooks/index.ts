@@ -1,6 +1,6 @@
 export * from "./useToken";
 export * from "./useRaffle";
-export * from "./useHollow";
+export * from "./useAriwa";
 export * from "./useAdmin";
 export * from "./usePayToPlay";
 export * from "./useGameSession";

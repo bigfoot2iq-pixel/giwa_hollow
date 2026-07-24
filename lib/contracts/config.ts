@@ -41,7 +41,7 @@ export const hardhatLocal = defineChain({
 });
 
 export const contracts = {
-  hollowToken: {
+  ariwaToken: {
     address: process.env.NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS as `0x${string}`,
   },
   raffles: {

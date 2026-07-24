@@ -12,7 +12,7 @@ const STATS = [
 
 const STEPS = [
   { n: 1, title: "Connect Wallet", note: "Connect your wallet to GIWA Sepolia" },
-  { n: 2, title: "Claim Tokens", note: "Mint HOLLOW tokens to get started" },
+  { n: 2, title: "Claim Tokens", note: "Mint ARIWA tokens to get started" },
   { n: 3, title: "Enter Raffles", note: "Use tokens to enter active raffles" },
   { n: 4, title: "Win Prizes", note: "Winners receive prizes automatically" },
 ] as const;
@@ -47,7 +47,7 @@ export default function DashboardPage() {
             </div>
             <p className="font-display text-2xl font-bold text-text-primary lg:text-3xl">
               {s.label === "Token Balance"
-                ? `${isConnected && balance !== undefined ? formatTokenBalance(balance) : "0.00"} HOLLOW`
+                ? `${isConnected && balance !== undefined ? formatTokenBalance(balance) : "0.00"} ARIWA`
                 : "0"}
             </p>
           </div>

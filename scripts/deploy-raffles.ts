@@ -1,14 +1,14 @@
 import pkg from "hardhat";
 const { ethers, run } = pkg;
 
-// Pulled from .env.local. HOLLOW_TOKEN_ADDRESS must be a deployed HollowToken
+// Pulled from .env.local. ARIWA_TOKEN_ADDRESS must be a deployed AriwaToken
 // on the target network; WATCHDOG_ADDRESS is the address allowed to end raffles.
-const HOLLOW_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS;
+const ARIWA_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS;
 const WATCHDOG_ADDRESS = process.env.WATCHDOG_ADDRESS;
 
 async function main() {
-  if (!HOLLOW_TOKEN_ADDRESS || !ethers.isAddress(HOLLOW_TOKEN_ADDRESS)) {
-    throw new Error("Set NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS in .env.local to the deployed HollowToken address");
+  if (!ARIWA_TOKEN_ADDRESS || !ethers.isAddress(ARIWA_TOKEN_ADDRESS)) {
+    throw new Error("Set NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS in .env.local to the deployed AriwaToken address");
   }
   if (!WATCHDOG_ADDRESS || !ethers.isAddress(WATCHDOG_ADDRESS)) {
     throw new Error("Set WATCHDOG_ADDRESS in .env.local to the watchdog wallet address");
@@ -20,15 +20,15 @@ async function main() {
   console.log("═══════════════════════════════════════════════════");
   console.log("Deployer:", deployer.address);
   console.log("Balance:", ethers.formatEther(await ethers.provider.getBalance(deployer.address)), "ETH");
-  console.log("HollowToken:", HOLLOW_TOKEN_ADDRESS);
+  console.log("AriwaToken:", ARIWA_TOKEN_ADDRESS);
   console.log("Watchdog:", WATCHDOG_ADDRESS);
   console.log("");
 
   // Deploy RobinhoodRaffles
-  console.log("Deploying HollowRaffles...");
-  const RobinhoodRaffles = await ethers.getContractFactory("HollowRaffles");
+  console.log("Deploying AriwaRaffles...");
+  const RobinhoodRaffles = await ethers.getContractFactory("AriwaRaffles");
   const robinhoodRaffles = await RobinhoodRaffles.deploy(
-    HOLLOW_TOKEN_ADDRESS,
+    ARIWA_TOKEN_ADDRESS,
     WATCHDOG_ADDRESS,
   );
   await robinhoodRaffles.waitForDeployment();
@@ -44,7 +44,7 @@ async function main() {
   try {
     await run("verify:verify", {
       address: rafflesAddress,
-      constructorArguments: [HOLLOW_TOKEN_ADDRESS, WATCHDOG_ADDRESS],
+      constructorArguments: [ARIWA_TOKEN_ADDRESS, WATCHDOG_ADDRESS],
     });
     console.log(`✅ RobinhoodRaffles verified!`);
   } catch (error: unknown) {

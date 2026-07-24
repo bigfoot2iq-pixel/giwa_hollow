@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAccount, usePublicClient, useWriteContract, useReadContract } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTokenAllowance, useTokenBalance, formatTokenBalance } from "@/lib/hooks";
-import { contracts, RobinhoodRafflesABI, HollowTokenABI } from "@/lib/contracts";
+import { contracts, RobinhoodRafflesABI, AriwaTokenABI } from "@/lib/contracts";
 import type { Raffle } from "@/lib/supabase";
 import { getTokenMetadataCached } from "@/lib/utils/erc20";
 
@@ -32,7 +32,7 @@ export function RaffleEntryForm({
   const [refreshKey, setRefreshKey] = useState(0);
   const [status, setStatus] = useState<EntryStatus>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [tokenSymbol, setTokenSymbol] = useState<string>("HOLLOW");
+  const [tokenSymbol, setTokenSymbol] = useState<string>("ARIWA");
 
   const tokensNeeded = BigInt(entryCount * raffle.tokens_required) * BigInt(10 ** 18);
 
@@ -61,7 +61,7 @@ export function RaffleEntryForm({
   // Fetch token symbol
   useEffect(() => {
     const fetchTokenSymbol = async () => {
-      const metadata = await getTokenMetadataCached(contracts.hollowToken.address, false);
+      const metadata = await getTokenMetadataCached(contracts.ariwaToken.address, false);
       if (metadata) {
         setTokenSymbol(metadata.symbol);
       }
@@ -115,8 +115,8 @@ export function RaffleEntryForm({
       if (needsApproval) {
         setStatus("approving");
         const approveHash = await writeContractAsync({
-          address: contracts.hollowToken.address,
-          abi: HollowTokenABI,
+          address: contracts.ariwaToken.address,
+          abi: AriwaTokenABI,
           functionName: "approve",
           args: [contracts.raffles.address, tokensNeeded],
         });
@@ -282,7 +282,7 @@ export function RaffleEntryForm({
       <button
         type="submit"
         disabled={isLoading || hasInsufficientBalance}
-        className="w-full py-4 bg-[#ffffff] border border-black/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-[0.15em] text-sm transition-all shadow-[0_0_20px_rgba(26, 36, 52,0.15)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full py-4 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-[0.15em] text-sm transition-all shadow-[0_0_20px_rgba(0,98,223,0.25)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {isLoading && (
           <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

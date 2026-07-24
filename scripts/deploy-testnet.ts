@@ -2,9 +2,9 @@ import pkg from "hardhat";
 const { ethers, run } = pkg;
 
 // ── Constructor arguments ──────────────────────────────────────────
-const HOLLOW_TOKEN_NAME = "The Hollow";
-const HOLLOW_TOKEN_SYMBOL = "HOLLOW";
-const INITIAL_CLAIM_AMOUNT = ethers.parseEther("1"); // 1 HOLLOW per claim
+const ARIWA_TOKEN_NAME = "ARIWA";
+const ARIWA_TOKEN_SYMBOL = "ARIWA";
+const INITIAL_CLAIM_AMOUNT = ethers.parseEther("1"); // 1 ARIWA per claim
 const INITIAL_CLAIM_FEE = 0n; // free by default; admin can raise
 const INITIAL_CLAIM_COOLDOWN = 43_200; // 12 hours
 const WATCHDOG_ADDRESS = process.env.WATCHDOG_ADDRESS;
@@ -34,32 +34,32 @@ async function main() {
     : deployer.address;
 
   console.log("═══════════════════════════════════════════════════");
-  console.log("  GIWA Sepolia Deployment (HollowToken + Raffles)");
+  console.log("  GIWA Sepolia Deployment (AriwaToken + Raffles)");
   console.log("═══════════════════════════════════════════════════");
   console.log("Deployer:", deployer.address);
   console.log("Balance:", ethers.formatEther(await ethers.provider.getBalance(deployer.address)), "ETH");
   console.log("Watchdog:", watchdog, watchdog === deployer.address ? "(defaulted to deployer)" : "");
   console.log("");
 
-  // ── 1. Deploy HollowToken ───────────────────────────────────────
-  console.log("Deploying HollowToken...");
-  const HollowToken = await ethers.getContractFactory("HollowToken");
-  const hollowToken = await HollowToken.deploy(
-    HOLLOW_TOKEN_NAME,
-    HOLLOW_TOKEN_SYMBOL,
+  // ── 1. Deploy AriwaToken ───────────────────────────────────────
+  console.log("Deploying AriwaToken...");
+  const AriwaToken = await ethers.getContractFactory("AriwaToken");
+  const ariwaToken = await AriwaToken.deploy(
+    ARIWA_TOKEN_NAME,
+    ARIWA_TOKEN_SYMBOL,
     INITIAL_CLAIM_AMOUNT,
     INITIAL_CLAIM_FEE,
     INITIAL_CLAIM_COOLDOWN,
   );
-  await hollowToken.waitForDeployment();
-  const hollowAddress = await hollowToken.getAddress();
-  console.log(`✅ HollowToken deployed to: ${hollowAddress}`);
+  await ariwaToken.waitForDeployment();
+  const ariwaAddress = await ariwaToken.getAddress();
+  console.log(`✅ AriwaToken deployed to: ${ariwaAddress}`);
 
-  // ── 2. Deploy HollowRaffles ─────────────────────────────────────
-  console.log("\nDeploying HollowRaffles...");
-  const RobinhoodRaffles = await ethers.getContractFactory("HollowRaffles");
+  // ── 2. Deploy AriwaRaffles ─────────────────────────────────────
+  console.log("\nDeploying AriwaRaffles...");
+  const RobinhoodRaffles = await ethers.getContractFactory("AriwaRaffles");
   const robinhoodRaffles = await RobinhoodRaffles.deploy(
-    hollowAddress,
+    ariwaAddress,
     watchdog,
   );
   await robinhoodRaffles.waitForDeployment();
@@ -71,26 +71,26 @@ async function main() {
   await new Promise((resolve) => setTimeout(resolve, 30_000));
 
   // ── 4. Verify ───────────────────────────────────────────────────
-  await verifyContract(hollowAddress, [
-    HOLLOW_TOKEN_NAME,
-    HOLLOW_TOKEN_SYMBOL,
+  await verifyContract(ariwaAddress, [
+    ARIWA_TOKEN_NAME,
+    ARIWA_TOKEN_SYMBOL,
     INITIAL_CLAIM_AMOUNT,
     INITIAL_CLAIM_FEE,
     INITIAL_CLAIM_COOLDOWN,
   ]);
-  await verifyContract(rafflesAddress, [hollowAddress, watchdog]);
+  await verifyContract(rafflesAddress, [ariwaAddress, watchdog]);
 
   // ── Summary ─────────────────────────────────────────────────────
   console.log("\n═══════════════════════════════════════════════════");
   console.log("  Deployment Complete!");
   console.log("═══════════════════════════════════════════════════");
-  console.log(`HollowToken:   ${hollowAddress}`);
+  console.log(`AriwaToken:   ${ariwaAddress}`);
   console.log(`RobinhoodRaffles: ${rafflesAddress}`);
   console.log(`\nUpdate your .env.local:`);
-  console.log(`NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS=${hollowAddress}`);
+  console.log(`NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS=${ariwaAddress}`);
   console.log(`NEXT_PUBLIC_RAFFLES_CONTRACT_ADDRESS=${rafflesAddress}`);
   console.log(`\nGIWA Explorer:`);
-  console.log(`https://sepolia-explorer.giwa.io/address/${hollowAddress}#code`);
+  console.log(`https://sepolia-explorer.giwa.io/address/${ariwaAddress}#code`);
   console.log(`https://sepolia-explorer.giwa.io/address/${rafflesAddress}#code`);
 }
 

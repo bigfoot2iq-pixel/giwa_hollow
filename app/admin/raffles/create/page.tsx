@@ -929,7 +929,7 @@ export default function CreateRafflePage() {
         <button
           type="submit"
           disabled={isSubmitting || step !== "form"}
-          className="w-full py-4 bg-[#ffffff] hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-[0.15em] text-sm transition-all shadow-[0_0_20px_rgba(26, 36, 52,0.15)] border border-black/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full py-4 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-[0.15em] text-sm transition-all shadow-[0_0_20px_rgba(0,98,223,0.25)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {isSubmitting && (
             <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

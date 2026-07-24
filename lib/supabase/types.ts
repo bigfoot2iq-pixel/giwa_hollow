@@ -131,7 +131,7 @@ export type Prize = Database["public"]["Tables"]["litvm_raffle_prizes"]["Row"];
 // Game-related types
 export type WalletType = 'evm';
 
-export interface TheHollowUser {
+export interface TheAriwaUser {
   id: string;
   wallet_address: string;
   wallet_type: WalletType;
@@ -163,7 +163,7 @@ export interface WhitelistRequest {
 export interface WhitelistResponse {
   success: boolean;
   message: string;
-  user?: TheHollowUser;
+  user?: TheAriwaUser;
 }
 
 // X OAuth User Data

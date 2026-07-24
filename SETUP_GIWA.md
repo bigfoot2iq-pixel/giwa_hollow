@@ -1,4 +1,4 @@
-# GIWA Hollow — Setup
+# GIWA ARIWA — Setup
 
 A GIWA Sepolia dApp: **faucet**, **claim a token every 12h**, **raffles** (community + platform), and a **pay-to-play game** with a leaderboard. Ported from the Robinhood Raffles app and rebranded for GIWA.
 
@@ -37,7 +37,7 @@ Tables/functions are prefixed `litvm_raffle_*` (internal names, kept as-is). Sto
 npx hardhat compile
 
 # ERC-20 claim token — deploys with a 12h claim cooldown + 4 categories
-npx hardhat run scripts/deploy-hollow-token.ts --network giwaSepolia
+npx hardhat run scripts/deploy-ariwa-token.ts --network giwaSepolia
 #   → set NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS
 
 # Raffles (needs token + WATCHDOG_ADDRESS)
@@ -69,5 +69,6 @@ npm run dev
 - **Faucet is link-only** (no server drip wallet) — it points at the official GIWA/Nodit faucets.
 - Twitter/X login, waitlist, and checker pages from the source app were **omitted**; re-add from
   `../robinhood_hollow` if needed.
-- The token ticker is **GIWA**; internal Solidity contract names (`HollowToken`, `RobinhoodRaffles`,
-  `TheHollowGame`) and DB table names were left unchanged to avoid churn.
+- The token ticker is **ARIWA**. Solidity contracts are `AriwaToken`, `RobinhoodRaffles` (raffles),
+  and `TheAriwaGame`. DB table names (`litvm_raffle_*`, `game_users`) and the
+  `NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS` env var were intentionally left unchanged to avoid churn.

@@ -30,7 +30,7 @@ const materialSymbols = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Hollow - Win Crypto Prizes",
+  title: "Ariwa - Win Crypto Prizes",
   description: "Decentralized raffles platform on GIWA Sepolia. Enter raffles, win prizes!",
   icons: {
     icon: "/giwa/logo-letter.svg",

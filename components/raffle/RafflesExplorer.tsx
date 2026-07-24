@@ -73,7 +73,7 @@ export function RafflesExplorer({ scope, title, showCreate = false, emptyHint }:
         {showCreate && isConnected && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#ffffff] border border-black/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all shadow-[0_0_20px_rgba(26, 36, 52,0.15)]"
+            className="flex items-center gap-2 px-5 py-2.5 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-xs transition-all shadow-[0_0_20px_rgba(0,98,223,0.25)]"
           >
             <span className="material-symbols-outlined text-base">add</span>
             Create Raffle

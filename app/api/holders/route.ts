@@ -10,7 +10,7 @@ const EXPLORER_BASE =
   giwaSepolia.blockExplorers?.default?.url ||
   'https://sepolia-explorer.giwa.io';
 
-const HOLLOW_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS as string;
+const ARIWA_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS as string;
 const HOLDERS_PER_PAGE = 50;
 const MAX_CURSOR_PAGES = 100; // safety cap on the cursor walk
 const CACHE_TTL_MS = 60_000; // 60 seconds
@@ -111,7 +111,7 @@ export async function GET(
 ): Promise<NextResponse<TokenHoldersResponse | { error: string }>> {
   try {
     const { searchParams } = new URL(request.url);
-    const contractAddress = searchParams.get('address') || HOLLOW_TOKEN_ADDRESS;
+    const contractAddress = searchParams.get('address') || ARIWA_TOKEN_ADDRESS;
     const pageParam = searchParams.get('page');
 
     if (!contractAddress) {

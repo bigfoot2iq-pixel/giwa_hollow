@@ -374,8 +374,8 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
           <div className="flex items-center gap-2">
             <span className="text-gray-300 text-xs sm:text-sm font-semibold">Move:</span>
             <div className="flex gap-1">
-              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-[#2a2200] rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">A</kbd>
-              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-[#2a2200] rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">D</kbd>
+              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">A</kbd>
+              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">D</kbd>
             </div>
           </div>
 
@@ -383,15 +383,15 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
 
           <div className="flex items-center gap-2">
             <span className="text-gray-300 text-xs sm:text-sm font-semibold">Jump:</span>
-            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-[#2a2200] rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">W</kbd>
-            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-[#2a2200] rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">Space</kbd>
+            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">W</kbd>
+            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">Space</kbd>
           </div>
 
           <div className="w-px h-4 sm:h-6 bg-dark-blue/30" />
 
           <div className="flex items-center gap-2">
             <span className="text-gray-300 text-xs sm:text-sm font-semibold">Attack:</span>
-            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-[#2a2200] rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">J</kbd>
+            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">J</kbd>
             <span className="text-gray-500 text-[10px] sm:text-xs hidden sm:inline">(hold for charged)</span>
           </div>
 
@@ -399,8 +399,8 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
 
           <div className="flex items-center gap-2">
             <span className="text-gray-300 text-xs sm:text-sm font-semibold">Dodge:</span>
-            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-[#2a2200] rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">L</kbd>
-            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-[#2a2200] rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">Shift</kbd>
+            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">L</kbd>
+            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">Shift</kbd>
           </div>
         </div>
       )}

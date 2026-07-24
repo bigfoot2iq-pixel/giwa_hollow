@@ -7,7 +7,7 @@ export default function GamePage() {
     <div className="space-y-6 lg:space-y-8">
       {/* Page Title */}
       <div className="mb-6 lg:mb-8">
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-header text-foreground mb-2">The Hollow: Last Stand</h2>
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-header text-foreground mb-2">ARIWA: Last Stand</h2>
         <p className="text-muted-blue text-xs sm:text-sm">Face the horde. Survive the waves. Claim your place on the leaderboard.</p>
       </div>
 

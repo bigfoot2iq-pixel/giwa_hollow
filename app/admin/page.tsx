@@ -11,7 +11,7 @@ import {
   useClaimAmount,
   useClaimFee,
 } from "@/lib/hooks";
-import { contracts, HollowTokenABI, THE_HOLLOW_GAME_ADDRESS, THE_HOLLOW_GAME_ABI } from "@/lib/contracts";
+import { contracts, AriwaTokenABI, THE_ARIWA_GAME_ADDRESS, THE_ARIWA_GAME_ABI } from "@/lib/contracts";
 
 interface AdminData {
   raffles: Array<
@@ -213,7 +213,7 @@ export default function AdminDashboard() {
         <h2 className="text-5xl font-header text-foreground">Admin Dashboard</h2>
         <div className="flex items-center gap-3">
           <Link href="/admin/raffles/create">
-            <button className="px-6 py-3 bg-[#ffffff] hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(26, 36, 52,0.15)] border border-black/10 flex items-center gap-2">
+            <button className="px-6 py-3 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(0,98,223,0.25)] flex items-center gap-2">
               <span className="material-symbols-outlined text-lg">add</span>
               Create Raffle
             </button>
@@ -244,7 +244,7 @@ export default function AdminDashboard() {
       {/* Tabs */}
       <div className="flex gap-1 border-b border-black/10">
         {([
-          { id: "token", label: "HOLLOW Token Config" },
+          { id: "token", label: "ARIWA Token Config" },
           { id: "game", label: "Game Config" },
           { id: "raffles", label: "Raffles" },
         ] as const).map((tab) => (
@@ -262,8 +262,8 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* HOLLOW Token Config */}
-      {activeTab === "token" && <HollowTokenConfig />}
+      {/* ARIWA Token Config */}
+      {activeTab === "token" && <AriwaTokenConfig />}
 
       {/* Game Play Fee Config */}
       {activeTab === "game" && <GameConfig />}
@@ -286,7 +286,7 @@ export default function AdminDashboard() {
                 onClick={() => changeScope(s.id)}
                 className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded transition-all ${
                   scope === s.id
-                    ? "bg-[#ffffff] text-text-primary border border-black/10"
+                    ? "bg-accent-warm text-background border border-transparent"
                     : "text-muted-blue hover:text-[#0062df]"
                 }`}
               >
@@ -454,16 +454,16 @@ function ClaimConfigField() {
     }
     if (currentAmount !== undefined && amountWei !== (currentAmount as bigint)) {
       writeContract({
-        address: contracts.hollowToken.address,
-        abi: HollowTokenABI,
+        address: contracts.ariwaToken.address,
+        abi: AriwaTokenABI,
         functionName: "setClaimAmount",
         args: [amountWei],
       });
     }
     if (currentFee !== undefined && feeWei !== (currentFee as bigint)) {
       writeContract({
-        address: contracts.hollowToken.address,
-        abi: HollowTokenABI,
+        address: contracts.ariwaToken.address,
+        abi: AriwaTokenABI,
         functionName: "setClaimFee",
         args: [feeWei],
       });
@@ -478,7 +478,7 @@ function ClaimConfigField() {
       </div>
       <div className="space-y-3">
         <div>
-          <label className="block text-[10px] text-muted-blue uppercase tracking-widest mb-1">Mint Amount (HOLLOW)</label>
+          <label className="block text-[10px] text-muted-blue uppercase tracking-widest mb-1">Mint Amount (ARIWA)</label>
           <input
             type="text"
             value={amount}
@@ -501,7 +501,7 @@ function ClaimConfigField() {
       <button
         onClick={handleSave}
         disabled={isPending || confirming}
-        className="w-full px-4 py-2.5 bg-[#ffffff] hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-black/10"
+        className="w-full px-4 py-2.5 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isPending ? "Sign..." : confirming ? "Confirming..." : "Save Claim Config"}
       </button>
@@ -510,7 +510,7 @@ function ClaimConfigField() {
   );
 }
 
-function HollowTokenConfig() {
+function AriwaTokenConfig() {
   const { address } = useAccount();
   const { data: currentCooldown } = useClaimCooldown();
 
@@ -539,8 +539,8 @@ function HollowTokenConfig() {
       return;
     }
     writeCooldown({
-      address: contracts.hollowToken.address,
-      abi: HollowTokenABI,
+      address: contracts.ariwaToken.address,
+      abi: AriwaTokenABI,
       functionName: "setClaimCooldown",
       args: [BigInt(seconds)],
     });
@@ -555,7 +555,7 @@ function HollowTokenConfig() {
   return (
     <div className="ui-container rounded overflow-hidden">
       <div className="px-6 py-4 border-b border-black/10">
-        <h3 className="text-xl font-header text-text-primary">HOLLOW Token Config</h3>
+        <h3 className="text-xl font-header text-text-primary">ARIWA Token Config</h3>
         <p className="text-[11px] text-muted-blue mt-1">
           Set the mint amount and fee (in ETH) for a claim. Users pay the fee to mint tokens.
         </p>
@@ -588,7 +588,7 @@ function HollowTokenConfig() {
             <button
               onClick={handleSetCooldown}
               disabled={cooldownPending || cooldownConfirming}
-              className="px-4 py-3 bg-[#ffffff] hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-black/10"
+              className="px-4 py-3 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {cooldownPending ? "Sign..." : cooldownConfirming ? "Confirming..." : "Update"}
             </button>
@@ -625,8 +625,8 @@ function HollowTokenConfig() {
 
 function GameConfig() {
   const { data: currentFee } = useReadContract({
-    address: THE_HOLLOW_GAME_ADDRESS,
-    abi: THE_HOLLOW_GAME_ABI,
+    address: THE_ARIWA_GAME_ADDRESS,
+    abi: THE_ARIWA_GAME_ABI,
     functionName: "getPlayPrice",
   });
 
@@ -657,8 +657,8 @@ function GameConfig() {
         return;
       }
       writeFee({
-        address: THE_HOLLOW_GAME_ADDRESS,
-        abi: THE_HOLLOW_GAME_ABI,
+        address: THE_ARIWA_GAME_ADDRESS,
+        abi: THE_ARIWA_GAME_ABI,
         functionName: "setPlayPrice",
         args: [wei],
       });
@@ -675,11 +675,11 @@ function GameConfig() {
       <div className="p-6">
         <div className="space-y-3 max-w-md">
           <div>
-            <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-1">Play Fee (HOLLOW)</p>
+            <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-1">Play Fee (ARIWA)</p>
             <p className="text-sm text-text-primary/60">
-              Current: <span className="text-[#0062df] font-bold">{currentFee !== undefined ? formatEther(currentFee as bigint) : "..."} HOLLOW</span>
+              Current: <span className="text-[#0062df] font-bold">{currentFee !== undefined ? formatEther(currentFee as bigint) : "..."} ARIWA</span>
             </p>
-            <p className="text-[10px] text-muted-blue mt-1">Amount of HOLLOW each player pays to play. Must be greater than 0.</p>
+            <p className="text-[10px] text-muted-blue mt-1">Amount of ARIWA each player pays to play. Must be greater than 0.</p>
           </div>
           <div className="flex gap-2">
             <input
@@ -692,7 +692,7 @@ function GameConfig() {
             <button
               onClick={handleSetFee}
               disabled={feePending || feeConfirming}
-              className="px-4 py-3 bg-[#ffffff] hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-black/10"
+              className="px-4 py-3 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {feePending ? "Sign..." : feeConfirming ? "Confirming..." : "Update"}
             </button>

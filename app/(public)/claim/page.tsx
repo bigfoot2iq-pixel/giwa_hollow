@@ -106,8 +106,8 @@ export default function ClaimPage() {
   const onCooldown = canClaim === false;
 
   const utilities = [
-    { icon: "swap_horiz", text: "HOLLOW is fully tradable — transfer and exchange freely." },
-    { icon: "confirmation_number", text: "Create and join raffles using HOLLOW tokens." },
+    { icon: "swap_horiz", text: "ARIWA is fully tradable — transfer and exchange freely." },
+    { icon: "confirmation_number", text: "Create and join raffles using ARIWA tokens." },
     { icon: "redeem", text: "Unlock free mints and exclusive drops." },
     { icon: "sports_esports", text: "Play games and compete on the leaderboard." },
   ];
@@ -123,11 +123,11 @@ export default function ClaimPage() {
                 <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-accent-warm/15">
                   <span className="material-symbols-outlined text-accent-warm" style={{ fontSize: 24 }}>redeem</span>
                 </div>
-                <h1 className="text-2xl font-header text-text-primary sm:text-3xl">Claim HOLLOW Tokens</h1>
+                <h1 className="text-2xl font-header text-text-primary sm:text-3xl">Claim ARIWA Tokens</h1>
               </div>
 
               <p className="mb-6 max-w-md text-sm text-muted-blue sm:text-base">
-                Pay the fee and mint HOLLOW tokens. Tokens are transferable and unlock raffles and future drops.
+                Pay the fee and mint ARIWA tokens. Tokens are transferable and unlock raffles and future drops.
               </p>
 
               {/* Claim summary — stat tiles */}
@@ -136,7 +136,7 @@ export default function ClaimPage() {
                   <span className="block text-[10px] font-bold uppercase tracking-widest text-muted-blue">You Receive</span>
                   <span className="mt-2 block font-display text-xl font-bold text-text-primary sm:text-2xl">
                     {amountValue !== undefined ? formatTokenBalance(amountValue) : "…"}
-                    <span className="ml-1.5 text-xs font-semibold text-muted-blue">HOLLOW</span>
+                    <span className="ml-1.5 text-xs font-semibold text-muted-blue">ARIWA</span>
                   </span>
                 </div>
                 <div className="rounded-xl border border-black/10 p-4">
@@ -205,7 +205,7 @@ export default function ClaimPage() {
 
             {/* Right Side - Utility */}
             <div className="flex-shrink-0 lg:w-72">
-              <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-muted-blue">HOLLOW Utility</h2>
+              <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-muted-blue">ARIWA Utility</h2>
               <div className="space-y-3">
                 {utilities.map((u) => (
                   <div key={u.icon} className="flex items-start gap-3">

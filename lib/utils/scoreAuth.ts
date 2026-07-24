@@ -13,7 +13,7 @@ export function buildScoreMessage(p: {
   score: number;
 }): string {
   return [
-    "The Hollow — Score Submission",
+    "ARIWA — Score Submission",
     `wallet: ${getAddress(p.walletAddress)}`,
     `session: ${p.sessionId}`,
     `score: ${p.score}`,

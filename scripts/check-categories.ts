@@ -7,13 +7,13 @@ async function main() {
     throw new Error("Set NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS in .env.local");
   }
 
-  const HollowToken = await ethers.getContractAt("HollowToken", address);
+  const AriwaToken = await ethers.getContractAt("AriwaToken", address);
 
   console.log("Token:", address);
-  console.log("Claim Amount:", ethers.formatEther(await HollowToken.claimAmount()), "HOLLOW");
-  console.log("Claim Fee:", ethers.formatEther(await HollowToken.claimFee()), "ETH");
-  console.log("Cooldown:", (await HollowToken.claimCooldown()).toString(), "seconds");
-  console.log("Owner:", await HollowToken.owner());
+  console.log("Claim Amount:", ethers.formatEther(await AriwaToken.claimAmount()), "ARIWA");
+  console.log("Claim Fee:", ethers.formatEther(await AriwaToken.claimFee()), "ETH");
+  console.log("Cooldown:", (await AriwaToken.claimCooldown()).toString(), "seconds");
+  console.log("Owner:", await AriwaToken.owner());
 }
 
 main().catch(console.error);

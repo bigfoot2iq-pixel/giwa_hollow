@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
-contract HollowToken is ERC20, ERC20Burnable, Ownable, ReentrancyGuard, Pausable {
+contract AriwaToken is ERC20, ERC20Burnable, Ownable, ReentrancyGuard, Pausable {
     uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10 ** 18;
 
     // Single, admin-controlled claim config. No tiers.

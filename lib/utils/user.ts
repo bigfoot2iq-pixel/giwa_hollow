@@ -1,5 +1,5 @@
 import supabase from '@/lib/supabase/game-client';
-import { TheHollowUser, UserRegistrationData, WalletType } from '@/lib/supabase/types';
+import { TheAriwaUser, UserRegistrationData, WalletType } from '@/lib/supabase/types';
 
 /**
  * Compress an image file to a smaller size suitable for profile avatars
@@ -74,7 +74,7 @@ const compressImage = async (file: File, maxSize: number = 200, quality: number 
 /**
  * Get user by wallet address and type
  */
-export const getUserByWallet = async (walletAddress: string, walletType?: WalletType): Promise<TheHollowUser | null> => {
+export const getUserByWallet = async (walletAddress: string, walletType?: WalletType): Promise<TheAriwaUser | null> => {
   try {
     let query = supabase
       .from('litvm_raffle_game_users')
@@ -103,7 +103,7 @@ export const getUserByWallet = async (walletAddress: string, walletType?: Wallet
 /**
  * Create or update user on wallet connection
  */
-export const upsertUser = async (walletAddress: string, walletType: WalletType): Promise<TheHollowUser | null> => {
+export const upsertUser = async (walletAddress: string, walletType: WalletType): Promise<TheAriwaUser | null> => {
   try {
     const { data, error } = await supabase
       .rpc('upsert_litvm_raffle_game_user', { 
@@ -130,7 +130,7 @@ export const updateUserRegistration = async (
   walletAddress: string,
   registrationData: UserRegistrationData,
   walletType?: WalletType
-): Promise<TheHollowUser | null> => {
+): Promise<TheAriwaUser | null> => {
   try {
     console.log('updateUserRegistration called with:', { walletAddress, registrationData });
     

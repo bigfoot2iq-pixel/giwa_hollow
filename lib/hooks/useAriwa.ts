@@ -1,12 +1,12 @@
 "use client";
 
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { contracts, HollowTokenABI } from "@/lib/contracts";
+import { contracts, AriwaTokenABI } from "@/lib/contracts";
 
 export function useCanClaim(address: `0x${string}` | undefined) {
   return useReadContract({
-    address: contracts.hollowToken.address,
-    abi: HollowTokenABI,
+    address: contracts.ariwaToken.address,
+    abi: AriwaTokenABI,
     functionName: "canClaim",
     args: address ? [address] : undefined,
     query: {
@@ -17,16 +17,16 @@ export function useCanClaim(address: `0x${string}` | undefined) {
 
 export function useClaimCooldown() {
   return useReadContract({
-    address: contracts.hollowToken.address,
-    abi: HollowTokenABI,
+    address: contracts.ariwaToken.address,
+    abi: AriwaTokenABI,
     functionName: "claimCooldown",
   });
 }
 
 export function useGetLastClaimTimestamp(address: `0x${string}` | undefined) {
   return useReadContract({
-    address: contracts.hollowToken.address,
-    abi: HollowTokenABI,
+    address: contracts.ariwaToken.address,
+    abi: AriwaTokenABI,
     functionName: "getLastClaimTimestamp",
     args: address ? [address] : undefined,
     query: {
@@ -35,10 +35,10 @@ export function useGetLastClaimTimestamp(address: `0x${string}` | undefined) {
   });
 }
 
-export function useHollowBalance(address: `0x${string}` | undefined) {
+export function useAriwaBalance(address: `0x${string}` | undefined) {
   return useReadContract({
-    address: contracts.hollowToken.address,
-    abi: HollowTokenABI,
+    address: contracts.ariwaToken.address,
+    abi: AriwaTokenABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
     query: {
@@ -49,16 +49,16 @@ export function useHollowBalance(address: `0x${string}` | undefined) {
 
 export function useClaimAmount() {
   return useReadContract({
-    address: contracts.hollowToken.address,
-    abi: HollowTokenABI,
+    address: contracts.ariwaToken.address,
+    abi: AriwaTokenABI,
     functionName: "claimAmount",
   });
 }
 
 export function useClaimFee() {
   return useReadContract({
-    address: contracts.hollowToken.address,
-    abi: HollowTokenABI,
+    address: contracts.ariwaToken.address,
+    abi: AriwaTokenABI,
     functionName: "claimFee",
   });
 }
@@ -72,8 +72,8 @@ export function useClaimTokens() {
 
   const claimTokens = (fee: bigint) => {
     writeContract({
-      address: contracts.hollowToken.address,
-      abi: HollowTokenABI,
+      address: contracts.ariwaToken.address,
+      abi: AriwaTokenABI,
       functionName: "claimTokens",
       args: [],
       value: fee,

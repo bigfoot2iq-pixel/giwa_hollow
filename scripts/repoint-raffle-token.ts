@@ -1,7 +1,7 @@
 import pkg from "hardhat";
 const { ethers } = pkg;
 
-// Points the deployed HollowRaffles at the current HollowToken (both from .env.local).
+// Points the deployed AriwaRaffles at the current AriwaToken (both from .env.local).
 const RAFFLES = process.env.NEXT_PUBLIC_RAFFLES_CONTRACT_ADDRESS;
 const TOKEN = process.env.NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS;
 
@@ -9,7 +9,7 @@ async function main() {
   if (!RAFFLES || !ethers.isAddress(RAFFLES)) throw new Error("Set NEXT_PUBLIC_RAFFLES_CONTRACT_ADDRESS");
   if (!TOKEN || !ethers.isAddress(TOKEN)) throw new Error("Set NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS");
 
-  const raffles = await ethers.getContractAt("HollowRaffles", RAFFLES);
+  const raffles = await ethers.getContractAt("AriwaRaffles", RAFFLES);
   const current = await raffles.raffleToken();
   console.log("Raffles:", RAFFLES);
   console.log("Current raffleToken:", current);

@@ -4,13 +4,13 @@ function abiOf(artifactPath) {
   return JSON.parse(readFileSync(artifactPath, "utf8")).abi;
 }
 
-const token = abiOf("artifacts/contracts/HollowToken.sol/HollowToken.json");
-const raffles = abiOf("artifacts/contracts/HollowRaffles.sol/HollowRaffles.json");
-const game = abiOf("artifacts/contracts/TheHollowGame.sol/TheHollowGame.json");
+const token = abiOf("artifacts/contracts/AriwaToken.sol/AriwaToken.json");
+const raffles = abiOf("artifacts/contracts/AriwaRaffles.sol/AriwaRaffles.json");
+const game = abiOf("artifacts/contracts/TheAriwaGame.sol/TheAriwaGame.json");
 
 writeFileSync(
-  "lib/contracts/HollowTokenABI.ts",
-  `export const HollowTokenABI = ${JSON.stringify(token, null, 2)} as const;\n`,
+  "lib/contracts/AriwaTokenABI.ts",
+  `export const AriwaTokenABI = ${JSON.stringify(token, null, 2)} as const;\n`,
 );
 
 writeFileSync(
@@ -19,14 +19,14 @@ writeFileSync(
 );
 
 writeFileSync(
-  "lib/contracts/theHollowGame.ts",
-  `// TheHollowGame Contract ABI and Config\n` +
-    `// Deploy the contract from contracts/TheHollowGame.sol and update the address below\n\n` +
-    "export const THE_HOLLOW_GAME_ADDRESS = process.env.NEXT_PUBLIC_GAME_CONTRACT_ADDRESS as `0x${string}` || '0x0000000000000000000000000000000000000000';\n\n" +
-    `export const THE_HOLLOW_GAME_ABI = ${JSON.stringify(game, null, 2)} as const;\n`,
+  "lib/contracts/theAriwaGame.ts",
+  `// TheAriwaGame Contract ABI and Config\n` +
+    `// Deploy the contract from contracts/TheAriwaGame.sol and update the address below\n\n` +
+    "export const THE_ARIWA_GAME_ADDRESS = process.env.NEXT_PUBLIC_GAME_CONTRACT_ADDRESS as `0x${string}` || '0x0000000000000000000000000000000000000000';\n\n" +
+    `export const THE_ARIWA_GAME_ABI = ${JSON.stringify(game, null, 2)} as const;\n`,
 );
 
 console.log("ABIs written:");
-console.log("  HollowTokenABI.ts       fns:", token.length);
+console.log("  AriwaTokenABI.ts       fns:", token.length);
 console.log("  RobinhoodRafflesABI.ts  fns:", raffles.length);
-console.log("  theHollowGame.ts        fns:", game.length);
+console.log("  theAriwaGame.ts        fns:", game.length);

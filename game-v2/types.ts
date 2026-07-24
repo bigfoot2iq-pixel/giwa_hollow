@@ -1,4 +1,4 @@
-// Game V2 Types - The Hollow: Last Stand
+// Game V2 Types - ARIWA: Last Stand
 
 export const CANVAS_WIDTH = 800
 export const CANVAS_HEIGHT = 450
@@ -50,7 +50,7 @@ export type PlayerState = 'idle' | 'run' | 'jump' | 'attack' | 'chargedAttack' |
 
 // Level themes with colors
 export const LEVEL_THEMES = [
-  { name: 'The Hollow', bgTop: '#0a0e1a', bgMid: '#1a1f2e', bgBottom: '#0a0e1a', accent: '#f6ff0d', ground: '#2a2f3e' },
+  { name: 'ARIWA', bgTop: '#0a0e1a', bgMid: '#1a1f2e', bgBottom: '#0a0e1a', accent: '#f6ff0d', ground: '#2a2f3e' },
   { name: 'Blood Moon', bgTop: '#1a0a0a', bgMid: '#2e1a1a', bgBottom: '#1a0a0a', accent: '#ff4444', ground: '#3e2a2a' },
   { name: 'Frozen Depths', bgTop: '#0a1a1a', bgMid: '#1a2e3e', bgBottom: '#0a1a1a', accent: '#44ffff', ground: '#2a3e4e' },
   { name: 'Cursed Forest', bgTop: '#0a1a0a', bgMid: '#1a2e1a', bgBottom: '#0a1a0a', accent: '#44ff44', ground: '#2a3e2a' },

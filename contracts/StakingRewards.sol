@@ -9,10 +9,10 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title StakingRewards
- * @dev Distributes Hollow token rewards to avKAT and vKAT stakers.
+ * @dev Distributes Ariwa token rewards to avKAT and vKAT stakers.
  *
  * Each token (avKAT / vKAT) has:
- *   - 3 owner-configurable tiers (threshold + hollow amount)
+ *   - 3 owner-configurable tiers (threshold + ariwa amount)
  *   - Its own lastClaim timestamp per wallet
  *
  * A single global claimWindowHours applies to both.
@@ -29,12 +29,12 @@ contract StakingRewards is Ownable, ReentrancyGuard {
 
     struct Tier {
         uint256 threshold;    // minimum staked balance to qualify (in wei)
-        uint256 hollowAmount; // hollow tokens rewarded at this tier (in wei)
+        uint256 ariwaAmount; // ariwa tokens rewarded at this tier (in wei)
     }
 
     // ─── State ─────────────────────────────────────────────────────────────────
 
-    IERC20 public immutable hollowToken;
+    IERC20 public immutable ariwaToken;
 
     address public trustedSigner;
     uint256 public claimWindowHours; // global, applies to both tokens
@@ -63,15 +63,15 @@ contract StakingRewards is Ownable, ReentrancyGuard {
     // ─── Constructor ───────────────────────────────────────────────────────────
 
     constructor(
-        address hollowToken_,
+        address ariwaToken_,
         address trustedSigner_,
         uint256 claimWindowHours_
     ) Ownable(msg.sender) {
-        require(hollowToken_ != address(0), "Invalid hollow token");
+        require(ariwaToken_ != address(0), "Invalid ariwa token");
         require(trustedSigner_ != address(0), "Invalid signer");
         require(claimWindowHours_ > 0, "Window must be > 0");
 
-        hollowToken = IERC20(hollowToken_);
+        ariwaToken = IERC20(ariwaToken_);
         trustedSigner = trustedSigner_;
         claimWindowHours = claimWindowHours_;
     }
@@ -81,7 +81,7 @@ contract StakingRewards is Ownable, ReentrancyGuard {
     /**
      * @notice Set avKAT reward tiers. Thresholds must be strictly descending.
      * @param thresholds [tier0, tier1, tier2] minimum balances in wei, highest first
-     * @param amounts    [tier0, tier1, tier2] hollow amounts in wei
+     * @param amounts    [tier0, tier1, tier2] ariwa amounts in wei
      */
     function setAVKATTiers(
         uint256[3] calldata thresholds,
@@ -101,7 +101,7 @@ contract StakingRewards is Ownable, ReentrancyGuard {
     /**
      * @notice Set vKAT reward tiers. Thresholds must be strictly descending.
      * @param thresholds [tier0, tier1, tier2] minimum balances in wei, highest first
-     * @param amounts    [tier0, tier1, tier2] hollow amounts in wei
+     * @param amounts    [tier0, tier1, tier2] ariwa amounts in wei
      */
     function setVKATTiers(
         uint256[3] calldata thresholds,
@@ -136,8 +136,8 @@ contract StakingRewards is Ownable, ReentrancyGuard {
 
     function withdrawTreasury(uint256 amount) external onlyOwner {
         require(amount > 0, "Amount must be > 0");
-        require(hollowToken.balanceOf(address(this)) >= amount, "Insufficient treasury");
-        hollowToken.transfer(owner(), amount);
+        require(ariwaToken.balanceOf(address(this)) >= amount, "Insufficient treasury");
+        ariwaToken.transfer(owner(), amount);
         emit TreasuryWithdrawn(owner(), amount);
     }
 
@@ -145,7 +145,7 @@ contract StakingRewards is Ownable, ReentrancyGuard {
 
     /**
      * @notice Claim avKAT staking rewards using a backend-signed voucher.
-     * @param amount    Hollow amount to receive (in wei), as signed by backend
+     * @param amount    Ariwa amount to receive (in wei), as signed by backend
      * @param expiry    Unix timestamp after which the voucher is invalid
      * @param nonce     Unique value to prevent voucher reuse
      * @param signature Backend signature over (msg.sender, amount, expiry, nonce, chainId)
@@ -172,7 +172,7 @@ contract StakingRewards is Ownable, ReentrancyGuard {
 
     /**
      * @notice Claim vKAT staking rewards using a backend-signed voucher.
-     * @param amount    Hollow amount to receive (in wei), as signed by backend
+     * @param amount    Ariwa amount to receive (in wei), as signed by backend
      * @param expiry    Unix timestamp after which the voucher is invalid
      * @param nonce     Unique value to prevent voucher reuse
      * @param signature Backend signature over (msg.sender, amount, expiry, nonce, chainId)
@@ -222,9 +222,9 @@ contract StakingRewards is Ownable, ReentrancyGuard {
 
     function _executeClaim(uint256 amount, bytes32 nonce) internal {
         require(amount > 0, "Amount must be > 0");
-        require(hollowToken.balanceOf(address(this)) >= amount, "Insufficient treasury");
+        require(ariwaToken.balanceOf(address(this)) >= amount, "Insufficient treasury");
         usedNonces[nonce] = true;
-        hollowToken.transfer(msg.sender, amount);
+        ariwaToken.transfer(msg.sender, amount);
     }
 
     // ─── Views ─────────────────────────────────────────────────────────────────
@@ -248,9 +248,9 @@ contract StakingRewards is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Current Hollow token balance held by this contract.
+     * @notice Current Ariwa token balance held by this contract.
      */
     function treasuryBalance() external view returns (uint256) {
-        return hollowToken.balanceOf(address(this));
+        return ariwaToken.balanceOf(address(this));
     }
 }

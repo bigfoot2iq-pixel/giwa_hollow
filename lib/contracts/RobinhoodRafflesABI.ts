@@ -268,13 +268,13 @@ export const RobinhoodRafflesABI = [
       },
       {
         "indexed": false,
-        "internalType": "enum HollowRaffles.RaffleState",
+        "internalType": "enum AriwaRaffles.RaffleState",
         "name": "oldState",
         "type": "uint8"
       },
       {
         "indexed": false,
-        "internalType": "enum HollowRaffles.RaffleState",
+        "internalType": "enum AriwaRaffles.RaffleState",
         "name": "newState",
         "type": "uint8"
       }
@@ -393,7 +393,7 @@ export const RobinhoodRafflesABI = [
   {
     "inputs": [
       {
-        "internalType": "enum HollowRaffles.PrizeType",
+        "internalType": "enum AriwaRaffles.PrizeType",
         "name": "prizeType_",
         "type": "uint8"
       },
@@ -475,7 +475,7 @@ export const RobinhoodRafflesABI = [
   {
     "inputs": [
       {
-        "internalType": "enum HollowRaffles.PrizeType",
+        "internalType": "enum AriwaRaffles.PrizeType",
         "name": "prizeType_",
         "type": "uint8"
       },
@@ -509,7 +509,7 @@ export const RobinhoodRafflesABI = [
   {
     "inputs": [
       {
-        "internalType": "enum HollowRaffles.PrizeType",
+        "internalType": "enum AriwaRaffles.PrizeType",
         "name": "prizeType_",
         "type": "uint8"
       },
@@ -654,7 +654,7 @@ export const RobinhoodRafflesABI = [
     "name": "getRaffleInfo",
     "outputs": [
       {
-        "internalType": "enum HollowRaffles.PrizeType",
+        "internalType": "enum AriwaRaffles.PrizeType",
         "name": "prizeType",
         "type": "uint8"
       },
@@ -669,7 +669,7 @@ export const RobinhoodRafflesABI = [
         "type": "uint256"
       },
       {
-        "internalType": "enum HollowRaffles.RaffleState",
+        "internalType": "enum AriwaRaffles.RaffleState",
         "name": "state",
         "type": "uint8"
       },
@@ -722,7 +722,7 @@ export const RobinhoodRafflesABI = [
     "name": "getRaffleState",
     "outputs": [
       {
-        "internalType": "enum HollowRaffles.RaffleState",
+        "internalType": "enum AriwaRaffles.RaffleState",
         "name": "",
         "type": "uint8"
       }
@@ -875,7 +875,7 @@ export const RobinhoodRafflesABI = [
     "name": "raffles",
     "outputs": [
       {
-        "internalType": "enum HollowRaffles.PrizeType",
+        "internalType": "enum AriwaRaffles.PrizeType",
         "name": "prizeType",
         "type": "uint8"
       },
@@ -885,7 +885,7 @@ export const RobinhoodRafflesABI = [
         "type": "address"
       },
       {
-        "internalType": "enum HollowRaffles.RaffleState",
+        "internalType": "enum AriwaRaffles.RaffleState",
         "name": "state",
         "type": "uint8"
       },

@@ -1,4 +1,4 @@
 export { giwaSepolia, hardhatLocal, contracts, ADMIN_WALLET } from "./config";
-export { HollowTokenABI } from "./HollowTokenABI";
+export { AriwaTokenABI } from "./AriwaTokenABI";
 export { RobinhoodRafflesABI } from "./RobinhoodRafflesABI";
-export { THE_HOLLOW_GAME_ADDRESS, THE_HOLLOW_GAME_ABI } from "./theHollowGame";
+export { THE_ARIWA_GAME_ADDRESS, THE_ARIWA_GAME_ABI } from "./theAriwaGame";

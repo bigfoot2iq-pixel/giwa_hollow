@@ -133,7 +133,7 @@ export default function LastStandContainer() {
             <span className="material-symbols-outlined text-muted-blue text-5xl sm:text-6xl mb-4 sm:mb-6 block">account_balance_wallet</span>
             <h3 className="text-xl sm:text-2xl font-header text-text-primary mb-3 sm:mb-4">Connect Your Wallet</h3>
             <p className="text-muted-blue text-sm sm:text-base mb-6 sm:mb-8 max-w-md mx-auto px-4">
-              Face the horde in The Hollow: Last Stand. Connect your wallet to begin your legendary defense.
+              Face the horde in ARIWA: Last Stand. Connect your wallet to begin your legendary defense.
             </p>
             <div className="flex justify-center">
               <ConnectButton.Custom>
@@ -153,7 +153,7 @@ export default function LastStandContainer() {
                   return (
                     <button
                       onClick={openConnectModal}
-                      className="px-6 sm:px-8 py-3 sm:py-4 bg-[#ffffff] border border-black/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all inline-flex items-center gap-2"
+                      className="px-6 sm:px-8 py-3 sm:py-4 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all inline-flex items-center gap-2"
                     >
                       <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
                       Connect Wallet
@@ -167,7 +167,7 @@ export default function LastStandContainer() {
           // Pay to Play / Session Selection
           <div className="text-center py-12 sm:py-16">
             <span className="material-symbols-outlined text-[#0062df] text-5xl sm:text-6xl mb-4 sm:mb-6 block">swords</span>
-            <h3 className="text-xl sm:text-2xl font-header text-text-primary mb-2">The Hollow</h3>
+            <h3 className="text-xl sm:text-2xl font-header text-text-primary mb-2">ARIWA</h3>
             <p className="text-muted-blue mb-6 sm:mb-8 text-sm sm:text-base">Last Stand Mode</p>
 
             <div className="max-w-md mx-auto space-y-4 sm:space-y-6 px-4">
@@ -192,7 +192,7 @@ export default function LastStandContainer() {
 
                   <button
                     onClick={handleStartWithSession}
-                    className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-[#ffffff] border border-black/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all"
+                    className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all"
                   >
                     <span className="material-symbols-outlined text-sm mr-2 inline-block">play_arrow</span>
                     Continue Playing
@@ -207,26 +207,26 @@ export default function LastStandContainer() {
                     </div>
                   )}
 
-                  {/* Play cost in HOLLOW */}
+                  {/* Play cost in ARIWA */}
                   <div className="ui-container p-4 rounded bg-black/5 border border-black/10">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-blue mb-1">Play Cost</p>
                     <p className="text-lg font-display font-bold text-text-primary">
                       {isLoadingPrice ? '...' : playPriceFormatted}
                     </p>
                     {!hasEnoughBalance && (
-                      <p className="text-[11px] text-red-400 mt-1">Not enough HOLLOW — claim tokens below.</p>
+                      <p className="text-[11px] text-red-400 mt-1">Not enough ARIWA — claim tokens below.</p>
                     )}
                   </div>
 
                   <button
                     onClick={handlePayToPlay}
                     disabled={isPaying || isConfirming || isCreatingSession || isLoadingPrice || step !== 'idle' || !hasEnoughBalance}
-                    className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-[#ffffff] border border-black/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {step === 'approving' ? (
                       <>
                         <span className="inline-block w-4 h-4 border-2 border-dark-navy border-t-transparent rounded-full animate-spin mr-2"></span>
-                        Approving HOLLOW...
+                        Approving ARIWA...
                       </>
                     ) : isPaying ? (
                       <>
@@ -255,14 +255,14 @@ export default function LastStandContainer() {
                     One payment = one game round until you lose
                   </p>
 
-                  {/* Get HOLLOW to pay, plus native gas for the tx */}
+                  {/* Get ARIWA to pay, plus native gas for the tx */}
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
                     <Link
                       href="/claim"
                       className="flex items-center justify-center gap-2 text-xs font-bold text-[#0062df] transition-opacity hover:opacity-80"
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: 16 }}>redeem</span>
-                      Need HOLLOW? Claim tokens
+                      Need ARIWA? Claim tokens
                     </Link>
                     <Link
                       href="/faucet"

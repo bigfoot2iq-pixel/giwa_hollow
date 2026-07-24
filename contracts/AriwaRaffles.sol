@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  * @title RobinhoodRaffles
  * @dev Minimal on-chain raffle contract with off-chain entry tracking.
  */
-contract HollowRaffles is Ownable, ReentrancyGuard, Pausable {
+contract AriwaRaffles is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
     enum PrizeType { ERC20, ERC721, ERC6220 }

@@ -34,7 +34,7 @@ const copyToClipboard = (text: string) => {
 
 export default function Leaderboard() {
   const [copiedWallet, setCopiedWallet] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'game' | 'hollow'>('hollow');
+  const [activeTab, setActiveTab] = useState<'game' | 'ariwa'>('ariwa');
   const { user } = useMultiUser();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -44,11 +44,11 @@ export default function Leaderboard() {
     if (tab === 'game') {
       setActiveTab('game');
     } else {
-      setActiveTab('hollow');
+      setActiveTab('ariwa');
     }
   }, [searchParams]);
 
-  const handleTabChange = (tab: 'game' | 'hollow') => {
+  const handleTabChange = (tab: 'game' | 'ariwa') => {
     setActiveTab(tab);
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', tab);
@@ -89,8 +89,8 @@ export default function Leaderboard() {
     loadMore: holdersLoadMore,
     isEmpty: holdersIsEmpty
   } = useTokenHolders({
-    tokenAddress: contracts.hollowToken.address,
-    autoRefresh: activeTab === 'hollow',
+    tokenAddress: contracts.ariwaToken.address,
+    autoRefresh: activeTab === 'ariwa',
     refreshInterval: 30000
   });
 
@@ -111,20 +111,20 @@ export default function Leaderboard() {
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
         <button
-          onClick={() => handleTabChange('hollow')}
+          onClick={() => handleTabChange('ariwa')}
           className={`px-4 py-2 font-bold text-xs uppercase tracking-widest rounded transition-all ${
-            activeTab === 'hollow'
-              ? 'bg-[#ffffff] border border-black/10 text-text-primary'
+            activeTab === 'ariwa'
+              ? 'bg-accent-warm border border-transparent text-background'
               : 'bg-black/5 text-foreground hover:bg-black/10 border border-black/20'
           }`}
         >
-          Hollow Token
+          Ariwa Token
         </button>
         <button
           onClick={() => handleTabChange('game')}
           className={`px-4 py-2 font-bold text-xs uppercase tracking-widest rounded transition-all ${
             activeTab === 'game'
-              ? 'bg-[#ffffff] border border-black/10 text-text-primary'
+              ? 'bg-accent-warm border border-transparent text-background'
               : 'bg-black/5 text-foreground hover:bg-black/10 border border-black/20'
           }`}
         >
@@ -202,7 +202,7 @@ export default function Leaderboard() {
               {activeTab === 'game' ? 'No warriors yet' : 'No holders yet'}
             </p>
             <p className="text-sm text-muted-blue">
-              {activeTab === 'game' ? 'Be the first to achieve a high score!' : 'Be the first to claim Hollow Tokens!'}
+              {activeTab === 'game' ? 'Be the first to achieve a high score!' : 'Be the first to claim Ariwa Tokens!'}
             </p>
           </div>
         )}
@@ -275,7 +275,7 @@ export default function Leaderboard() {
                 );
               })
             ) : (
-              // Hollow Token Table
+              // Ariwa Token Table
               holders.map((holder) => (
                 <div
                   key={holder.address}
@@ -375,7 +375,7 @@ export default function Leaderboard() {
         <p className="text-muted-blue text-sm lg:text-base mb-4">Ready to claim your place among the legends?</p>
         <button
           onClick={() => router.push('/game')}
-          className="px-6 lg:px-8 py-2.5 lg:py-3 bg-[#ffffff] border border-black/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-xs lg:text-sm transition-all"
+          className="px-6 lg:px-8 py-2.5 lg:py-3 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-xs lg:text-sm transition-all"
         >
           Play Now
         </button>

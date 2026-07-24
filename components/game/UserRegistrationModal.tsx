@@ -3,14 +3,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
-import { UserRegistrationData, TheHollowUser } from '@/lib/supabase/types';
+import { UserRegistrationData, TheAriwaUser } from '@/lib/supabase/types';
 
 interface UserRegistrationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: UserRegistrationData) => Promise<boolean>;
   loading: boolean;
-  user?: TheHollowUser | null;
+  user?: TheAriwaUser | null;
 }
 
 export default function UserRegistrationModal({
@@ -154,7 +154,7 @@ export default function UserRegistrationModal({
               <User size={32} className="text-text-primary" />
             </motion.div>
             <h2 className="text-2xl font-bold text-text-primary mb-2">
-              {user?.is_registered ? 'Edit Profile' : 'Welcome to The Hollow'}
+              {user?.is_registered ? 'Edit Profile' : 'Welcome to ARIWA'}
             </h2>
             <p className="text-text-secondary">
               {user?.is_registered ? 'Update your profile information' : 'Complete your profile to get started'}

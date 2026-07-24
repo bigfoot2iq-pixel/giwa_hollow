@@ -1,9 +1,9 @@
-// TheHollowGame Contract ABI and Config
-// Deploy the contract from contracts/TheHollowGame.sol and update the address below
+// TheAriwaGame Contract ABI and Config
+// Deploy the contract from contracts/TheAriwaGame.sol and update the address below
 
-export const THE_HOLLOW_GAME_ADDRESS = process.env.NEXT_PUBLIC_GAME_CONTRACT_ADDRESS as `0x${string}` || '0x0000000000000000000000000000000000000000';
+export const THE_ARIWA_GAME_ADDRESS = process.env.NEXT_PUBLIC_GAME_CONTRACT_ADDRESS as `0x${string}` || '0x0000000000000000000000000000000000000000';
 
-export const THE_HOLLOW_GAME_ABI = [
+export const THE_ARIWA_GAME_ABI = [
   {
     "inputs": [
       {
@@ -156,6 +156,19 @@ export const THE_HOLLOW_GAME_ABI = [
   },
   {
     "inputs": [],
+    "name": "ariwaToken",
+    "outputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "getBalance",
     "outputs": [
       {
@@ -175,19 +188,6 @@ export const THE_HOLLOW_GAME_ABI = [
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "hollowToken",
-    "outputs": [
-      {
-        "internalType": "contract IERC20",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",

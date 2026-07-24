@@ -8,7 +8,9 @@ import { format } from "date-fns";
 import { RaffleEntryForm } from "@/components/raffle";
 import type { Prize, PrizeType, Raffle, RaffleStatus, Winner } from "@/lib/supabase";
 import { getTokenMetadataCached, fromTokenUnits } from "@/lib/utils/erc20";
-import { contracts } from "@/lib/contracts/config";
+import { contracts, giwaSepolia } from "@/lib/contracts/config";
+
+const EXPLORER_TX_URL = `${giwaSepolia.blockExplorers?.default.url ?? "https://sepolia-explorer.giwa.io"}/tx`;
 
 const prizeTypeLabels: Record<PrizeType, string> = {
   erc20: "Token",
@@ -44,7 +46,7 @@ export default function RaffleDetailView() {
   const [data, setData] = useState<RaffleData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [entryTokenSymbol, setEntryTokenSymbol] = useState<string>("HOLLOW");
+  const [entryTokenSymbol, setEntryTokenSymbol] = useState<string>("ARIWA");
   const [prizesWithMetadata, setPrizesWithMetadata] = useState<PrizeWithMetadata[]>([]);
 
   // Entries pagination state
@@ -133,7 +135,7 @@ export default function RaffleDetailView() {
   // Fetch entry token metadata
   useEffect(() => {
     const fetchEntryTokenMetadata = async () => {
-      const metadata = await getTokenMetadataCached(contracts.hollowToken.address, false);
+      const metadata = await getTokenMetadataCached(contracts.ariwaToken.address, false);
       if (metadata) {
         setEntryTokenSymbol(metadata.symbol);
       }
@@ -370,7 +372,7 @@ export default function RaffleDetailView() {
                   <button
                     type="submit"
                     disabled={entriesLoading}
-                    className="px-4 py-2 bg-[#ffffff] text-text-primary font-bold rounded border border-black/10 hover:brightness-125 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-4 py-2 bg-accent-warm text-background font-bold rounded hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     <span className="material-symbols-outlined text-lg">search</span>
                     Search
@@ -402,7 +404,7 @@ export default function RaffleDetailView() {
                       {entries.map((entry, index) => (
                         <li key={`${entry.tx_hash}-${index}`}>
                           <Link
-                            href={`https://katanascan.com/tx/${entry.tx_hash}`}
+                            href={`${EXPLORER_TX_URL}/${entry.tx_hash}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center justify-between p-4 bg-black/5 rounded border border-black/10 hover:bg-black/10 hover:border-[#0062df]/30 transition-all group"
@@ -439,7 +441,7 @@ export default function RaffleDetailView() {
                         <button
                           onClick={handleLoadMore}
                           disabled={entriesLoading}
-                          className="px-6 py-3 bg-[#ffffff] text-text-primary font-bold rounded border border-black/10 hover:brightness-125 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-6 py-3 bg-accent-warm text-background font-bold rounded hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {entriesLoading ? "Loading..." : "Load More"}
                         </button>
@@ -476,7 +478,7 @@ export default function RaffleDetailView() {
                       {winners.map((winner, index) => (
                         <li key={winner.id}>
                           <Link
-                            href={winner.distribution_tx_hash ? `https://katanascan.com/tx/${winner.distribution_tx_hash}` : "#"}
+                            href={winner.distribution_tx_hash ? `${EXPLORER_TX_URL}/${winner.distribution_tx_hash}` : "#"}
                             target={winner.distribution_tx_hash ? "_blank" : undefined}
                             rel={winner.distribution_tx_hash ? "noopener noreferrer" : undefined}
                             className={`flex items-center justify-between p-4 bg-black/5 rounded border border-black/10 ${winner.distribution_tx_hash

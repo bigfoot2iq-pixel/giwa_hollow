@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
-import { TheHollowUser, UserRegistrationData } from '@/lib/supabase/types';
+import { TheAriwaUser, UserRegistrationData } from '@/lib/supabase/types';
 import { getUserByWallet, upsertUser, updateUserRegistration } from '@/lib/utils/user';
 import { clearXAuthSession } from '@/lib/utils/x-auth';
 
 interface UseMultiUserReturn {
-  user: TheHollowUser | null;
+  user: TheAriwaUser | null;
   loading: boolean;
   error: string | null;
   refreshUser: () => Promise<void>;
@@ -17,7 +17,7 @@ interface UseMultiUserReturn {
 
 export const useMultiUser = (): UseMultiUserReturn => {
   const { address, isConnected } = useAccount();
-  const [user, setUser] = useState<TheHollowUser | null>(null);
+  const [user, setUser] = useState<TheAriwaUser | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

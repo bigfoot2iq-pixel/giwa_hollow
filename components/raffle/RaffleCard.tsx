@@ -49,7 +49,7 @@ function formatPrizeAmount(amount: string): string {
 }
 
 export function RaffleCard({ raffle, basePath = "/raffles" }: RaffleCardProps) {
-  const [tokenSymbol, setTokenSymbol] = useState<string>("HOLLOW");
+  const [tokenSymbol, setTokenSymbol] = useState<string>("ARIWA");
   const [prizeLabel, setPrizeLabel] = useState<string>("");
 
   const isActive = raffle.status === "active";
@@ -73,7 +73,7 @@ export function RaffleCard({ raffle, basePath = "/raffles" }: RaffleCardProps) {
   // Fetch entry-token symbol (secondary cost line)
   useEffect(() => {
     let active = true;
-    getTokenMetadataCached(contracts.hollowToken.address, false).then((m) => {
+    getTokenMetadataCached(contracts.ariwaToken.address, false).then((m) => {
       if (active && m) setTokenSymbol(m.symbol);
     });
     return () => {
@@ -219,7 +219,7 @@ export function RaffleCard({ raffle, basePath = "/raffles" }: RaffleCardProps) {
                 )}
               </p>
             </div>
-            <button className="flex-shrink-0 px-3 py-1.5 bg-[#ffffff] border border-black/10 hover:brightness-125 text-text-primary font-bold rounded uppercase tracking-widest text-[9px] transition-all shadow-[0_0_15px_rgba(26, 36, 52,0.15)]">
+            <button className="flex-shrink-0 px-3 py-1.5 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-[9px] transition-all shadow-[0_0_15px_rgba(0,98,223,0.25)]">
               {isActive ? "Enter" : "View"}
             </button>
           </div>

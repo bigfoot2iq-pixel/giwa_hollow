@@ -5,8 +5,8 @@ import { useAccount, useReadContract, useWriteContract, useWaitForTransactionRec
 import { useQueryClient } from '@tanstack/react-query'
 import { waitForTransactionReceipt } from '@wagmi/core'
 import { formatEther, maxUint256 } from 'viem'
-import { THE_HOLLOW_GAME_ADDRESS, THE_HOLLOW_GAME_ABI } from '@/lib/contracts/theHollowGame'
-import { contracts, HollowTokenABI } from '@/lib/contracts'
+import { THE_ARIWA_GAME_ADDRESS, THE_ARIWA_GAME_ABI } from '@/lib/contracts/theAriwaGame'
+import { contracts, AriwaTokenABI } from '@/lib/contracts'
 
 type PayStep = 'idle' | 'approving' | 'paying'
 
@@ -34,7 +34,7 @@ interface UsePayToPlayReturn {
   reset: () => void
 }
 
-const TOKEN_SYMBOL = 'HOLLOW'
+const TOKEN_SYMBOL = 'ARIWA'
 
 export function usePayToPlay(): UsePayToPlayReturn {
   const { address } = useAccount()
@@ -49,15 +49,15 @@ export function usePayToPlay(): UsePayToPlayReturn {
     isLoading: isLoadingPrice,
     refetch: refetchPrice,
   } = useReadContract({
-    address: THE_HOLLOW_GAME_ADDRESS,
-    abi: THE_HOLLOW_GAME_ABI,
+    address: THE_ARIWA_GAME_ADDRESS,
+    abi: THE_ARIWA_GAME_ABI,
     functionName: 'getPlayPrice',
   })
 
   // Player's GIWA balance
   const { data: balance, refetch: refetchBalance } = useReadContract({
-    address: contracts.hollowToken.address,
-    abi: HollowTokenABI,
+    address: contracts.ariwaToken.address,
+    abi: AriwaTokenABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
     query: { enabled: !!address },
@@ -65,10 +65,10 @@ export function usePayToPlay(): UsePayToPlayReturn {
 
   // Player's standing allowance to the game contract
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: contracts.hollowToken.address,
-    abi: HollowTokenABI,
+    address: contracts.ariwaToken.address,
+    abi: AriwaTokenABI,
     functionName: 'allowance',
-    args: address ? [address, THE_HOLLOW_GAME_ADDRESS] : undefined,
+    args: address ? [address, THE_ARIWA_GAME_ADDRESS] : undefined,
     query: { enabled: !!address },
   })
 
@@ -84,7 +84,7 @@ export function usePayToPlay(): UsePayToPlayReturn {
     hash: txHash,
   })
 
-  // payToPlay spends HOLLOW. Once the tx confirms, refresh this hook's own
+  // payToPlay spends ARIWA. Once the tx confirms, refresh this hook's own
   // balance/allowance reads, then invalidate every other balanceOf observer
   // (e.g. the header total, which builds its own queryKey) so the whole UI
   // updates without a page reload.
@@ -140,10 +140,10 @@ export function usePayToPlay(): UsePayToPlayReturn {
       if (currentAllowance < playPrice) {
         setStep('approving')
         const approveHash = await writeContractAsync({
-          address: contracts.hollowToken.address,
-          abi: HollowTokenABI,
+          address: contracts.ariwaToken.address,
+          abi: AriwaTokenABI,
           functionName: 'approve',
-          args: [THE_HOLLOW_GAME_ADDRESS, maxUint256],
+          args: [THE_ARIWA_GAME_ADDRESS, maxUint256],
         })
         await waitForTransactionReceipt(config, { hash: approveHash })
         await refetchAllowance()
@@ -152,8 +152,8 @@ export function usePayToPlay(): UsePayToPlayReturn {
       // 2. Pay to play.
       setStep('paying')
       const hash = await writeContractAsync({
-        address: THE_HOLLOW_GAME_ADDRESS,
-        abi: THE_HOLLOW_GAME_ABI,
+        address: THE_ARIWA_GAME_ADDRESS,
+        abi: THE_ARIWA_GAME_ABI,
         functionName: 'payToPlay',
       })
 

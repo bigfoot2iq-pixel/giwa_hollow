@@ -16,10 +16,10 @@ export function Header() {
     if (pathname.startsWith("/claim")) return "Claim";
     if (pathname.startsWith("/community-raffles")) return "Community Raffles";
     if (pathname.startsWith("/raffles")) return "Raffles";
-    if (pathname.startsWith("/game")) return "The Hollow: Last Stand";
+    if (pathname.startsWith("/game")) return "ARIWA: Last Stand";
     if (pathname.startsWith("/leaderboard")) return "Leaderboard";
     if (pathname.startsWith("/admin")) return "Admin Dashboard";
-    return "Hollow";
+    return "Ariwa";
   };
 
   return (
@@ -47,7 +47,7 @@ export function Header() {
             <span className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-text-primary">
               <span className="hidden sm:inline">{formatTokenBalance(balance)} </span>
               <span className="sm:hidden">{formatTokenBalance(balance)} </span>
-              HOLLOW
+              ARIWA
             </span>
           </div>
         )}
