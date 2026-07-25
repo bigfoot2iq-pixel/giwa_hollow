@@ -297,13 +297,13 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
 
   if (!imagesLoaded) {
     return (
-      <div 
-        className="flex items-center justify-center bg-dark-navy"
+      <div
+        className="flex items-center justify-center rounded-xl bg-[#060b1c] ring-1 ring-[#0062df]/25"
         style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}
       >
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-text-primary">Loading game assets...</p>
+          <div className="w-12 h-12 border-4 border-[#4c8dff] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[#cde0ff]">Loading game assets...</p>
         </div>
       </div>
     )
@@ -311,54 +311,76 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
 
   return (
     <div className="relative w-full max-w-4xl mx-auto">
-      <canvas
-        ref={canvasRef}
-        width={CANVAS_WIDTH}
-        height={CANVAS_HEIGHT}
-        onClick={handleCanvasClick}
-        className="bg-dark-navy cursor-pointer w-full h-auto rounded"
-        style={{ maxWidth: '100%', height: 'auto', aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
-      />
-      
+      {/* Arcade console shell */}
+      <div className="relative rounded-2xl p-1.5 sm:p-2.5 bg-gradient-to-b from-[#0b1636] to-[#05091c] ring-1 ring-[#0062df]/40 shadow-[0_18px_50px_-16px_rgba(0,98,223,0.55)]">
+        {/* Top bezel bar */}
+        <div className="flex items-center justify-between px-2 pb-1.5 sm:pb-2">
+          <div className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#ff5a6a] shadow-[0_0_6px_#ff5a6a]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#ffcf5c] shadow-[0_0_6px_#ffcf5c]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#2dd4bf] shadow-[0_0_6px_#2dd4bf]" />
+          </div>
+          <span className="text-[10px] sm:text-xs font-bold tracking-[0.3em] text-[#6aa6ff]">GIWA · HOLLOW</span>
+          <span className="text-[10px] sm:text-xs font-mono text-[#4c8dff]/60">ARIWA</span>
+        </div>
+
+        <div className="relative rounded-xl overflow-hidden ring-1 ring-[#0062df]/30">
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            onClick={handleCanvasClick}
+            className="block bg-[#060b1c] cursor-pointer w-full h-auto glow-teal"
+            style={{ maxWidth: '100%', height: 'auto', aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
+          />
+          {/* Screen glare + corner bolts */}
+          <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-white/[0.06] via-transparent to-transparent" />
+          <span className="pointer-events-none absolute top-1.5 left-1.5 h-1.5 w-1.5 rounded-full bg-[#0062df]/50" />
+          <span className="pointer-events-none absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[#0062df]/50" />
+          <span className="pointer-events-none absolute bottom-1.5 left-1.5 h-1.5 w-1.5 rounded-full bg-[#0062df]/50" />
+          <span className="pointer-events-none absolute bottom-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[#0062df]/50" />
+        </div>
+      </div>
+
       {/* Mobile Touch Controls */}
       {isMobile && (
         <div className="mt-4 flex justify-between gap-2 px-2">
           {/* Left side - Movement */}
           <div className="flex gap-2">
             <button
-              className="w-12 h-12 sm:w-14 sm:h-14 bg-dark-navy/80 border-2 border-dark-blue/50 rounded-xl text-text-primary font-bold text-lg sm:text-xl active:bg-primary active:text-dark-navy transition-colors touch-none"
+              className="w-12 h-12 sm:w-14 sm:h-14 bg-white border-2 border-[#0062df]/25 rounded-xl text-[#003597] font-bold text-lg sm:text-xl active:bg-[#0062df] active:text-white transition-colors touch-none shadow-sm"
               onTouchStart={() => controlsRef.current.left = true}
               onTouchEnd={() => controlsRef.current.left = false}
             >
               ←
             </button>
             <button
-              className="w-12 h-12 sm:w-14 sm:h-14 bg-dark-navy/80 border-2 border-dark-blue/50 rounded-xl text-text-primary font-bold text-lg sm:text-xl active:bg-primary active:text-dark-navy transition-colors touch-none"
+              className="w-12 h-12 sm:w-14 sm:h-14 bg-white border-2 border-[#0062df]/25 rounded-xl text-[#003597] font-bold text-lg sm:text-xl active:bg-[#0062df] active:text-white transition-colors touch-none shadow-sm"
               onTouchStart={() => controlsRef.current.right = true}
               onTouchEnd={() => controlsRef.current.right = false}
             >
               →
             </button>
           </div>
-          
+
           {/* Right side - Actions */}
           <div className="flex gap-2">
             <button
-              className="w-12 h-12 sm:w-14 sm:h-14 bg-dark-navy/80 border-2 border-dark-blue/50 rounded-xl text-text-primary font-bold text-[10px] sm:text-xs active:bg-primary active:text-dark-navy transition-colors touch-none"
+              className="w-12 h-12 sm:w-14 sm:h-14 bg-white border-2 border-[#0062df]/25 rounded-xl text-[#003597] font-bold text-[10px] sm:text-xs active:bg-[#0062df] active:text-white transition-colors touch-none shadow-sm"
               onTouchStart={() => controlsRef.current.dodge = true}
               onTouchEnd={() => controlsRef.current.dodge = false}
             >
               DODGE
             </button>
             <button
-              className="w-12 h-12 sm:w-14 sm:h-14 bg-dark-navy/80 border-2 border-primary/50 rounded-xl text-primary font-bold text-[10px] sm:text-xs active:bg-primary active:text-dark-navy transition-colors touch-none"
+              className="w-12 h-12 sm:w-14 sm:h-14 bg-white border-2 border-[#0062df]/40 rounded-xl text-[#0062df] font-bold text-[10px] sm:text-xs active:bg-[#0062df] active:text-white transition-colors touch-none shadow-sm"
               onTouchStart={() => controlsRef.current.jump = true}
               onTouchEnd={() => controlsRef.current.jump = false}
             >
               JUMP
             </button>
             <button
-              className="w-14 h-12 sm:w-16 sm:h-14 bg-primary/20 border-2 border-primary rounded-xl text-primary font-bold text-[10px] sm:text-xs active:bg-primary active:text-dark-navy transition-colors touch-none"
+              className="w-14 h-12 sm:w-16 sm:h-14 bg-[#0062df] border-2 border-[#0062df] rounded-xl text-white font-bold text-[10px] sm:text-xs active:brightness-95 transition-all touch-none shadow-md shadow-[#0062df]/30"
               onTouchStart={() => controlsRef.current.attack = true}
               onTouchEnd={() => controlsRef.current.attack = false}
             >
@@ -370,7 +392,7 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
 
       {/* Desktop Control instructions */}
       {!isMobile && (
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-4 lg:gap-6 px-2 sm:px-4 py-3 bg-dark-navy/50 border border-dark-blue/30 rounded-lg backdrop-blur-sm">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-4 lg:gap-6 px-2 sm:px-4 py-3 bg-white/70 border border-[#0062df]/15 rounded-lg backdrop-blur-sm shadow-sm">
           <div className="flex items-center gap-2">
             <span className="text-gray-300 text-xs sm:text-sm font-semibold">Move:</span>
             <div className="flex gap-1">
@@ -379,7 +401,7 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
             </div>
           </div>
 
-          <div className="w-px h-4 sm:h-6 bg-dark-blue/30" />
+          <div className="w-px h-4 sm:h-6 bg-[#0062df]/20" />
 
           <div className="flex items-center gap-2">
             <span className="text-gray-300 text-xs sm:text-sm font-semibold">Jump:</span>
@@ -387,7 +409,7 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
             <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">Space</kbd>
           </div>
 
-          <div className="w-px h-4 sm:h-6 bg-dark-blue/30" />
+          <div className="w-px h-4 sm:h-6 bg-[#0062df]/20" />
 
           <div className="flex items-center gap-2">
             <span className="text-gray-300 text-xs sm:text-sm font-semibold">Attack:</span>
@@ -395,7 +417,7 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
             <span className="text-gray-500 text-[10px] sm:text-xs hidden sm:inline">(hold for charged)</span>
           </div>
 
-          <div className="w-px h-4 sm:h-6 bg-dark-blue/30 hidden lg:block" />
+          <div className="w-px h-4 sm:h-6 bg-[#0062df]/20 hidden lg:block" />
 
           <div className="flex items-center gap-2">
             <span className="text-gray-300 text-xs sm:text-sm font-semibold">Dodge:</span>

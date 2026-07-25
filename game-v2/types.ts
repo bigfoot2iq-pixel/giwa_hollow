@@ -48,16 +48,18 @@ export type EnemyType = keyof typeof ENEMY_STATS
 
 export type PlayerState = 'idle' | 'run' | 'jump' | 'attack' | 'chargedAttack' | 'dodge' | 'hurt'
 
-// Level themes with colors
+// Level themes with colors — GIWA-blue cohesive palette.
+// Dark backgrounds keep the chibi + enemies readable; bright brand-adjacent
+// accents drive the glow-heavy renderer. Blue spine with tasteful variety.
 export const LEVEL_THEMES = [
-  { name: 'ARIWA', bgTop: '#0a0e1a', bgMid: '#1a1f2e', bgBottom: '#0a0e1a', accent: '#f6ff0d', ground: '#2a2f3e' },
-  { name: 'Blood Moon', bgTop: '#1a0a0a', bgMid: '#2e1a1a', bgBottom: '#1a0a0a', accent: '#ff4444', ground: '#3e2a2a' },
-  { name: 'Frozen Depths', bgTop: '#0a1a1a', bgMid: '#1a2e3e', bgBottom: '#0a1a1a', accent: '#44ffff', ground: '#2a3e4e' },
-  { name: 'Cursed Forest', bgTop: '#0a1a0a', bgMid: '#1a2e1a', bgBottom: '#0a1a0a', accent: '#44ff44', ground: '#2a3e2a' },
-  { name: 'Shadow Realm', bgTop: '#0a0a1a', bgMid: '#1a1a3e', bgBottom: '#0a0a1a', accent: '#aa44ff', ground: '#2a2a4e' },
-  { name: 'Inferno', bgTop: '#1a0a00', bgMid: '#3e1a0a', bgBottom: '#1a0a00', accent: '#ff8844', ground: '#4e2a1a' },
-  { name: 'Void', bgTop: '#050508', bgMid: '#0a0a10', bgBottom: '#050508', accent: '#ffffff', ground: '#1a1a2a' },
-  { name: 'Golden Temple', bgTop: '#1a1a0a', bgMid: '#2e2e1a', bgBottom: '#1a1a0a', accent: '#ffdd44', ground: '#3e3e2a' },
+  { name: 'Azure Keep',   bgTop: '#060b1c', bgMid: '#0d2350', bgBottom: '#060b1c', accent: '#4c8dff', ground: '#10203f' },
+  { name: 'Cobalt Deep',  bgTop: '#05081a', bgMid: '#0a1b45', bgBottom: '#05081a', accent: '#0062df', ground: '#0c1836' },
+  { name: 'Frost Reach',  bgTop: '#041018', bgMid: '#06304a', bgBottom: '#041018', accent: '#38bdf8', ground: '#0a2838' },
+  { name: 'Twilight',     bgTop: '#0a0620', bgMid: '#241a55', bgBottom: '#0a0620', accent: '#7c7bff', ground: '#1a1442' },
+  { name: 'Teal Tide',    bgTop: '#04140f', bgMid: '#0a3a3a', bgBottom: '#04140f', accent: '#2dd4bf', ground: '#0a2a2a' },
+  { name: 'Ember Gate',   bgTop: '#140a08', bgMid: '#3a1a12', bgBottom: '#140a08', accent: '#ff8a4c', ground: '#2a1610' },
+  { name: 'The Void',     bgTop: '#04060c', bgMid: '#0a1020', bgBottom: '#04060c', accent: '#dbe7ff', ground: '#0e1626' },
+  { name: 'Royal Temple', bgTop: '#0a0a18', bgMid: '#1a2350', bgBottom: '#0a0a18', accent: '#ffcf5c', ground: '#14183a' },
 ]
 
 export interface Player {
