@@ -53,7 +53,7 @@ export function Sidebar() {
       <div className="flex flex-col gap-8">
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center">
-          <img src="/ariwa-logo.png" alt="Ariwa" className="w-full h-16 object-contain rounded-lg" />
+          <img src="/ariwa-logo.png" alt="Ariwa" className="w-full h-16 object-cover rounded-lg" />
         </Link>
 
         {/* Navigation */}

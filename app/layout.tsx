@@ -32,9 +32,6 @@ const materialSymbols = localFont({
 export const metadata: Metadata = {
   title: "Ariwa - Win Crypto Prizes",
   description: "Decentralized raffles platform on GIWA Sepolia. Enter raffles, win prizes!",
-  icons: {
-    icon: "/ariwa-logo.png",
-  },
 };
 
 export default function RootLayout({
