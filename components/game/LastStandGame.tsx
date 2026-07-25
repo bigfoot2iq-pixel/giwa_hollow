@@ -320,7 +320,7 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
             <span className="h-2.5 w-2.5 rounded-full bg-[#ffcf5c] shadow-[0_0_6px_#ffcf5c]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#2dd4bf] shadow-[0_0_6px_#2dd4bf]" />
           </div>
-          <span className="text-[10px] sm:text-xs font-bold tracking-[0.3em] text-[#6aa6ff]">GIWA · HOLLOW</span>
+          <span className="text-[10px] sm:text-xs font-bold tracking-[0.3em] text-[#6aa6ff]">GIWA · ARIWA</span>
           <span className="text-[10px] sm:text-xs font-mono text-[#4c8dff]/60">ARIWA</span>
         </div>
 
