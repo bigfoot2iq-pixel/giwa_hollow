@@ -27,7 +27,7 @@ export function Header() {
       <div className="flex items-center gap-3 lg:gap-6 flex-1 min-w-0">
         {/* Mobile: Leave space for menu button */}
         <div className="lg:hidden w-10"></div>
-        <img src="/ariwa-logo.png" alt="Ariwa" className="h-9 w-auto object-contain shrink-0" />
+        <img src="/ariwa.jpg" alt="Ariwa" className="h-9 w-auto object-contain shrink-0" />
         <h1 className="text-lg lg:text-2xl font-header text-text-primary truncate">{getPageTitle()}</h1>
         <div className="hidden xl:flex gap-4">
           <a
