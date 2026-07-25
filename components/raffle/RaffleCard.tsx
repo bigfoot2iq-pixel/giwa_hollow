@@ -132,7 +132,7 @@ export function RaffleCard({ raffle, basePath = "/raffles" }: RaffleCardProps) {
               height={56}
               unoptimized
               className="object-contain group-hover:scale-110 transition-transform duration-700"
-              src="/litvm/logo-letter.svg"
+              src="/ariwa-logo.png"
             />
           )}
           <div className="absolute top-3 left-3 flex gap-1.5">

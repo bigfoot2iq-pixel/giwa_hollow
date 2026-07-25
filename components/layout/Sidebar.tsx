@@ -53,7 +53,7 @@ export function Sidebar() {
       <div className="flex flex-col gap-8">
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center">
-          <img src="/giwa/logo.svg" alt="Ariwa" className="w-full h-12 object-contain rounded-lg" />
+          <img src="/ariwa-logo.png" alt="Ariwa" className="w-full h-16 object-contain rounded-lg" />
         </Link>
 
         {/* Navigation */}
@@ -102,6 +102,17 @@ export function Sidebar() {
 
       {/* User section with RainbowKit */}
       <div className="flex flex-col gap-4">
+        <a
+          href="https://x.com/ARIWA_on_Giwa"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 px-4 py-3 rounded text-muted-blue hover:bg-[#f4f5f7] hover:text-text-primary transition-all"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="w-5 h-5 fill-current">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+          </svg>
+          <p className="text-sm font-medium">Follow on X</p>
+        </a>
         <ConnectButton.Custom>
           {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted }) => {
             const ready = mounted;

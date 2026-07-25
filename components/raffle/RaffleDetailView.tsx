@@ -274,7 +274,7 @@ export default function RaffleDetailView() {
                   height={96}
                   unoptimized
                   className="object-contain"
-                  src="/litvm/logo-letter.svg"
+                  src="/ariwa-logo.png"
                 />
               )}
               <div className="absolute top-4 left-4 flex gap-2">
