@@ -82,11 +82,18 @@ export default function ClaimPage() {
   };
 
   useEffect(() => {
-    if (isSuccess) {
-      toast.success("Tokens claimed successfully!");
-      queryClient.invalidateQueries();
-      reset();
-    }
+    if (!isSuccess) return;
+    toast.success("Tokens claimed successfully!");
+    // Refresh header balance + claim state now, then retry a few times. The RPC
+    // node serving `balanceOf` can lag the just-mined block, so a single refetch
+    // may grab the pre-mint value and stick until a manual page refresh.
+    // Fire-and-forget timers: reset() below flips isSuccess false and would tear
+    // down any cleanup-bound retry before it runs.
+    queryClient.invalidateQueries();
+    [1500, 4000, 8000].forEach((ms) =>
+      setTimeout(() => queryClient.invalidateQueries(), ms)
+    );
+    reset();
   }, [isSuccess, queryClient, reset]);
 
   useEffect(() => {
