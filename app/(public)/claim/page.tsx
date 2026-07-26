@@ -56,7 +56,7 @@ export default function ClaimPage() {
   const amountValue = claimAmount as bigint | undefined;
   const feeValue = claimFee as bigint | undefined;
 
-  const cooldownSeconds = claimCooldown ? Number(claimCooldown) : 43200; // 12h default until on-chain value loads
+  const cooldownSeconds = claimCooldown !== undefined && claimCooldown !== null ? Number(claimCooldown) : 43200; // 12h default until on-chain value loads
   const cooldownLabel = formatCooldownLabel(cooldownSeconds);
 
   const handleClaim = () => {
