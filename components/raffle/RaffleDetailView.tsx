@@ -417,9 +417,6 @@ export default function RaffleDetailView() {
                                 <p className="font-mono text-text-primary text-sm group-hover:text-[#0062df] transition-colors">
                                   {entry.wallet_address.slice(0, 10)}...{entry.wallet_address.slice(-8)}
                                 </p>
-                                <p className="text-[10px] text-muted-blue mt-0.5">
-                                  {format(new Date(entry.created_at), "MMM d, yyyy 'at' h:mm a")}
-                                </p>
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
