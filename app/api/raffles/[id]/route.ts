@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getRaffleStatus } from "@/lib/utils/raffles";
 import { getOnChainRaffleState } from "@/lib/utils/chain";
+import { syncRaffleEntriesFromChain } from "@/lib/raffles/sync-entries";
+
+export const maxDuration = 15;
 
 export async function GET(
   request: NextRequest,
@@ -36,6 +39,10 @@ export async function GET(
       console.error("Error fetching raffle:", error);
       return NextResponse.json({ error: "Failed to fetch raffle" }, { status: 500 });
     }
+
+    // Pull in anyone who joined by calling the contract directly before counting.
+    // Throttled + non-throwing: a failure just means we serve the DB as-is.
+    await syncRaffleEntriesFromChain(supabase, raffle);
 
     // Get entries count
     const { data: entriesData, count: participantsCount } = await supabase

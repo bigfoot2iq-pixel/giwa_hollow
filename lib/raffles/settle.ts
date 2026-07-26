@@ -3,6 +3,7 @@ import { createPublicClient, createWalletClient, getAddress, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { RobinhoodRafflesABI, contracts, giwaSepolia } from "@/lib/contracts";
 import type { createServiceClient } from "@/lib/supabase/server";
+import { syncRaffleEntriesFromChain } from "@/lib/raffles/sync-entries";
 
 type ServiceClient = Awaited<ReturnType<typeof createServiceClient>>;
 
@@ -170,7 +171,9 @@ export async function processExpiredRaffles(supabase: ServiceClient): Promise<Se
   // ---- End raffles past end_date (or full) that are still ACTIVE on-chain ----
   const { data: started, error: endErr } = await supabase
     .from("litvm_raffle_raffles")
-    .select("id, chain_raffle_id, title, end_date, max_participants")
+    .select(
+      "id, chain_raffle_id, title, end_date, max_participants, tokens_required, max_entries_per_user"
+    )
     .lte("start_date", nowIso)
     .not("chain_raffle_id", "is", null)
     .order("end_date", { ascending: true })
@@ -183,6 +186,11 @@ export async function processExpiredRaffles(supabase: ServiceClient): Promise<Se
     if (!chainId) continue;
     try {
       if ((await readState(chainId)) !== RAFFLE_STATE.ACTIVE) continue;
+
+      // The draw is built from the DB, so reconcile against EntrySubmitted logs
+      // first — otherwise anyone who joined by calling the contract directly is
+      // excluded from endRaffle. Forced: a throttled read here loses entrants.
+      await syncRaffleEntriesFromChain(supabase, raffle, { force: true });
 
       const participantCount = await countRows(supabase, "litvm_raffle_entries", raffle.id);
       const isPastEnd = new Date() >= new Date(raffle.end_date);

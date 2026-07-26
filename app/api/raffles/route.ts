@@ -3,6 +3,11 @@ import { createServiceClient } from "@/lib/supabase/server";
 import type { PrizeType, RaffleStatus } from "@/lib/supabase";
 import { getRaffleStatus } from "@/lib/utils/raffles";
 import { getOnChainRaffleMeta, ZERO_ADDRESS } from "@/lib/utils/chain";
+import { syncManyRaffleEntriesFromChain } from "@/lib/raffles/sync-entries";
+
+// Reads on-chain state and (throttled) reconciles entries, so bound the
+// invocation rather than letting a slow upstream burn function duration.
+export const maxDuration = 15;
 
 export async function GET(request: NextRequest) {
   try {
@@ -113,6 +118,20 @@ export async function GET(request: NextRequest) {
           prizesByRaffle.set(prize.raffle_id, fullExisting);
         });
       }
+    }
+
+    // Reconcile the visible page against EntrySubmitted logs first, so wallets
+    // that joined via the contract directly are counted.
+    //
+    // Restricted to active raffles: pending ones cannot have entries yet, and
+    // ended ones were already reconciled by the settle cron before the draw.
+    // This is the highest-traffic route, so the fan-out is kept as small as
+    // possible — the persisted throttle inside caps it further.
+    const syncable = pageSlice
+      .filter(({ status: s }) => s === "active")
+      .map(({ raffle }) => raffle);
+    if (syncable.length > 0) {
+      await syncManyRaffleEntriesFromChain(supabase, syncable);
     }
 
     const participantsByRaffle = new Map<string, number>();

@@ -14,6 +14,8 @@ export interface RaffleRow {
   start_date: string;
   end_date: string;
   tx_hash: string | null;
+  /** Last chain<->DB entry reconciliation; throttles the sync. Null = never. */
+  entries_synced_at: string | null;
   created_at: string;
   updated_at: string;
 }

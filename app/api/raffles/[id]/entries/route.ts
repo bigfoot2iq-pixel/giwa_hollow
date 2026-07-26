@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { syncRaffleEntriesFromChain } from "@/lib/raffles/sync-entries";
+
+export const maxDuration = 15;
 
 export async function GET(
   request: NextRequest,
@@ -38,7 +41,9 @@ export async function GET(
     // Verify raffle exists first
     let raffleQuery = supabase
       .from("litvm_raffle_raffles")
-      .select("id");
+      // `*` rather than an explicit list so a not-yet-applied migration degrades
+      // to "sync unthrottled" instead of failing the lookup and 404-ing the page.
+      .select("*");
 
     if (isUuid) {
       raffleQuery = raffleQuery.eq("id", id);
@@ -47,10 +52,13 @@ export async function GET(
     }
 
     const { data: raffle, error: raffleError } = await raffleQuery.single();
-    
+
     if (raffleError || !raffle) {
       return NextResponse.json({ error: "Raffle not found" }, { status: 404 });
     }
+
+    // Pull in direct-contract entrants before listing. Throttled + non-throwing.
+    await syncRaffleEntriesFromChain(supabase, raffle);
 
     // Build query with optional wallet filter
     let query = supabase
