@@ -24,6 +24,16 @@
 -- before running. Do NOT commit the real secret: cron.job is readable by the
 -- postgres role and this file is tracked in git. Paste the filled statement into
 -- the Supabase SQL editor, or use the Vault variant at the bottom.
+--
+-- The URL below must match the live deployment. Earlier revisions of this file
+-- pointed at litvm-raffle.vercel.app, a host left over from before the rename.
+-- That host still resolves but answers HTTP 402 (Vercel's paused-deployment
+-- response), so the POST is accepted by DNS and TLS and then goes nowhere —
+-- re-running those revisions would silently stop all settlement.
+--
+-- pg_net records the response but never raises, and cron.job_run_details reports
+-- only that the SQL dispatched, so a job pointing at a dead host still looks
+-- healthy. Confirm delivery via net._http_response (query below), not the job log.
 
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
@@ -37,7 +47,7 @@ select cron.schedule(
   '*/30 * * * *',
   $$
   select net.http_post(
-    url     := 'https://litvm-raffle.vercel.app/api/cron/settle-raffles',
+    url     := 'https://giwa-hollow.vercel.app/api/cron/settle-raffles',
     headers := jsonb_build_object(
       'Content-Type',  'application/json',
       'Authorization', 'Bearer <CRON_SECRET>'
@@ -54,12 +64,18 @@ select cron.schedule(
 --   select status, start_time, end_time from cron.job_run_details
 --     where jobid = (select jobid from cron.job where jobname = 'settle-expired-raffles')
 --     order by start_time desc limit 10;
+--
+-- job_run_details only reports whether the SQL dispatched, not what the endpoint
+-- answered — a 401 from a stale CRON_SECRET still shows as a succeeded job. For
+-- the actual HTTP status:
+--   select status_code, content, created from net._http_response
+--     order by created desc limit 10;
 
 -- ---------------------------------------------------------------------------
 -- ALTERNATIVE (recommended for production): keep the URL and secret out of the
 -- job definition via Vault.
 --
---   select vault.create_secret('https://litvm-raffle.vercel.app', 'app_url');
+--   select vault.create_secret('https://giwa-hollow.vercel.app', 'app_url');
 --   select vault.create_secret('your-cron-secret', 'cron_secret');
 --
 --   select cron.schedule(

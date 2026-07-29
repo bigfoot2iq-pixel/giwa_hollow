@@ -33,7 +33,7 @@ select cron.schedule(
   '30 seconds',
   $$
   select net.http_post(
-    url     := 'https://litvm-raffle.vercel.app/api/cron/settle-raffles',
+    url     := 'https://giwa-hollow.vercel.app/api/cron/settle-raffles',
     headers := jsonb_build_object(
       'Content-Type',  'application/json',
       'Authorization', 'Bearer <CRON_SECRET>'
@@ -55,7 +55,7 @@ select cron.schedule(
 -- ALTERNATIVE (recommended for production): keep the URL and secret out of the
 -- job definition (cron.job is world-readable to the postgres role) via Vault.
 --
---   select vault.create_secret('https://litvm-raffle.vercel.app', 'app_url');
+--   select vault.create_secret('https://giwa-hollow.vercel.app', 'app_url');
 --   select vault.create_secret('your-cron-secret', 'cron_secret');
 --
 --   select cron.schedule(
