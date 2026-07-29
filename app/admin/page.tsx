@@ -40,6 +40,7 @@ export default function AdminDashboard() {
   const [data, setData] = useState<AdminData | null>(null);
   const [loading, setLoading] = useState(true);
   const [scope, setScope] = useState<RaffleScope>("all");
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
   const authRef = useRef<{ wallet: string; signature: string; timestamp: string } | null>(null);
@@ -63,7 +64,7 @@ export default function AdminDashboard() {
     }
 
     const timestamp = now.toString();
-    const message = `Katana Raffles Admin\nTimestamp: ${timestamp}`;
+    const message = `GIWA Raffles Admin\nTimestamp: ${timestamp}`;
 
     authPromiseRef.current = signMessageAsync({ message })
       .then((signature) => {
@@ -104,9 +105,20 @@ export default function AdminDashboard() {
       if (response.ok) {
         const result = await response.json();
         setData(result);
+        setLoadError(null);
+      } else {
+        // A failed load used to fall through silently and render as "no raffles
+        // created yet", which is indistinguishable from an empty table.
+        const detail = await response.json().catch(() => ({}));
+        setLoadError(
+          response.status === 401
+            ? "Admin signature rejected. Reconnect the admin wallet and re-sign."
+            : detail?.error || `Failed to load raffles (HTTP ${response.status})`
+        );
       }
     } catch (error) {
       console.error("Error fetching admin data:", error);
+      setLoadError(error instanceof Error ? error.message : "Failed to load raffles");
     } finally {
       setLoading(false);
     }
@@ -295,6 +307,17 @@ export default function AdminDashboard() {
             ))}
           </div>
         </div>
+        {loadError && (
+          <div className="px-6 py-4 border-b border-red-500/20 bg-red-500/10 flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-sm text-red-400">{loadError}</p>
+            <button
+              onClick={() => loadRaffles()}
+              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-bold rounded uppercase tracking-widest transition-all border border-red-500/30"
+            >
+              Retry
+            </button>
+          </div>
+        )}
         {data?.raffles && data.raffles.length > 0 ? (
           <table className="w-full text-left border-collapse">
             <thead className="bg-black/5 border-b border-black/10">
@@ -382,7 +405,7 @@ export default function AdminDashboard() {
               ))}
             </tbody>
           </table>
-        ) : (
+        ) : loadError ? null : (
           <div className="p-8 text-center">
             <span className="material-symbols-outlined text-muted-blue text-4xl mb-2 block">confirmation_number</span>
             <p className="text-muted-blue">
