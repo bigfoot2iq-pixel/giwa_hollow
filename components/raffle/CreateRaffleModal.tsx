@@ -1,10 +1,16 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import { contracts, RobinhoodRafflesABI } from "@/lib/contracts";
 import { ERC20_DECIMALS_ABI, toTokenUnits } from "@/lib/utils/erc20";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import {
+  savePendingCreate,
+  loadPendingCreate,
+  clearPendingCreate,
+  type PendingRaffleCreate,
+} from "@/lib/raffles/pending-create";
 
 interface CreateRaffleModalProps {
   onClose: () => void;
@@ -105,6 +111,14 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(0);
+  const [pending, setPending] = useState<PendingRaffleCreate | null>(null);
+
+  // Offer to finish a create that escrowed its prize but never registered.
+  useEffect(() => {
+    if (!address) return;
+    const found = loadPendingCreate(address);
+    if (found?.kind === "community") setPending(found);
+  }, [address]);
 
   const busy =
     status === "loading-token" ||
@@ -181,6 +195,40 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
     setError(null);
     if (status === "error") setStatus("idle");
     setStep(target);
+  }
+
+  // Shared by the initial attempt and the retry, so both send an identical body.
+  async function registerRaffle(txHash: string, raffleData: unknown) {
+    const response = await fetch("/api/raffles/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ txHash, creatorWallet: address, raffleData }),
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(
+        (payload?.error || "Failed to register raffle") +
+          ". Your prize is escrowed on-chain — reopen this form to retry."
+      );
+    }
+  }
+
+  // Finish a create whose transaction landed but whose registration did not.
+  async function retryPending() {
+    if (!pending || !address) return;
+    setStatus("registering");
+    setError(null);
+    try {
+      await registerRaffle(pending.txHash, pending.raffleData);
+      clearPendingCreate(address);
+      setPending(null);
+      setStatus("success");
+      onCreated?.();
+    } catch (err: unknown) {
+      setStatus("error");
+      setError((err as Error)?.message || "Failed to register raffle");
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -314,36 +362,28 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
         throw new Error("Raffle creation transaction failed");
       }
 
+      const raffleData = {
+        title: title.trim(),
+        description: description.trim(),
+        image_url: imageUrl.trim() || null,
+        tokens_required: Number(tokensRequired),
+        max_entries_per_user: Number(maxEntriesPerUser),
+        max_participants: Number(maxParticipants),
+        start_date: new Date().toISOString(),
+        end_date: new Date(endDate).toISOString(),
+        prizes,
+      };
+
+      // The prize is escrowed from here on. Persist before attempting the write
+      // so a failed request, a closed tab, or a refresh can still be retried
+      // instead of stranding the tokens in the contract.
+      savePendingCreate({ txHash: createHash, raffleData, kind: "community", wallet: address });
+
       // Register metadata so the raffle shows up in the explorer list.
       setStatus("registering");
-      const response = await fetch("/api/raffles/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          txHash: createHash,
-          creatorWallet: address,
-          raffleData: {
-            title: title.trim(),
-            description: description.trim(),
-            image_url: imageUrl.trim() || null,
-            tokens_required: Number(tokensRequired),
-            max_entries_per_user: Number(maxEntriesPerUser),
-            max_participants: Number(maxParticipants),
-            start_date: new Date().toISOString(),
-            end_date: new Date(endDate).toISOString(),
-            prizes,
-          },
-        }),
-      });
+      await registerRaffle(createHash, raffleData);
 
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(
-          (payload?.error || "Failed to register raffle") +
-            ". Your prize is escrowed on-chain — contact support with your tx hash."
-        );
-      }
-
+      clearPendingCreate(address);
       setStatus("success");
       onCreated?.();
     } catch (err: unknown) {
@@ -464,6 +504,40 @@ export function CreateRaffleModal({ onClose, onCreated }: CreateRaffleModalProps
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6">
+            {/* A previous attempt escrowed the prize but never registered it.
+                Shown before the form, because finishing it is what turns those
+                already-spent tokens into an actual raffle. */}
+            {pending && (
+              <div className="mb-5 rounded border-l-4 border-amber-500 bg-amber-500/10 p-4 space-y-2">
+                <p className="text-sm font-bold text-text-primary">Unfinished raffle found</p>
+                <p className="text-xs text-muted-blue">
+                  Your prize is already escrowed on-chain from an earlier attempt, but the raffle
+                  was never registered. Finish it — no new transaction is sent.
+                </p>
+                <p className="text-[10px] font-mono text-muted-blue break-all">{pending.txHash}</p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={retryPending}
+                    disabled={busy}
+                    className="px-4 py-2 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-[10px] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {status === "registering" ? "Finishing..." : "Finish saving"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearPendingCreate(address);
+                      setPending(null);
+                    }}
+                    className="px-4 py-2 bg-black/5 hover:bg-black/10 text-text-primary font-bold rounded uppercase tracking-widest text-[10px] transition-all border border-black/10"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Step content re-animates on each transition via the keyed wrapper. */}
             <div key={step} className="animate-step space-y-4">
               {step === 0 && (

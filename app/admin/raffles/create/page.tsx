@@ -10,6 +10,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { ERC20_DECIMALS_ABI, toTokenUnits } from "@/lib/utils/erc20";
 import { RobinhoodRafflesABI, contracts } from "@/lib/contracts";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { savePendingCreate, loadPendingCreate, clearPendingCreate } from "@/lib/raffles/pending-create";
 
 const normalizePrizeValues = (values: Array<{ value: string }>) =>
   values.map((item) => item.value.trim()).filter((value) => value.length > 0);
@@ -122,7 +123,9 @@ export default function CreateRafflePage() {
   const [fetchingTokenInfo, setFetchingTokenInfo] = useState(false);
   const [pendingRaffleData, setPendingRaffleData] = useState<any>(null);
   const [pendingTxHash, setPendingTxHash] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [pendingConfirmData, setPendingConfirmData] = useState<any>(null);
+  const [recovering, setRecovering] = useState(false);
 
   const {
     register,
@@ -146,6 +149,55 @@ export default function CreateRafflePage() {
   const prizeTokenAddress = watch("prize_token_address");
   const prizeAmountsWatch = watch("prize_amounts");
   const prizeTokenIdsWatch = watch("prize_token_ids");
+
+  // Reattach to a create whose transaction landed but whose database write did
+  // not. Without this the prize stays escrowed and the raffle never appears
+  // anywhere, which is how chain ids 3-7 were stranded.
+  useEffect(() => {
+    if (!address || pendingTxHash) return;
+    const pending = loadPendingCreate(address);
+    if (!pending || pending.kind !== "admin") return;
+    setPendingTxHash(pending.txHash);
+    setPendingConfirmData(pending.raffleData);
+  }, [address, pendingTxHash]);
+
+  // Replay the confirm step for a recovered transaction. Signs fresh, so it
+  // works no matter how long the raffle sat unconfirmed.
+  const retryPendingConfirm = async () => {
+    if (!address || !pendingTxHash) return;
+    setRecovering(true);
+    setError(null);
+    try {
+      const timestamp = Date.now().toString();
+      const signature = await signMessageAsync({
+        message: `GIWA Raffles Admin\nTimestamp: ${timestamp}`,
+      });
+
+      const response = await fetch("/api/admin/raffles/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-wallet": address,
+          "x-admin-signature": signature,
+          "x-admin-timestamp": timestamp,
+        },
+        body: JSON.stringify({ txHash: pendingTxHash, raffleData: pendingConfirmData }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error || "Failed to confirm raffle");
+
+      setPendingTxHash(null);
+      setPendingConfirmData(null);
+      clearPendingCreate(address);
+      setStep("complete");
+      setTimeout(() => router.push("/admin"), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to confirm raffle");
+    } finally {
+      setRecovering(false);
+    }
+  };
   
   const {
     fields: prizeAmountFields,
@@ -491,9 +543,12 @@ export default function CreateRafflePage() {
 
         console.log("Transaction sent:", txHash);
 
-        // Save txHash so retries skip the on-chain tx
+        // Save txHash so retries skip the on-chain tx. Persisted as well as held
+        // in state: React state dies with the tab, and losing it here means the
+        // prize is escrowed with nothing left pointing at the transaction.
         setPendingTxHash(txHash);
         setPendingConfirmData(raffleData);
+        savePendingCreate({ txHash, raffleData, kind: "admin", wallet: address });
         confirmData = raffleData;
       } else {
         // Old flow (shouldn't happen with new code)
@@ -502,14 +557,26 @@ export default function CreateRafflePage() {
         return;
       }
 
-      // Step 3: Confirm with backend
+      // Step 3: Confirm with backend.
+      //
+      // Signed fresh rather than reusing the signature from step 1.
+      // verifyAdminSignature rejects anything older than 5 minutes, and by this
+      // point the flow has waited on a wallet prompt, a possible approval
+      // transaction, and the create transaction being mined — routinely more
+      // than 5 minutes. The stale signature came back 401, the row was never
+      // written, and the prize stayed escrowed on-chain with no raffle.
+      const confirmTimestamp = Date.now().toString();
+      const confirmSignature = await signMessageAsync({
+        message: `GIWA Raffles Admin\nTimestamp: ${confirmTimestamp}`,
+      });
+
       const confirmResponse = await fetch("/api/admin/raffles/confirm", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-admin-wallet": address,
-          "x-admin-signature": signature,
-          "x-admin-timestamp": timestamp,
+          "x-admin-signature": confirmSignature,
+          "x-admin-timestamp": confirmTimestamp,
         },
         body: JSON.stringify({
           txHash,
@@ -525,6 +592,7 @@ export default function CreateRafflePage() {
       // Success — clear pending state
       setPendingTxHash(null);
       setPendingConfirmData(null);
+      clearPendingCreate(address);
       setStep("complete");
       setTimeout(() => router.push("/admin"), 2000);
     } catch (err) {
@@ -571,6 +639,46 @@ export default function CreateRafflePage() {
         </button>
         <h2 className="text-5xl font-header text-text-primary">Create New Raffle</h2>
       </div>
+
+      {/* An earlier attempt escrowed the prize on-chain but never wrote the row.
+          Surfaced prominently: the funds are already locked in the contract, and
+          finishing this is the only way to get a usable raffle out of them. */}
+      {pendingTxHash && (
+        <div className="ui-container rounded border-l-4 border-amber-500 p-6 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-amber-500">warning</span>
+            <h3 className="text-lg font-header text-text-primary">Unfinished raffle found</h3>
+          </div>
+          <p className="text-sm text-muted-blue">
+            A previous attempt sent its transaction and escrowed the prize, but the raffle was
+            never saved. Finish it below — this does not send another transaction or move any
+            more tokens.
+          </p>
+          <p className="text-xs font-mono text-muted-blue break-all">{pendingTxHash}</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={retryPendingConfirm}
+              disabled={recovering}
+              className="px-5 py-2.5 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {recovering ? "Confirming..." : "Finish saving this raffle"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!confirm("Discard the record of this transaction? The prize stays escrowed on-chain and the raffle can then only be recovered manually.")) return;
+                clearPendingCreate(address);
+                setPendingTxHash(null);
+                setPendingConfirmData(null);
+              }}
+              className="px-5 py-2.5 bg-black/5 hover:bg-black/10 text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all border border-black/10"
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Basic Information */}
