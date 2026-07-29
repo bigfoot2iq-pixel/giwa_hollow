@@ -4,6 +4,7 @@ import type { PrizeType, RaffleStatus } from "@/lib/supabase";
 import { getRaffleStatus } from "@/lib/utils/raffles";
 import { getOnChainRaffleMeta, ZERO_ADDRESS } from "@/lib/utils/chain";
 import { syncManyRaffleEntriesFromChain } from "@/lib/raffles/sync-entries";
+import { CACHE } from "@/lib/utils/cache";
 
 // Reads on-chain state and (throttled) reconciles entries, so bound the
 // invocation rather than letting a slow upstream burn function duration.
@@ -134,23 +135,24 @@ export async function GET(request: NextRequest) {
       await syncManyRaffleEntriesFromChain(supabase, syncable);
     }
 
+    // One query for every raffle on the page, tallied here. The previous
+    // per-raffle `count: exact` fanned out into `limit` separate round trips on
+    // the app's highest-traffic route; only `raffle_id` is selected so the
+    // payload stays proportional to entries, not to row width.
     const participantsByRaffle = new Map<string, number>();
     if (raffleIds.length > 0) {
-      const counts = await Promise.all(
-        raffleIds.map(async (id) => {
-          const { count, error: countError } = await supabase
-            .from("litvm_raffle_entries")
-            .select("*", { count: "exact", head: true })
-            .eq("raffle_id", id);
-          if (countError) {
-            console.error(`Error fetching participant count for raffle ${id}:`, countError);
-          }
-          return { id, count: count || 0 };
-        })
-      );
-      counts.forEach(({ id, count }) => {
-        participantsByRaffle.set(id, count);
-      });
+      const { data: entryRows, error: countError } = await supabase
+        .from("litvm_raffle_entries")
+        .select("raffle_id")
+        .in("raffle_id", raffleIds);
+
+      if (countError) {
+        console.error("Error fetching participant counts:", countError);
+      } else {
+        for (const row of entryRows ?? []) {
+          participantsByRaffle.set(row.raffle_id, (participantsByRaffle.get(row.raffle_id) ?? 0) + 1);
+        }
+      }
     }
 
     const raffles = pageSlice.map(({ raffle, status: raffleStatus }) => {
@@ -166,12 +168,10 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({
-      raffles,
-      total,
-      limit,
-      offset,
-    });
+    return NextResponse.json(
+      { raffles, total, limit, offset },
+      { headers: { "Cache-Control": CACHE.raffles } }
+    );
   } catch (error) {
     console.error("Error in GET /api/raffles:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

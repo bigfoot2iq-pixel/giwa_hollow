@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { CACHE } from "@/lib/utils/cache";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await res.json();
-    return NextResponse.json(data);
+    return NextResponse.json(data, { headers: { "Cache-Control": CACHE.tokenPrices } });
   } catch {
     return NextResponse.json({ error: "Failed to fetch prices" }, { status: 500 });
   }

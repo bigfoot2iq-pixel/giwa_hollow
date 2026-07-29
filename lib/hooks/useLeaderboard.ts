@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import type { LeaderboardResponse, LeaderboardEntry } from "@/lib/supabase/types"
+import { usePolling } from "./usePolling"
 
 interface UseLeaderboardOptions {
   limit?: number;
@@ -14,7 +15,7 @@ export function useLeaderboard(options: UseLeaderboardOptions = {}) {
   const {
     limit = 10,
     autoRefresh = true,
-    refreshInterval = 30000, // 30 seconds
+    refreshInterval = 60000, // 60s; the route is CDN-cached for 60s anyway
     currentUserWallet
   } = options
 
@@ -104,16 +105,8 @@ export function useLeaderboard(options: UseLeaderboardOptions = {}) {
     fetchLeaderboard(1)
   }, [fetchLeaderboard])
 
-  // Auto-refresh setup
-  useEffect(() => {
-    if (!autoRefresh || refreshInterval <= 0) return
-
-    const interval = setInterval(() => {
-      fetchLeaderboard(1, true)
-    }, refreshInterval)
-
-    return () => clearInterval(interval)
-  }, [autoRefresh, refreshInterval, fetchLeaderboard])
+  // Auto-refresh, paused while the tab is hidden.
+  usePolling(() => fetchLeaderboard(1, true), refreshInterval, autoRefresh)
 
   // Reset when options change
   useEffect(() => {

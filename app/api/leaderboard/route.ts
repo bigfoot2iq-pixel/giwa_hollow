@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import supabase from '@/lib/supabase/game-client';
 import type { LeaderboardResponse, LeaderboardEntry } from '@/lib/supabase/types';
+import { CACHE } from '@/lib/utils/cache';
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,7 +50,9 @@ export async function GET(request: NextRequest) {
       hasMore
     };
 
-    return NextResponse.json(response);
+    return NextResponse.json(response, {
+      headers: { 'Cache-Control': CACHE.leaderboard },
+    });
   } catch (error) {
     console.error('Error in leaderboard API:', error);
     return NextResponse.json(

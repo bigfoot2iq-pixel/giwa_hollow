@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { usePolling } from "./usePolling"
 
 export interface Holder {
   rank: number
@@ -29,7 +30,7 @@ export function useTokenHolders(options: UseTokenHoldersOptions = {}) {
   const {
     tokenAddress,
     autoRefresh = true,
-    refreshInterval = 30000
+    refreshInterval = 120000 // holder balances move slowly and the route is the priciest we serve
   } = options
 
   const [holders, setHolders] = useState<Holder[]>([])
@@ -98,15 +99,8 @@ export function useTokenHolders(options: UseTokenHoldersOptions = {}) {
     }
   }, [tokenAddress, fetchHolders])
 
-  useEffect(() => {
-    if (!autoRefresh || refreshInterval <= 0 || !tokenAddress) return
-
-    const interval = setInterval(() => {
-      fetchHolders(1, true)
-    }, refreshInterval)
-
-    return () => clearInterval(interval)
-  }, [autoRefresh, refreshInterval, tokenAddress, fetchHolders])
+  // Auto-refresh, paused while the tab is hidden.
+  usePolling(() => fetchHolders(1, true), refreshInterval, autoRefresh && !!tokenAddress)
 
   useEffect(() => {
     setHolders([])

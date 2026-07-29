@@ -18,6 +18,18 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Handled by the routing layer, so hitting "/" costs no function invocation.
+  // Temporary rather than permanent so the landing page can be changed later
+  // without fighting browsers that cached a 308.
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/claim",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {

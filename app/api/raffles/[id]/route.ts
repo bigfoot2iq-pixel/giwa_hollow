@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getRaffleStatus } from "@/lib/utils/raffles";
 import { getOnChainRaffleState } from "@/lib/utils/chain";
 import { syncRaffleEntriesFromChain } from "@/lib/raffles/sync-entries";
+import { CACHE } from "@/lib/utils/cache";
 
 export const maxDuration = 15;
 
@@ -73,16 +74,19 @@ export async function GET(
       }
     }
 
-    return NextResponse.json({
-      raffle: {
-        ...raffle,
-        status: getRaffleStatus(raffle.start_date, raffle.end_date, undefined, chainStatus),
+    return NextResponse.json(
+      {
+        raffle: {
+          ...raffle,
+          status: getRaffleStatus(raffle.start_date, raffle.end_date, undefined, chainStatus),
+        },
+        participantsCount: participantsCount || 0,
+        entriesCount: totalEntries,
+        prizes: prizes || [],
+        winners: winners || [],
       },
-      participantsCount: participantsCount || 0,
-      entriesCount: totalEntries,
-      prizes: prizes || [],
-      winners: winners || [],
-    });
+      { headers: { "Cache-Control": CACHE.raffleDetail } }
+    );
   } catch (error) {
     console.error("Error in GET /api/raffles/[id]:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

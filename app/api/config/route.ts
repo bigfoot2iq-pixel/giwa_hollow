@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { verifyAdminSignature } from "@/lib/utils/auth";
+import { CACHE } from "@/lib/utils/cache";
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,7 +28,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Config not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ key, value: data.value });
+    return NextResponse.json(
+      { key, value: data.value },
+      { headers: { "Cache-Control": CACHE.config } }
+    );
   } catch (error) {
     console.error("Error in GET /api/config:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

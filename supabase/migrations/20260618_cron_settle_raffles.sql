@@ -1,3 +1,8 @@
+-- SUPERSEDED by 20260729_cron_settle_raffles_30min.sql. Do not re-run this file:
+-- the '30 seconds' schedule below is ~86,400 monthly invocations of a
+-- 60s-maxDuration route and exhausted the Vercel free-tier CPU allowance on its
+-- own. Kept for history.
+--
 -- Settle expired raffles on a schedule using Supabase Cron (pg_cron + pg_net).
 -- A Postgres cron job POSTs to the Next.js endpoint; the endpoint activates due
 -- raffles and ends raffles past their end_date on-chain.
