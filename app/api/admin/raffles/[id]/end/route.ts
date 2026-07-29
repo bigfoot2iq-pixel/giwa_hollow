@@ -4,6 +4,7 @@ import { verifyAdminSignature } from "@/lib/utils/auth";
 import { RobinhoodRafflesABI, contracts, giwaSepolia } from "@/lib/contracts";
 import { createPublicClient, createWalletClient, getAddress, http, parseEventLogs } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { selectAllPaged } from "@/lib/supabase/paginate";
 import { randomBytes } from "crypto";
 
 export async function POST(
@@ -43,19 +44,42 @@ export async function POST(
       return NextResponse.json({ error: "Raffle not deployed on chain" }, { status: 400 });
     }
 
-    // Get all entries for this raffle
-    const { data: entries, error: entriesError } = await supabase
+    // Get all entries for this raffle. Paged: a plain select() stops at
+    // PostgREST's 1000-row cap, which would draw winners from a fraction of the
+    // entrants on any raffle larger than that.
+    let entries: Array<{ wallet_address: string; tokens_spent: number }>;
+    try {
+      entries = await selectAllPaged<{ wallet_address: string; tokens_spent: number }>(
+        (from, to) =>
+          supabase
+            .from("litvm_raffle_entries")
+            .select("wallet_address, tokens_spent")
+            .eq("raffle_id", raffle.id)
+            .range(from, to)
+      );
+    } catch (entriesError) {
+      console.error("Error fetching entries:", entriesError);
+      return NextResponse.json({ error: "Failed to fetch entries" }, { status: 500 });
+    }
+
+    const { count: expectedCount } = await supabase
       .from("litvm_raffle_entries")
-      .select("wallet_address, tokens_spent")
+      .select("id", { count: "exact", head: true })
       .eq("raffle_id", raffle.id);
 
-    if (entriesError) {
-      return NextResponse.json({ error: "Failed to fetch entries" }, { status: 500 });
+    if (expectedCount != null && entries.length !== expectedCount) {
+      return NextResponse.json(
+        {
+          error: "Entry read incomplete",
+          details: `Read ${entries.length} of ${expectedCount} entries; refusing to draw from a partial set.`,
+        },
+        { status: 500 }
+      );
     }
 
     // Aggregate entries by wallet
     const participantMap = new Map<string, bigint>();
-    (entries || []).forEach((entry) => {
+    entries.forEach((entry) => {
       const normalized = getAddress(entry.wallet_address.toLowerCase() as `0x${string}`);
       const current = participantMap.get(normalized) || 0n;
       participantMap.set(normalized, current + BigInt(entry.tokens_spent));

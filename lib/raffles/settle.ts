@@ -4,6 +4,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { RobinhoodRafflesABI, contracts, giwaSepolia } from "@/lib/contracts";
 import type { createServiceClient } from "@/lib/supabase/server";
 import { syncRaffleEntriesFromChain } from "@/lib/raffles/sync-entries";
+import { selectAllPaged } from "@/lib/supabase/paginate";
 
 type ServiceClient = Awaited<ReturnType<typeof createServiceClient>>;
 
@@ -203,16 +204,33 @@ export async function processExpiredRaffles(supabase: ServiceClient): Promise<Se
         continue;
       }
 
-      const { data: entries } = await supabase
-        .from("litvm_raffle_entries")
-        .select("wallet_address, entry_count")
-        .eq("raffle_id", raffle.id)
-        .order("created_at", { ascending: true });
+      // Paged: a plain select() stops at PostgREST's 1000-row cap, which would
+      // hand endRaffle a fraction of the entrants and draw winners from it.
+      const entries = await selectAllPaged<{ wallet_address: string; entry_count: number }>(
+        (from, to) =>
+          supabase
+            .from("litvm_raffle_entries")
+            .select("wallet_address, entry_count")
+            .eq("raffle_id", raffle.id)
+            .order("created_at", { ascending: true })
+            .range(from, to)
+      );
 
-      const participants = (entries ?? []).map((e) =>
+      if (entries.length !== participantCount) {
+        // The draw must cover every counted entrant or the result is not fair.
+        summary.errors.push({
+          raffleId: raffle.id,
+          chainRaffleId: chainId,
+          title: raffle.title,
+          reason: `entry read incomplete: got ${entries.length} of ${participantCount}`,
+        });
+        continue;
+      }
+
+      const participants = entries.map((e) =>
         getAddress(e.wallet_address.toLowerCase() as `0x${string}`)
       );
-      const ticketCounts = (entries ?? []).map((e) => BigInt(e.entry_count));
+      const ticketCounts = entries.map((e) => BigInt(e.entry_count));
 
       if (participants.length > 0 && participants.length < prizeCount) {
         summary.skipped.push({ raffleId: raffle.id, chainRaffleId: chainId, title: raffle.title, reason: `participants(${participants.length}) < prizes(${prizeCount})` });

@@ -1,6 +1,7 @@
 import { createPublicClient, encodeEventTopics, http } from "viem";
 import { RobinhoodRafflesABI, contracts, giwaSepolia } from "@/lib/contracts";
 import type { createServiceClient } from "@/lib/supabase/server";
+import { selectAllPaged } from "@/lib/supabase/paginate";
 
 type ServiceClient = Awaited<ReturnType<typeof createServiceClient>>;
 
@@ -36,6 +37,18 @@ const ENDED_SYNC_TTL_MS = 3_600_000;
 // possible outcome on a per-duration billing model, and a 504 on a public page.
 const EXPLORER_TIMEOUT_MS = 4_000;
 
+// GIWA's Blockscout truncates `getLogs` at 1000 rows and ignores page/offset
+// (verified against the live explorer), so a full response means "there is more"
+// and the only cursor available is fromBlock. Reading a raffle with 10k entrants
+// as a single call silently returned the oldest 1000 and dropped the rest.
+const EXPLORER_PAGE_LIMIT = 1000;
+
+// Page budget for throttled (user-facing) syncs. The cursor is persisted after
+// every run, so a raffle with a large backlog still drains across calls instead
+// of blocking one request until the duration cap. Forced syncs are unbounded.
+const MAX_PAGES_THROTTLED = 2;
+const MAX_PAGES_FORCED = 60;
+
 // The RPC fallback walks in chunks, so give it room while still bounding it.
 const RPC_TIMEOUT_MS = 8_000;
 
@@ -44,7 +57,7 @@ const RPC_TIMEOUT_MS = 8_000;
 const RPC_MAX_BLOCK_RANGE = 100_000n;
 
 // How far back the RPC fallback walks when no deploy block is configured.
-// Only used when the explorer (which has no range cap) is unreachable.
+// Only used when the explorer is unreachable.
 const FALLBACK_LOOKBACK_BLOCKS = BigInt(
   process.env.RAFFLES_LOG_LOOKBACK_BLOCKS ?? 2_000_000
 );
@@ -52,6 +65,12 @@ const FALLBACK_LOOKBACK_BLOCKS = BigInt(
 const DEPLOY_BLOCK = process.env.RAFFLES_DEPLOY_BLOCK
   ? BigInt(process.env.RAFFLES_DEPLOY_BLOCK)
   : undefined;
+
+// Rows per insert statement. Supabase sends an array insert as one statement, so
+// a single unique violation rolls back every row in it — one racing entry used to
+// discard the entire reconciliation. Chunking bounds that, and the retry path
+// below narrows a failed chunk down to just the offending rows.
+const INSERT_CHUNK_SIZE = 500;
 
 const TOKEN_DECIMALS = 10n ** 18n;
 
@@ -66,11 +85,13 @@ export interface SyncableRaffle {
   end_date: string;
   /** Persisted throttle marker. Absent on callers that didn't select it. */
   entries_synced_at?: string | null;
+  /** Highest block already reconciled. Absent on callers that didn't select it. */
+  entries_synced_block?: number | string | null;
 }
 
 /** Columns `syncRaffleEntriesFromChain` needs. Use in route `.select()` calls. */
 export const SYNCABLE_RAFFLE_COLUMNS =
-  "id, chain_raffle_id, tokens_required, max_entries_per_user, end_date, entries_synced_at";
+  "id, chain_raffle_id, tokens_required, max_entries_per_user, end_date, entries_synced_at, entries_synced_block";
 
 /** Normalised log shape shared by the explorer and RPC paths. */
 interface RawEntryLog {
@@ -107,15 +128,15 @@ function entryTopics(chainRaffleId: number): [string, string] {
   return [topics[0] as string, topics[1] as string];
 }
 
-/**
- * Blockscout's legacy `logs` module has no block-range cap, so a single call
- * covers the contract's whole history. Keyless.
- */
-async function fetchLogsFromExplorer(chainRaffleId: number): Promise<RawEntryLog[]> {
+/** One page of Blockscout's legacy `logs` module. Keyless. */
+async function fetchExplorerPage(
+  chainRaffleId: number,
+  fromBlock: bigint
+): Promise<RawEntryLog[]> {
   const [topic0, topic1] = entryTopics(chainRaffleId);
   const url =
     `${EXPLORER_BASE}/api?module=logs&action=getLogs` +
-    `&fromBlock=${DEPLOY_BLOCK ?? 0n}&toBlock=latest` +
+    `&fromBlock=${fromBlock}&toBlock=latest` +
     `&address=${contracts.raffles.address}` +
     `&topic0=${topic0}&topic1=${topic1}&topic0_1_opr=and`;
 
@@ -155,12 +176,50 @@ async function fetchLogsFromExplorer(chainRaffleId: number): Promise<RawEntryLog
 }
 
 /**
- * Fallback for when the explorer is down. Walks backwards from head in
- * RPC_MAX_BLOCK_RANGE chunks, bounded by DEPLOY_BLOCK when configured and by
- * FALLBACK_LOOKBACK_BLOCKS otherwise — so coverage here can be partial, which
- * is why the diff step never lowers an existing count.
+ * Walk the explorer from `fromBlock` to head, following a block cursor.
+ *
+ * A full page means the response was truncated, so the next page restarts at the
+ * highest block seen — not that block plus one, because a block's logs can
+ * straddle the cap. That re-reads the boundary block, hence the caller dedupes.
  */
-async function fetchLogsFromRpc(chainRaffleId: number): Promise<RawEntryLog[]> {
+async function fetchLogsFromExplorer(
+  chainRaffleId: number,
+  fromBlock: bigint,
+  maxPages: number
+): Promise<RawEntryLog[]> {
+  const logs: RawEntryLog[] = [];
+  let cursor = fromBlock;
+
+  for (let page = 0; page < maxPages; page++) {
+    const chunk = await fetchExplorerPage(chainRaffleId, cursor);
+    logs.push(...chunk);
+
+    if (chunk.length < EXPLORER_PAGE_LIMIT) break;
+
+    const highest = chunk.reduce((max, log) => (log.blockNumber > max ? log.blockNumber : max), cursor);
+    // A single block holding more than a full page would pin the cursor forever.
+    // Stepping past it loses those logs, but stalling loses every later block too.
+    cursor = highest > cursor ? highest : cursor + 1n;
+  }
+
+  return logs;
+}
+
+/**
+ * Fallback for when the explorer is down. Walks forward from `fromBlock` in
+ * RPC_MAX_BLOCK_RANGE chunks (the GIWA RPC rejects wider spans).
+ *
+ * Forward from a persisted cursor rather than backwards from head: the old
+ * direction re-read the same FALLBACK_LOOKBACK_BLOCKS window on every call —
+ * 20 sequential eth_getLogs against a 15s budget, which is what timed the
+ * public raffle routes out. Coverage can still be partial when no cursor and no
+ * deploy block are known, which is why the diff step never lowers a count.
+ */
+async function fetchLogsFromRpc(
+  chainRaffleId: number,
+  fromBlock: bigint,
+  maxChunks: number
+): Promise<RawEntryLog[]> {
   const rpcUrl =
     process.env.RPC_URL || process.env.NEXT_PUBLIC_RPC_URL || "https://sepolia-rpc.giwa.io";
   const client = createPublicClient({
@@ -169,14 +228,20 @@ async function fetchLogsFromRpc(chainRaffleId: number): Promise<RawEntryLog[]> {
   });
 
   const head = await client.getBlockNumber();
-  const floor = DEPLOY_BLOCK ?? (head > FALLBACK_LOOKBACK_BLOCKS ? head - FALLBACK_LOOKBACK_BLOCKS : 0n);
   const [topic0, topic1] = entryTopics(chainRaffleId);
 
+  // With neither a persisted cursor nor a configured deploy block there is no
+  // floor, and walking forward from genesis would scan the entire chain. Cap the
+  // lookback instead; coverage is then partial, which is safe because the diff
+  // step only ever raises a count.
+  let cursor = fromBlock;
+  if (cursor === 0n && DEPLOY_BLOCK === undefined) {
+    cursor = head > FALLBACK_LOOKBACK_BLOCKS ? head - FALLBACK_LOOKBACK_BLOCKS : 0n;
+  }
+
   const logs: RawEntryLog[] = [];
-  let toBlock = head;
-  while (toBlock >= floor) {
-    const span = toBlock - floor + 1n;
-    const fromBlock = span > RPC_MAX_BLOCK_RANGE ? toBlock - RPC_MAX_BLOCK_RANGE + 1n : floor;
+  for (let chunkIndex = 0; chunkIndex < maxChunks && cursor <= head; chunkIndex++) {
+    const toBlock = cursor + RPC_MAX_BLOCK_RANGE - 1n > head ? head : cursor + RPC_MAX_BLOCK_RANGE - 1n;
 
     const chunk = await client.request({
       method: "eth_getLogs",
@@ -184,7 +249,7 @@ async function fetchLogsFromRpc(chainRaffleId: number): Promise<RawEntryLog[]> {
         {
           address: contracts.raffles.address,
           topics: [topic0, topic1],
-          fromBlock: `0x${fromBlock.toString(16)}`,
+          fromBlock: `0x${cursor.toString(16)}`,
           toBlock: `0x${toBlock.toString(16)}`,
         },
       ],
@@ -207,11 +272,28 @@ async function fetchLogsFromRpc(chainRaffleId: number): Promise<RawEntryLog[]> {
       });
     }
 
-    if (fromBlock === 0n || fromBlock <= floor) break;
-    toBlock = fromBlock - 1n;
+    cursor = toBlock + 1n;
   }
 
   return logs;
+}
+
+/** Lowest block worth scanning when a raffle has never been synced. */
+function defaultFloor(): bigint {
+  return DEPLOY_BLOCK ?? 0n;
+}
+
+/** Drop the boundary-block duplicates produced by the paged walk. */
+function dedupeLogs(logs: RawEntryLog[]): RawEntryLog[] {
+  const seen = new Set<string>();
+  const unique: RawEntryLog[] = [];
+  for (const log of logs) {
+    const key = `${log.transactionHash}:${log.logIndex}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(log);
+  }
+  return unique;
 }
 
 /** Fold logs into one record per wallet, keeping the most recent tx hash. */
@@ -273,35 +355,57 @@ function toEntryCount(tokensWei: bigint, raffle: SyncableRaffle): number {
   return Math.min(Number(tickets), ceiling);
 }
 
-async function reconcile(supabase: ServiceClient, raffle: SyncableRaffle): Promise<void> {
+async function reconcile(
+  supabase: ServiceClient,
+  raffle: SyncableRaffle,
+  maxPages: number
+): Promise<bigint | null> {
   const chainRaffleId = raffle.chain_raffle_id;
-  if (chainRaffleId === null) return;
+  if (chainRaffleId === null) return null;
+
+  // Resume where the last run stopped. The cursor block itself is re-read rather
+  // than skipped, because a block's logs can straddle the explorer page limit.
+  const fromBlock =
+    raffle.entries_synced_block !== undefined && raffle.entries_synced_block !== null
+      ? BigInt(raffle.entries_synced_block)
+      : defaultFloor();
 
   let logs: RawEntryLog[];
   try {
-    logs = await fetchLogsFromExplorer(chainRaffleId);
+    logs = await fetchLogsFromExplorer(chainRaffleId, fromBlock, maxPages);
   } catch (explorerErr) {
     console.warn(
       `Entry sync: explorer log fetch failed for raffle ${raffle.id}, falling back to RPC:`,
       explorerErr instanceof Error ? explorerErr.message : explorerErr
     );
-    logs = await fetchLogsFromRpc(chainRaffleId);
+    logs = await fetchLogsFromRpc(chainRaffleId, fromBlock, maxPages);
   }
 
-  if (logs.length === 0) return;
+  logs = dedupeLogs(logs);
+  if (logs.length === 0) return null;
+
+  const highestBlock = logs.reduce(
+    (max, log) => (log.blockNumber > max ? log.blockNumber : max),
+    fromBlock
+  );
 
   const folded = foldByWallet(logs);
-  if (folded.size === 0) return;
+  if (folded.size === 0) return highestBlock;
 
-  const { data: existingRows, error: readErr } = await supabase
-    .from("litvm_raffle_entries")
-    .select("wallet_address, entry_count")
-    .eq("raffle_id", raffle.id);
-
-  if (readErr) throw new Error(`Failed to read existing entries: ${readErr.message}`);
+  // Paged: PostgREST truncates at 1000 rows, and a short read here reads as
+  // "these wallets are new", so the reconciler retries inserts that already
+  // exist and the unique violation takes the whole batch down with it.
+  const existingRows = await selectAllPaged<{ wallet_address: string; entry_count: number }>(
+    (from, to) =>
+      supabase
+        .from("litvm_raffle_entries")
+        .select("wallet_address, entry_count")
+        .eq("raffle_id", raffle.id)
+        .range(from, to)
+  );
 
   const dbCounts = new Map<string, number>(
-    (existingRows ?? []).map((row) => [row.wallet_address.toLowerCase(), row.entry_count])
+    existingRows.map((row) => [row.wallet_address.toLowerCase(), row.entry_count])
   );
 
   type Insert = { wallet: string; entryCount: number; txHash: string };
@@ -323,32 +427,71 @@ async function reconcile(supabase: ServiceClient, raffle: SyncableRaffle): Promi
     }
   }
 
-  if (inserts.length === 0 && updates.length === 0) return; // no drift
+  if (inserts.length === 0 && updates.length === 0) return highestBlock; // no drift
 
   if (inserts.length > 0) {
-    const { error: insertErr } = await supabase.from("litvm_raffle_entries").insert(
-      inserts.map((row) => ({
-        raffle_id: raffle.id,
-        wallet_address: row.wallet,
-        tokens_spent: row.entryCount * raffle.tokens_required,
-        entry_count: row.entryCount,
-        tx_hash: row.txHash,
-      }))
-    );
-    if (insertErr) {
+    const toRow = (row: Insert) => ({
+      raffle_id: raffle.id,
+      wallet_address: row.wallet,
+      tokens_spent: row.entryCount * raffle.tokens_required,
+      entry_count: row.entryCount,
+      tx_hash: row.txHash,
+    });
+
+    // Only wallets that actually landed get their user stats incremented, so a
+    // skipped duplicate never double-counts.
+    const inserted: Insert[] = [];
+
+    for (let start = 0; start < inserts.length; start += INSERT_CHUNK_SIZE) {
+      const chunk = inserts.slice(start, start + INSERT_CHUNK_SIZE);
+      const { error: insertErr } = await supabase
+        .from("litvm_raffle_entries")
+        .insert(chunk.map(toRow));
+
+      if (!insertErr) {
+        inserted.push(...chunk);
+        continue;
+      }
+
       // A concurrent POST /api/entries can win the race on either unique index
-      // (tx_hash, or raffle_id+wallet_address); the next sync settles it.
-      console.error(`Entry sync: insert failed for raffle ${raffle.id}:`, insertErr.message);
-    } else {
-      for (const row of inserts) {
-        await supabase.rpc("litvm_raffle_increment_user_entries", {
-          p_wallet: row.wallet,
-          p_count: row.entryCount,
-        });
+      // (tx_hash, or raffle_id+wallet_address), and the whole statement rolls
+      // back with it. Re-run the chunk row by row so one collision costs one row
+      // instead of the entire batch.
+      console.warn(
+        `Entry sync: chunk insert failed for raffle ${raffle.id} (${insertErr.message}), retrying ${chunk.length} rows individually`
+      );
+      for (const row of chunk) {
+        const { error: rowErr } = await supabase
+          .from("litvm_raffle_entries")
+          .insert(toRow(row));
+        if (!rowErr) inserted.push(row);
+        else if (rowErr.code !== "23505") {
+          // 23505 is the expected unique violation for an entry that raced us.
+          console.error(
+            `Entry sync: insert failed for raffle ${raffle.id} wallet ${row.wallet}:`,
+            rowErr.message
+          );
+        }
+      }
+    }
+
+    if (inserted.length > 0) {
+      // One statement for the batch. This used to be an awaited RPC per wallet,
+      // which at 10k entrants exhausted the invocation before finishing and left
+      // user stats permanently short.
+      const { error: statsErr } = await supabase.rpc("litvm_raffle_increment_user_entries_bulk", {
+        p_wallets: inserted.map((row) => row.wallet),
+        p_counts: inserted.map((row) => row.entryCount),
+      });
+      if (statsErr) {
+        console.error(`Entry sync: bulk user-stat increment failed for raffle ${raffle.id}:`, statsErr.message);
       }
     }
   }
 
+  // Each row carries a different count, so the writes stay per-row, but the
+  // stat increments are folded into one call afterwards.
+  const updated: Update[] = [];
   for (const row of updates) {
     // tx_hash is left alone: it is UNIQUE and the original row already carries
     // valid proof of entry.
@@ -368,16 +511,26 @@ async function reconcile(supabase: ServiceClient, raffle: SyncableRaffle): Promi
       );
       continue;
     }
-    await supabase.rpc("litvm_raffle_increment_user_entries", {
-      p_wallet: row.wallet,
-      p_count: row.delta,
+    updated.push(row);
+  }
+
+  if (updated.length > 0) {
+    const { error: statsErr } = await supabase.rpc("litvm_raffle_increment_user_entries_bulk", {
+      p_wallets: updated.map((row) => row.wallet),
+      p_counts: updated.map((row) => row.delta),
     });
+    if (statsErr) {
+      console.error(`Entry sync: bulk user-stat increment failed for raffle ${raffle.id}:`, statsErr.message);
+    }
   }
 
   console.log(
     `Entry sync: raffle ${raffle.id} (chain ${chainRaffleId}) reconciled ` +
-      `${inserts.length} new + ${updates.length} updated from ${logs.length} logs`
+      `${inserts.length} new + ${updates.length} updated from ${logs.length} logs ` +
+      `(blocks ${fromBlock}..${highestBlock})`
   );
+
+  return highestBlock;
 }
 
 function ttlFor(raffle: SyncableRaffle): number {
@@ -437,8 +590,13 @@ export async function syncRaffleEntriesFromChain(
   }
 
   const run = (async () => {
+    let syncedBlock: bigint | null = null;
     try {
-      await reconcile(supabase, raffle);
+      syncedBlock = await reconcile(
+        supabase,
+        raffle,
+        options.force ? MAX_PAGES_FORCED : MAX_PAGES_THROTTLED
+      );
     } catch (err) {
       console.error(
         `Entry sync failed for raffle ${raffle.id}:`,
@@ -449,9 +607,19 @@ export async function syncRaffleEntriesFromChain(
       // make every request retry. Recovery is delayed by one window at worst.
       lastSyncedAt.set(raffle.id, Date.now());
       inFlight.delete(raffle.id);
+
+      // The cursor only advances on success, so a failed run re-reads the same
+      // range rather than skipping past logs it never saw. A throttled run that
+      // exhausted its page budget still records progress, letting a large
+      // backlog drain across calls instead of restarting from the floor.
+      const stamp: { entries_synced_at: string; entries_synced_block?: string } = {
+        entries_synced_at: new Date().toISOString(),
+      };
+      if (syncedBlock !== null) stamp.entries_synced_block = syncedBlock.toString();
+
       const { error: stampErr } = await supabase
         .from("litvm_raffle_raffles")
-        .update({ entries_synced_at: new Date().toISOString() })
+        .update(stamp)
         .eq("id", raffle.id);
       if (stampErr) {
         console.error(`Entry sync: failed to stamp sync time for ${raffle.id}:`, stampErr.message);

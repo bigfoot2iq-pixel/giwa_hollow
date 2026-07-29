@@ -153,19 +153,17 @@ export async function GET(request: NextRequest) {
     const prizeTypesByRaffle = new Map<string, string[]>();
 
     if (raffleIds.length > 0) {
-      const { data: entries, error: entriesError } = await supabase
-        .from("litvm_raffle_entries")
-        .select("raffle_id")
-        .in("raffle_id", raffleIds);
+      // Counted in the database: tallying rows in JS stopped at PostgREST's
+      // 1000-row cap, so a full 10,000-entrant raffle showed as 1,000 here.
+      const { data: counts, error: entriesError } = await supabase.rpc("litvm_raffle_entry_counts", {
+        p_raffle_ids: raffleIds,
+      });
 
       if (entriesError) {
         console.error("Error fetching raffle participants:", entriesError);
       } else {
-        entries?.forEach((entry) => {
-          participantsByRaffle.set(
-            entry.raffle_id,
-            (participantsByRaffle.get(entry.raffle_id) || 0) + 1
-          );
+        counts?.forEach((row: { raffle_id: string; participants: number }) => {
+          participantsByRaffle.set(row.raffle_id, Number(row.participants));
         });
       }
     }

@@ -135,22 +135,21 @@ export async function GET(request: NextRequest) {
       await syncManyRaffleEntriesFromChain(supabase, syncable);
     }
 
-    // One query for every raffle on the page, tallied here. The previous
-    // per-raffle `count: exact` fanned out into `limit` separate round trips on
-    // the app's highest-traffic route; only `raffle_id` is selected so the
-    // payload stays proportional to entries, not to row width.
+    // Counted in the database, one round trip for the whole page. Tallying rows
+    // in JS silently capped at PostgREST's 1000-row limit, so a raffle at its
+    // 10,000 cap reported 1,000 participants; it also shipped one row per entry
+    // on the app's highest-traffic route.
     const participantsByRaffle = new Map<string, number>();
     if (raffleIds.length > 0) {
-      const { data: entryRows, error: countError } = await supabase
-        .from("litvm_raffle_entries")
-        .select("raffle_id")
-        .in("raffle_id", raffleIds);
+      const { data: counts, error: countError } = await supabase.rpc("litvm_raffle_entry_counts", {
+        p_raffle_ids: raffleIds,
+      });
 
       if (countError) {
         console.error("Error fetching participant counts:", countError);
       } else {
-        for (const row of entryRows ?? []) {
-          participantsByRaffle.set(row.raffle_id, (participantsByRaffle.get(row.raffle_id) ?? 0) + 1);
+        for (const row of counts ?? []) {
+          participantsByRaffle.set(row.raffle_id, Number(row.participants));
         }
       }
     }

@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# The template holds only blank keys and public network constants. Tracking it is
+# what makes a required-but-missing variable visible; WATCHDOG_PRIVATE_KEY went
+# undocumented precisely because this file was local-only.
+!.env.example
 
 # vercel
 .vercel
