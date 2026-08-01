@@ -58,4 +58,21 @@ export const CACHE = {
    * since the sidebar asks on every full page load.
    */
   adminAccess: cacheControl({ browser: 300, cdn: 0, private: true }),
+  /**
+   * A wallet's entry count for one raffle. This was the only read route serving
+   * no Cache-Control at all, so every mount of RaffleEntryForm reached Postgres
+   * — at ~200k requests/day it was the single largest consumer of the Supabase
+   * egress allowance, despite a 36-byte body (a PostgREST response costs ~1.2 KB
+   * in headers no matter how small the row).
+   *
+   * Private, like adminAccess: the wallet is already in the URL so a shared
+   * cache would key correctly, but with one entry per wallet the edge hit rate
+   * would be near zero anyway. The browser cache is what collapses the repeat
+   * mounts that make up the volume.
+   *
+   * The window is short because the count changes the moment its owner enters,
+   * and RaffleEntryForm re-reads it immediately after a successful entry — that
+   * refetch bypasses the cache explicitly rather than relying on this expiring.
+   */
+  walletEntry: cacheControl({ browser: 30, cdn: 0, private: true }),
 } as const;

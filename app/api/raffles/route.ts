@@ -93,31 +93,36 @@ export async function GET(request: NextRequest) {
       prize_amount: string | null;
       prize_token_id: string | null;
     };
+    // Prizes and participant counts for the visible page, in one call. These
+    // were two separate PostgREST round trips; on this route the round-trip
+    // count is what drives Supabase egress, since every response carries ~1.2 KB
+    // of headers whatever the body size.
     const prizeTypesByRaffle = new Map<string, PrizeType[]>();
     const prizesByRaffle = new Map<string, CardPrize[]>();
+    const participantsByRaffle = new Map<string, number>();
     if (raffleIds.length > 0) {
-      const { data: prizes, error: prizesError } = await supabase
-        .from("litvm_raffle_prizes")
-        .select("raffle_id, prize_type, prize_token_address, prize_amount, prize_token_id")
-        .in("raffle_id", raffleIds);
+      const { data: pageMeta, error: pageMetaError } = await supabase.rpc(
+        "litvm_raffle_page_meta",
+        { p_raffle_ids: raffleIds }
+      );
 
-      if (prizesError) {
-        console.error("Error fetching raffle prizes:", prizesError);
+      if (pageMetaError) {
+        console.error("Error fetching raffle page meta:", pageMetaError);
       } else {
-        prizes?.forEach((prize) => {
-          const existing = prizeTypesByRaffle.get(prize.raffle_id) || [];
-          existing.push(prize.prize_type);
-          prizeTypesByRaffle.set(prize.raffle_id, existing);
+        for (const row of (pageMeta ?? []) as Array<{
+          raffle_id: string;
+          participants: number | string;
+          prizes: CardPrize[] | null;
+        }>) {
+          participantsByRaffle.set(row.raffle_id, Number(row.participants) || 0);
 
-          const fullExisting = prizesByRaffle.get(prize.raffle_id) || [];
-          fullExisting.push({
-            prize_type: prize.prize_type,
-            prize_token_address: prize.prize_token_address,
-            prize_amount: prize.prize_amount,
-            prize_token_id: prize.prize_token_id,
-          });
-          prizesByRaffle.set(prize.raffle_id, fullExisting);
-        });
+          const prizes = row.prizes ?? [];
+          prizesByRaffle.set(row.raffle_id, prizes);
+          prizeTypesByRaffle.set(
+            row.raffle_id,
+            prizes.map((prize) => prize.prize_type)
+          );
+        }
       }
     }
 
@@ -133,25 +138,6 @@ export async function GET(request: NextRequest) {
       .map(({ raffle }) => raffle);
     if (syncable.length > 0) {
       await syncManyRaffleEntriesFromChain(supabase, syncable);
-    }
-
-    // Counted in the database, one round trip for the whole page. Tallying rows
-    // in JS silently capped at PostgREST's 1000-row limit, so a raffle at its
-    // 10,000 cap reported 1,000 participants; it also shipped one row per entry
-    // on the app's highest-traffic route.
-    const participantsByRaffle = new Map<string, number>();
-    if (raffleIds.length > 0) {
-      const { data: counts, error: countError } = await supabase.rpc("litvm_raffle_entry_counts", {
-        p_raffle_ids: raffleIds,
-      });
-
-      if (countError) {
-        console.error("Error fetching participant counts:", countError);
-      } else {
-        for (const row of counts ?? []) {
-          participantsByRaffle.set(row.raffle_id, Number(row.participants));
-        }
-      }
     }
 
     const raffles = pageSlice.map(({ raffle, status: raffleStatus }) => {

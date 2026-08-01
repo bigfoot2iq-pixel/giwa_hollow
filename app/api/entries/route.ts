@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { CACHE } from "@/lib/utils/cache";
 import { z } from "zod";
 
 const verifyEntrySchema = z.object({
@@ -46,10 +47,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch entry" }, { status: 500 });
     }
 
-    return NextResponse.json({
-      tokensSpent: data?.tokens_spent || 0,
-      entryCount: data?.entry_count || 0,
-    });
+    return NextResponse.json(
+      {
+        tokensSpent: data?.tokens_spent || 0,
+        entryCount: data?.entry_count || 0,
+      },
+      { headers: { "Cache-Control": CACHE.walletEntry } }
+    );
   } catch (error) {
     console.error("Error in GET /api/entries:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

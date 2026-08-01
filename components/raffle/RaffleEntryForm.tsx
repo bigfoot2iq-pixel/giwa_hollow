@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAccount, usePublicClient, useWriteContract, useReadContract } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTokenAllowance, useTokenBalance, formatTokenBalance } from "@/lib/hooks";
@@ -69,33 +69,55 @@ export function RaffleEntryForm({
     fetchTokenSymbol();
   }, []);
 
-  useEffect(() => {
-    if (!address || !raffle.id) {
-      setEnteredCount(null);
-      return;
-    }
-
-    const controller = new AbortController();
-    const loadEnteredCount = async () => {
+  /**
+   * Reads how many entries this wallet already has.
+   *
+   * `fresh` skips the browser cache. The route is cached to keep it off
+   * Postgres, but the read after a successful entry is the one moment the value
+   * is guaranteed to have just changed.
+   */
+  const fetchEnteredCount = useCallback(
+    async (opts: { fresh?: boolean; signal?: AbortSignal } = {}): Promise<number> => {
+      if (!address || !raffle.id) return 0;
       try {
         const response = await fetch(
           `/api/entries?raffleId=${raffle.id}&walletAddress=${address}`,
-          { signal: controller.signal }
+          { signal: opts.signal, cache: opts.fresh ? "no-store" : "default" }
         );
-        if (!response.ok) {
-          setEnteredCount(0);
-          return;
-        }
-        const payload = await response.json();
-        setEnteredCount(typeof payload?.entryCount === "number" ? payload.entryCount : 0);
+        const count = response.ok
+          ? Number((await response.json())?.entryCount) || 0
+          : 0;
+        setEnteredCount(count);
+        return count;
       } catch {
         setEnteredCount(0);
+        return 0;
       }
-    };
+    },
+    [address, raffle.id]
+  );
 
-    loadEnteredCount();
+  // Deferred until the wallet actually engages with the form.
+  //
+  // This read is per-wallet, so it can never be cached across users — every
+  // request is a distinct Supabase round trip by construction. Firing it on
+  // mount meant one round trip per page view, and the overwhelming majority of
+  // page views are automated traffic that never touches the form. Waiting for
+  // real intent removes those without changing anything a real entrant sees:
+  // `handleSubmit` loads the count itself before going on-chain.
+  const [entryFormEngaged, setEntryFormEngaged] = useState(false);
+
+  useEffect(() => {
+    setEnteredCount(null);
+    setEntryFormEngaged(false);
+  }, [address, raffle.id]);
+
+  useEffect(() => {
+    if (!entryFormEngaged || !address || !raffle.id) return;
+    const controller = new AbortController();
+    fetchEnteredCount({ fresh: refreshKey > 0, signal: controller.signal });
     return () => controller.abort();
-  }, [address, raffle.id, refreshKey]);
+  }, [entryFormEngaged, address, raffle.id, refreshKey, fetchEnteredCount]);
 
   const needsApproval = allowance !== undefined && allowance < tokensNeeded;
   const isLoading = status === "approving" || status === "joining" || status === "recording";
@@ -111,6 +133,23 @@ export function RaffleEntryForm({
     setError(null);
 
     try {
+      // The on-screen cap is optimistic until the deferred read lands, and every
+      // step below this line costs real tokens. Settle the count against the
+      // server first — the POST that records the entry enforces the same limit,
+      // and hitting it after joinRaffle would take the tokens without an entry.
+      const alreadyEntered = enteredCount ?? (await fetchEnteredCount({ fresh: true }));
+      if (alreadyEntered + entryCount > raffle.max_entries_per_user) {
+        const remaining = Math.max(0, raffle.max_entries_per_user - alreadyEntered);
+        setStatus("error");
+        setError(
+          remaining === 0
+            ? "You have reached the maximum entries for this raffle."
+            : `You can only enter ${remaining} more time${remaining === 1 ? "" : "s"}.`
+        );
+        setEntryCount(Math.max(1, Math.min(entryCount, remaining || 1)));
+        return;
+      }
+
       // Step 1: Approve if needed
       if (needsApproval) {
         setStatus("approving");
@@ -231,7 +270,16 @@ export function RaffleEntryForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form
+      onSubmit={handleSubmit}
+      // First real interaction anywhere in the form triggers the deferred
+      // entry-count read, so it is already in flight by the time anyone submits.
+      // Capture phase, and both events, so focusing the input and clicking the
+      // button are each enough on their own.
+      onFocusCapture={() => setEntryFormEngaged(true)}
+      onPointerDownCapture={() => setEntryFormEngaged(true)}
+      className="space-y-6"
+    >
       <div>
         <label className="text-[10px] font-bold uppercase text-muted-blue tracking-widest block mb-2">
           Number of Entries
