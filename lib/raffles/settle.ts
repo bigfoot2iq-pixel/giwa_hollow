@@ -59,7 +59,7 @@ function getClients() {
 
 async function countRows(
   supabase: ServiceClient,
-  table: "litvm_raffle_entries" | "litvm_raffle_prizes",
+  table: "litvm_raffle_entries" | "litvm_raffle_prizes" | "litvm_raffle_winners",
   raffleId: string
 ): Promise<number> {
   const { count, error } = await supabase
@@ -77,7 +77,8 @@ async function persistWinners(
   supabase: ServiceClient,
   raffleId: string,
   winners: string[],
-  txHash: string
+  /** Null when recovered from chain state, where the end tx is no longer known. */
+  txHash: string | null
 ): Promise<void> {
   if (winners.length === 0) return;
 
@@ -107,6 +108,53 @@ async function persistWinners(
     });
     if (incErr) console.error(`Error incrementing wins for ${wallet}:`, incErr);
   }
+}
+
+/**
+ * Repair path for a settlement that confirmed on-chain but never reached the DB.
+ *
+ * `endRaffle` and the winner insert are not one atomic step: the invocation that
+ * sends the tx can be killed while it waits on the receipt, and the main loop
+ * then skips the raffle forever because it is no longer ACTIVE. The result is a
+ * raffle the UI renders as ended with "No winners selected" while the prize has
+ * already been transferred on-chain (raffle `ariwa` / chain id 1, 2026-07-28).
+ *
+ * The chain is the only surviving record of the outcome, so re-read it. The end
+ * tx hash is not recoverable without an unbounded `RaffleEnded` log scan, so
+ * `distribution_tx_hash` is left null here — the winner list then renders
+ * without an explorer link, which beats rendering nothing.
+ */
+async function recoverMissingWinners(
+  supabase: ServiceClient,
+  publicClient: ReturnType<typeof getClients>["publicClient"],
+  raffleContract: `0x${string}`,
+  raffle: { id: string; chain_raffle_id: number | null; title: string },
+  summary: SettleSummary
+): Promise<void> {
+  const chainId = raffle.chain_raffle_id;
+  if (!chainId) return;
+
+  const existing = await countRows(supabase, "litvm_raffle_winners", raffle.id);
+  if (existing > 0) return;
+
+  const winners = (await publicClient.readContract({
+    address: raffleContract,
+    abi: RobinhoodRafflesABI,
+    functionName: "getWinners",
+    args: [BigInt(chainId)],
+  })) as string[];
+
+  // A raffle that ended with no entrants has no winners by design; nothing to do.
+  if (winners.length === 0) return;
+
+  await persistWinners(supabase, raffle.id, winners, null);
+  summary.ended.push({
+    raffleId: raffle.id,
+    chainRaffleId: chainId,
+    title: raffle.title,
+    winners: winners.length,
+    reason: "recovered winners from chain (settlement tx confirmed, DB write lost)",
+  });
 }
 
 /**
@@ -186,7 +234,15 @@ export async function processExpiredRaffles(supabase: ServiceClient): Promise<Se
     const chainId = raffle.chain_raffle_id;
     if (!chainId) continue;
     try {
-      if ((await readState(chainId)) !== RAFFLE_STATE.ACTIVE) continue;
+      const state = await readState(chainId);
+      if (state !== RAFFLE_STATE.ACTIVE) {
+        // Already settled on-chain. Normally a no-op, but confirm the outcome
+        // actually reached the DB before writing this raffle off for good.
+        if (state === RAFFLE_STATE.COMPLETED) {
+          await recoverMissingWinners(supabase, publicClient, raffleContract, raffle, summary);
+        }
+        continue;
+      }
 
       // The draw is built from the DB, so reconcile against EntrySubmitted logs
       // first — otherwise anyone who joined by calling the contract directly is
