@@ -5,6 +5,21 @@ import { RobinhoodRafflesABI, giwaSepolia } from "@/lib/contracts";
 import { createPublicClient, getAddress, http, isAddress, parseEventLogs } from "viem";
 import { z } from "zod";
 
+// Unique per raffle: the on-chain id is appended, and chain_raffle_id is a UNIQUE
+// column, so no two raffles can ever collide — even with identical titles. The
+// admin path previously left slug unset and let the DB trigger derive it from the
+// title alone, so a second "Ariwa" raffle hit litvm_raffle_raffles_slug_key AFTER
+// its prize was already escrowed on-chain. Mirrors slugify() in
+// app/api/raffles/create/route.ts.
+function slugify(title: string, chainRaffleId: number): string {
+  const base = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+  return `${base || "raffle"}-${chainRaffleId}`;
+}
+
 const confirmRaffleSchema = z.object({
   txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/, "Invalid transaction hash"),
   raffleData: z.object({
@@ -129,6 +144,7 @@ export async function POST(request: NextRequest) {
       .from("litvm_raffle_raffles")
       .insert({
         title: raffleData.title,
+        slug: slugify(raffleData.title, chainRaffleId),
         description: raffleData.description,
         image_url: raffleData.image_url,
         tokens_required: raffleData.tokens_required,
