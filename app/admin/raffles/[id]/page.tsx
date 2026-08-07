@@ -30,6 +30,8 @@ interface RaffleDetail {
     prize_token_id: string | null;
   }>;
   chainStatus?: string;
+  // Unix seconds the contract locks endRaffle until. 0/undefined = endable now.
+  chainEndTime?: number;
 }
 
 export default function RaffleDetailPage() {
@@ -181,6 +183,47 @@ export default function RaffleDetailPage() {
     }
   };
 
+  const handleCancelRaffle = async () => {
+    if (!walletLower) return;
+
+    if (
+      !confirm(
+        "Cancel this raffle on-chain? The escrowed prize is returned to its creator (or the platform owner), no winner is drawn, and this cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    setActionLoading((prev) => ({ ...prev, cancel: true }));
+
+    try {
+      const auth = await getAdminAuth();
+
+      const response = await fetch(`/api/admin/raffles/${raffleId}/cancel`, {
+        method: "POST",
+        headers: {
+          "x-admin-wallet": auth.wallet,
+          "x-admin-signature": auth.signature,
+          "x-admin-timestamp": auth.timestamp,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(`Raffle cancelled. Prize returned to ${result.recipient}.`);
+        await fetchData();
+      } else {
+        const error = await response.json();
+        alert(`Failed to cancel raffle: ${error.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Error cancelling raffle:", error);
+      alert("Failed to cancel raffle");
+    } finally {
+      setActionLoading((prev) => ({ ...prev, cancel: false }));
+    }
+  };
+
   const handleManualEndRaffle = async () => {
     if (!walletLower) return;
 
@@ -269,8 +312,15 @@ export default function RaffleDetailPage() {
     );
   }
 
-  const { raffle, entries, winners, prizes, chainStatus } = data;
+  const { raffle, entries, winners, prizes, chainStatus, chainEndTime } = data;
   const status = getRaffleStatus(raffle.start_date, raffle.end_date, undefined, chainStatus as any);
+
+  // Scheduled raffles (on-chain endTime > 0) revert endRaffle until their time
+  // passes. Lock the End / Manual End buttons until then so a click can't fail
+  // with "Raffle not yet ended". endTime 0 = owner-managed, endable anytime.
+  const endTimeMs = chainEndTime ? chainEndTime * 1000 : 0;
+  const endLocked = endTimeMs > 0 && Date.now() < endTimeMs;
+  const endUnlockLabel = endLocked ? format(new Date(endTimeMs), "MMM d, yyyy HH:mm") : null;
 
   return (
     <div className="space-y-8">
@@ -295,12 +345,30 @@ export default function RaffleDetailPage() {
             </button>
           )}
           {status === "active" && (
+            <div className="flex flex-col items-end gap-1">
+              <button
+                onClick={handleEndRaffle}
+                disabled={actionLoading.end || endLocked}
+                title={endLocked ? `Scheduled raffle — contract locks end until ${endUnlockLabel}` : undefined}
+                className="px-6 py-3 bg-orange-500 hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {actionLoading.end ? "Ending..." : "End Raffle"}
+              </button>
+              {endLocked && (
+                <span className="text-[10px] text-muted-blue uppercase tracking-widest">
+                  Locked until {endUnlockLabel}
+                </span>
+              )}
+            </div>
+          )}
+          {(status === "active" || status === "pending") && raffle.chain_raffle_id != null && (
             <button
-              onClick={handleEndRaffle}
-              disabled={actionLoading.end}
-              className="px-6 py-3 bg-orange-500 hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handleCancelRaffle}
+              disabled={actionLoading.cancel}
+              title="Cancel on-chain and return the escrowed prize to its creator or the platform owner. No winner is drawn. Not time-locked."
+              className="px-6 py-3 bg-red-500 hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {actionLoading.end ? "Ending..." : "End Raffle"}
+              {actionLoading.cancel ? "Cancelling..." : "Cancel Raffle"}
             </button>
           )}
         </div>
@@ -441,6 +509,12 @@ export default function RaffleDetailPage() {
               Manually end the raffle with custom participants and ticket counts. This bypasses the database entries and sends custom data directly to the smart contract.
             </p>
 
+            {endLocked && (
+              <p className="text-orange-500 text-sm">
+                Scheduled raffle — the contract blocks ending until {endUnlockLabel}. To close it early, use the Cancel Raffle button (returns the prize, no winner).
+              </p>
+            )}
+
             {/* Participant rows */}
             <div className="space-y-3">
               {manualParticipants.map((participant, index) => (
@@ -485,7 +559,8 @@ export default function RaffleDetailPage() {
 
               <button
                 onClick={handleManualEndRaffle}
-                disabled={actionLoading.manualEnd}
+                disabled={actionLoading.manualEnd || endLocked}
+                title={endLocked ? `Scheduled raffle — contract locks end until ${endUnlockLabel}` : undefined}
                 className="px-6 py-3 bg-orange-500 hover:brightness-110 text-text-primary font-bold rounded uppercase tracking-widest text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {actionLoading.manualEnd ? "Ending..." : "Manually End Raffle"}

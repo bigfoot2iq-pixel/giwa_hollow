@@ -34,6 +34,33 @@ export async function getOnChainRaffleState(chainRaffleId: number): Promise<Raff
   return CHAIN_STATE_MAP[state] ?? "pending";
 }
 
+export interface OnChainRaffleSchedule {
+  status: RaffleStatus;
+  // Unix seconds after which the contract allows endRaffle. 0 = owner-managed,
+  // endable anytime. Non-zero = scheduled raffle; endRaffle reverts "Raffle not
+  // yet ended" until block.timestamp >= endTime (anti-rug).
+  endTime: number;
+}
+
+/** Read on-chain state + schedule for a single raffle in one struct read. */
+export async function getOnChainRaffleSchedule(
+  chainRaffleId: number
+): Promise<OnChainRaffleSchedule> {
+  const client = getPublicClient();
+  const result = await client.readContract({
+    address: contracts.raffles.address,
+    abi,
+    functionName: "raffles",
+    args: [BigInt(chainRaffleId)],
+  }) as [number, string, number, bigint, boolean, boolean, string, bigint];
+
+  const state = Number(result[2]);
+  return {
+    status: CHAIN_STATE_MAP[state] ?? "pending",
+    endTime: Number(result[7]),
+  };
+}
+
 // address(0) creator on-chain = owner/platform raffle; otherwise a user raffle.
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 

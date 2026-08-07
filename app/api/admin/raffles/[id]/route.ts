@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { verifyAdminSignature } from "@/lib/utils/auth";
-import { getOnChainRaffleState } from "@/lib/utils/chain";
+import { getOnChainRaffleSchedule } from "@/lib/utils/chain";
 import { z } from "zod";
 
 const updateRaffleSchema = z.object({
@@ -88,17 +88,22 @@ export async function GET(
       .eq("raffle_id", raffle.id)
       .order("created_at", { ascending: true });
 
-    // Read on-chain state
+    // Read on-chain state + schedule. chainEndTime (unix seconds) gates the admin
+    // End button: a scheduled raffle (endTime > 0) reverts endRaffle until its
+    // time passes, so the UI must disable the button until then.
     let chainStatus = undefined;
+    let chainEndTime = undefined;
     if (raffle.chain_raffle_id) {
       try {
-        chainStatus = await getOnChainRaffleState(raffle.chain_raffle_id);
+        const schedule = await getOnChainRaffleSchedule(raffle.chain_raffle_id);
+        chainStatus = schedule.status;
+        chainEndTime = schedule.endTime;
       } catch (err) {
         console.error("Error reading on-chain state:", err);
       }
     }
 
-    return NextResponse.json({ raffle, entries, winners, prizes, chainStatus });
+    return NextResponse.json({ raffle, entries, winners, prizes, chainStatus, chainEndTime });
   } catch (error) {
     console.error("Error in GET /api/admin/raffles/[id]:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
