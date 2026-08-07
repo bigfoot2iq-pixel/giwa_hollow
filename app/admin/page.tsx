@@ -202,6 +202,47 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCancelRaffle = async (raffleId: string) => {
+    if (!walletLower) return;
+
+    if (
+      !confirm(
+        "Cancel this raffle on-chain? The escrowed prize is returned to its creator (or the platform owner), no winner is drawn, and this cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    setActionLoading((prev) => ({ ...prev, [`cancel-${raffleId}`]: true }));
+
+    try {
+      const auth = await getAdminAuth();
+
+      const response = await fetch(`/api/admin/raffles/${raffleId}/cancel`, {
+        method: "POST",
+        headers: {
+          "x-admin-wallet": auth.wallet,
+          "x-admin-signature": auth.signature,
+          "x-admin-timestamp": auth.timestamp,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(`Raffle cancelled. Prize returned to ${result.recipient}.`);
+        await loadRaffles();
+      } else {
+        const error = await response.json();
+        alert(`Failed to cancel raffle: ${error.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Error cancelling raffle:", error);
+      alert("Failed to cancel raffle");
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [`cancel-${raffleId}`]: false }));
+    }
+  };
+
   if (loading && !data) {
     return (
       <div className="space-y-6">
@@ -392,6 +433,16 @@ export default function AdminDashboard() {
                           className="px-3 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-500 text-xs font-bold rounded uppercase tracking-widest transition-all border border-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {actionLoading[`end-${raffle.id}`] ? "..." : "End"}
+                        </button>
+                      )}
+                      {(raffle.status === "active" || raffle.status === "pending") && raffle.chain_raffle_id != null && (
+                        <button
+                          onClick={() => handleCancelRaffle(raffle.id)}
+                          disabled={actionLoading[`cancel-${raffle.id}`]}
+                          title="Cancel on-chain and return the escrowed prize. No winner is drawn. Not time-locked."
+                          className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 text-xs font-bold rounded uppercase tracking-widest transition-all border border-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {actionLoading[`cancel-${raffle.id}`] ? "..." : "Cancel"}
                         </button>
                       )}
                       <Link href={`/admin/raffles/${raffle.slug || raffle.id}`}>
