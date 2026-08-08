@@ -37,7 +37,12 @@ export async function GET(request: NextRequest) {
       } else if (status === "active") {
         query = query.lte("start_date", nowIso).gt("end_date", nowIso);
       } else if (status === "ended") {
-        query = query.lte("end_date", nowIso);
+        // Historical must include raffles ended EARLY on-chain — cancelled or
+        // drawn before their end_date — whose end_date is still in the future.
+        // A date-only `end_date <= now` filter drops those; they're only
+        // distinguishable via chain state, so fetch every started raffle here
+        // and narrow to the effective status after reading the chain below.
+        query = query.lte("start_date", nowIso);
       }
     }
 
@@ -72,10 +77,18 @@ export async function GET(request: NextRequest) {
       status: getRaffleStatus(raffle.start_date, raffle.end_date, now, chainMeta.get(raffle.id)?.status),
     }));
 
+    // The DB pre-filter is date-based, but a raffle's real status can diverge
+    // from its dates: cancelled or drawn early on-chain keeps a future end_date.
+    // Narrow to the effective (chain-aware) status so those leave Live and land
+    // in Historical, instead of showing under the tab their dates imply.
+    const statusFiltered = status
+      ? enriched.filter((e) => e.status === status)
+      : enriched;
+
     // Sort: active first, then pending, then ended (when not filtering by an explicit status).
     if (!status) {
       const statusOrder: Record<RaffleStatus, number> = { active: 0, pending: 1, ended: 2 };
-      enriched.sort((a, b) => {
+      statusFiltered.sort((a, b) => {
         const orderA = statusOrder[a.status] ?? 3;
         const orderB = statusOrder[b.status] ?? 3;
         if (orderA !== orderB) return orderA - orderB;
@@ -83,8 +96,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const total = enriched.length;
-    const pageSlice = enriched.slice(offset, offset + limit);
+    const total = statusFiltered.length;
+    const pageSlice = statusFiltered.slice(offset, offset + limit);
     const raffleIds = pageSlice.map((e) => e.raffle.id);
 
     type CardPrize = {
