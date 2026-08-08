@@ -77,14 +77,19 @@ export async function GET(
 
     const totalEntries = entriesData?.reduce((sum, entry) => sum + entry.entry_count, 0) || 0;
 
+    // Display-count overrides for raffles whose entry rows were pruned (see
+    // 20260808_add_participants_display.sql). Null falls back to the real counts.
+    const displayParticipants = raffle.participants_display ?? (participantsCount || 0);
+    const displayEntries = raffle.entries_display ?? totalEntries;
+
     return NextResponse.json(
       {
         raffle: {
           ...raffle,
           status: getRaffleStatus(raffle.start_date, raffle.end_date, undefined, chainStatus),
         },
-        participantsCount: participantsCount || 0,
-        entriesCount: totalEntries,
+        participantsCount: displayParticipants,
+        entriesCount: displayEntries,
         prizes: prizes || [],
         winners: winners || [],
       },

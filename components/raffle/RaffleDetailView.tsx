@@ -70,7 +70,10 @@ export default function RaffleDetailView() {
 
       if (response.ok) {
         setData(result);
-        setTotalEntriesCount(result.participantsCount || 0);
+        // Joiner total lives in the Participants stat (result.participantsCount).
+        // totalEntriesCount is the Entries-list count and is owned solely by
+        // fetchEntries — setting it here too would race the list total (and, when
+        // participants_display overrides the joiner count, disagree with it).
       } else {
         setError(result.error || "Failed to load raffle");
       }

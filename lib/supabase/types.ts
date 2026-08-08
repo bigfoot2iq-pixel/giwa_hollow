@@ -16,6 +16,10 @@ export interface RaffleRow {
   tx_hash: string | null;
   /** Last chain<->DB entry reconciliation; throttles the sync. Null = never. */
   entries_synced_at: string | null;
+  /** Displayed joiner count when set; null = count entry rows. Display only. */
+  participants_display: number | null;
+  /** Displayed total-entries count when set; null = sum entry rows. Display only. */
+  entries_display: number | null;
   created_at: string;
   updated_at: string;
 }
