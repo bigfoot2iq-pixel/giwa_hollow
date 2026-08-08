@@ -41,38 +41,41 @@ export async function GET(
       return NextResponse.json({ error: "Failed to fetch raffle" }, { status: 500 });
     }
 
-    // Pull in anyone who joined by calling the contract directly before counting.
-    // Throttled + non-throwing: a failure just means we serve the DB as-is.
-    await syncRaffleEntriesFromChain(supabase, raffle);
+    // The entry reconcile, the winners/prizes reads, and the on-chain state read
+    // are mutually independent — only the entries count below depends on the
+    // reconcile having written any direct-contract entrants. Overlap the four so
+    // this route costs one round-trip's worth of latency instead of the sum of
+    // four sequential ones (it was ~6 serial trips before).
+    //
+    // Sync never throws; the chain read is wrapped so a slow RPC can't reject the
+    // batch (it falls back to date-derived status, exactly as before).
+    const [, winnersResult, prizesResult, chainStatus] = await Promise.all([
+      syncRaffleEntriesFromChain(supabase, raffle),
+      supabase.from("litvm_raffle_winners").select("*").eq("raffle_id", raffle.id),
+      supabase
+        .from("litvm_raffle_prizes")
+        .select("*")
+        .eq("raffle_id", raffle.id)
+        .order("created_at", { ascending: true }),
+      raffle.chain_raffle_id
+        ? getOnChainRaffleState(raffle.chain_raffle_id).catch((err) => {
+            console.error("Error reading on-chain state:", err);
+            return undefined;
+          })
+        : Promise.resolve(undefined),
+    ]);
 
-    // Get entries count
+    const winners = winnersResult.data;
+    const prizes = prizesResult.data;
+
+    // Entries count runs after the reconcile so direct-contract entrants are
+    // included in the participant/entry totals.
     const { data: entriesData, count: participantsCount } = await supabase
       .from("litvm_raffle_entries")
       .select("entry_count", { count: "exact" })
       .eq("raffle_id", raffle.id);
 
     const totalEntries = entriesData?.reduce((sum, entry) => sum + entry.entry_count, 0) || 0;
-
-    const { data: winners } = await supabase
-      .from("litvm_raffle_winners")
-      .select("*")
-      .eq("raffle_id", raffle.id);
-
-    const { data: prizes } = await supabase
-      .from("litvm_raffle_prizes")
-      .select("*")
-      .eq("raffle_id", raffle.id)
-      .order("created_at", { ascending: true });
-
-    // Read on-chain state if deployed
-    let chainStatus = undefined;
-    if (raffle.chain_raffle_id) {
-      try {
-        chainStatus = await getOnChainRaffleState(raffle.chain_raffle_id);
-      } catch (err) {
-        console.error("Error reading on-chain state:", err);
-      }
-    }
 
     return NextResponse.json(
       {
