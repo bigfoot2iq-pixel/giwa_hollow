@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import supabase from '@/lib/supabase/game-client';
+import { isAddress } from 'viem';
+import { createServiceClient } from '@/lib/supabase/server';
+import { findGameUser } from '@/lib/utils/gameUsersServer';
 import type { ScoreUpdateResponse } from '@/lib/supabase/types';
 
 export async function POST(request: NextRequest) {
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
     const { walletAddress, score } = body;
 
     // Validate input
-    if (!walletAddress || typeof walletAddress !== 'string') {
+    if (!walletAddress || typeof walletAddress !== 'string' || !isAddress(walletAddress)) {
       return NextResponse.json(
         { error: 'Valid wallet address is required' },
         { status: 400 }
@@ -33,10 +35,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const supabase = await createServiceClient();
+
+    // Resolve the stored wallet value: the SQL function matches
+    // wallet_address case-sensitively.
+    const user = await findGameUser(supabase, walletAddress);
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     // Call the database function to update score
     const { data, error } = await supabase
       .rpc('litvm_raffle_update_game_score', {
-        user_wallet: walletAddress,
+        user_wallet: user.wallet_address,
         new_score: score
       });
 
@@ -88,28 +99,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const walletAddress = searchParams.get('walletAddress');
 
-    if (!walletAddress) {
+    if (!walletAddress || !isAddress(walletAddress)) {
       return NextResponse.json(
-        { error: 'Wallet address is required' },
+        { error: 'Valid wallet address is required' },
         { status: 400 }
       );
     }
 
-    const { data, error } = await supabase
-      .from('litvm_raffle_game_users')
-      .select('game_score')
-      .eq('wallet_address', walletAddress)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error fetching user score:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch user score' },
-        { status: 500 }
-      );
-    }
-
-    const gameScore = data?.game_score || 0;
+    const supabase = await createServiceClient();
+    const user = await findGameUser(supabase, walletAddress);
+    const gameScore = user?.game_score || 0;
 
     return NextResponse.json({ score: gameScore });
   } catch (error) {
@@ -119,4 +118,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

@@ -1,5 +1,15 @@
-import supabase from '@/lib/supabase/game-client';
-import { TheAriwaUser, UserRegistrationData, WalletType } from '@/lib/supabase/types';
+import { TheAriwaUser, UserRegistrationData } from '@/lib/supabase/types';
+
+/**
+ * Client-side profile helpers.
+ *
+ * All reads/writes go through /api/game-user, which holds the service-role key
+ * server-side and verifies a wallet signature for updates. The browser never
+ * touches Supabase directly for profile data.
+ */
+
+const AVATAR_MAX_SIZE = 200;
+const AVATAR_QUALITY = 0.8;
 
 /**
  * Compress an image file to a smaller size suitable for profile avatars
@@ -72,195 +82,78 @@ const compressImage = async (file: File, maxSize: number = 200, quality: number 
 };
 
 /**
- * Get user by wallet address and type
+ * Get user by wallet address. Returns null when the wallet has no profile yet.
  */
-export const getUserByWallet = async (walletAddress: string, walletType?: WalletType): Promise<TheAriwaUser | null> => {
+export const getUserByWallet = async (walletAddress: string): Promise<TheAriwaUser | null> => {
   try {
-    let query = supabase
-      .from('litvm_raffle_game_users')
-      .select('*')
-      .eq('wallet_address', walletAddress);
-    
-    // If wallet type is provided, filter by it as well
-    if (walletType) {
-      query = query.eq('wallet_type', walletType);
-    }
-    
-    const { data, error } = await query.single();
+    const response = await fetch(
+      `/api/game-user?wallet=${encodeURIComponent(walletAddress)}`,
+      { cache: 'no-store' }
+    );
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
-      console.error('Error fetching user:', error);
+    if (!response.ok) {
+      console.error('Error fetching user:', response.status, response.statusText);
       return null;
     }
 
-    return data;
+    const data = await response.json();
+    return (data.user as TheAriwaUser) ?? null;
   } catch (err) {
     console.error('Error in getUserByWallet:', err);
     return null;
   }
 };
 
-/**
- * Create or update user on wallet connection
- */
-export const upsertUser = async (walletAddress: string, walletType: WalletType): Promise<TheAriwaUser | null> => {
-  try {
-    const { data, error } = await supabase
-      .rpc('upsert_litvm_raffle_game_user', { 
-        wallet: walletAddress, 
-        wallet_type: walletType 
-      });
-
-    if (error) {
-      console.error('Error upserting user:', error);
-      return null;
-    }
-
-    return data;
-  } catch (err) {
-    console.error('Error in upsertUser:', err);
-    return null;
-  }
-};
+export interface ProfileAuth {
+  signature: string;
+  timestamp: number;
+}
 
 /**
- * Update user profile information (works for both registration and profile editing)
+ * Create or update the profile. The caller must sign the canonical profile
+ * message (`buildProfileUpdateMessage`) first; the API verifies it before
+ * writing, so only the wallet owner can change the row.
  */
 export const updateUserRegistration = async (
   walletAddress: string,
   registrationData: UserRegistrationData,
-  walletType?: WalletType
+  auth: ProfileAuth
 ): Promise<TheAriwaUser | null> => {
   try {
-    console.log('updateUserRegistration called with:', { walletAddress, registrationData });
-    
-    // Get current user data to handle image updates properly
-    const currentUser = await getUserByWallet(walletAddress, walletType);
-    if (!currentUser) {
-      throw new Error('User not found');
+    const formData = new FormData();
+    formData.append('wallet', walletAddress);
+    formData.append('username', registrationData.username);
+    formData.append('timestamp', String(auth.timestamp));
+    formData.append('signature', auth.signature);
+
+    if (registrationData.removeImage) {
+      formData.append('removeImage', 'true');
     }
-    
-    console.log('Current user:', currentUser);
 
-    let imageUrl: string | null = currentUser.image_url || null; // Keep existing image by default
-
-    // Handle image changes
     if (registrationData.imageFile) {
-      // Delete old avatar if it exists
-      if (currentUser.image_url) {
-        await deleteOldAvatar(currentUser.image_url);
-      }
-      
-      // Upload new avatar
-      imageUrl = await uploadAvatar(walletAddress, registrationData.imageFile);
-      if (!imageUrl) {
-        throw new Error('Failed to upload avatar');
-      }
-    } else if (registrationData.removeImage) {
-      // User wants to remove their current image
-      if (currentUser.image_url) {
-        await deleteOldAvatar(currentUser.image_url);
-      }
-      imageUrl = null;
+      const compressedFile = await compressImage(
+        registrationData.imageFile,
+        AVATAR_MAX_SIZE,
+        AVATAR_QUALITY
+      );
+      formData.append('image', compressedFile, compressedFile.name);
     }
 
-    // Prepare update data
-    const updateData: any = {
-      username: registrationData.username,
-      is_registered: true,
-    };
+    const response = await fetch('/api/game-user', {
+      method: 'PATCH',
+      body: formData,
+    });
 
-    // Update image_url if we have changes (new image or removal)
-    if (registrationData.imageFile || registrationData.removeImage) {
-      updateData.image_url = imageUrl;
-    }
-
-    console.log('Updating user with data:', updateData);
-    
-    // Update user record
-    const { data, error } = await supabase
-      .from('litvm_raffle_game_users')
-      .update(updateData)
-      .eq('wallet_address', walletAddress)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating user registration:', error);
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      console.error('Error updating user registration:', body?.error || response.statusText);
       return null;
     }
 
-    console.log('User updated successfully:', data);
-    return data;
+    const data = await response.json();
+    return (data.user as TheAriwaUser) ?? null;
   } catch (err) {
     console.error('Error in updateUserRegistration:', err);
     return null;
   }
 };
-
-/**
- * Upload user avatar to Supabase storage
- * Images are compressed to 200x200px max before upload for performance
- */
-export const uploadAvatar = async (walletAddress: string, file: File): Promise<string | null> => {
-  try {
-    // Validate file size (max 2MB for original)
-    if (file.size > 2 * 1024 * 1024) {
-      throw new Error('File size must be less than 2MB');
-    }
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      throw new Error('File must be an image');
-    }
-
-    // Compress image before upload (200x200px max, JPEG 80% quality)
-    const compressedFile = await compressImage(file, 200, 0.8);
-    console.log(`Image compressed: ${file.size} bytes -> ${compressedFile.size} bytes`);
-
-    // Generate unique filename (always .jpg after compression)
-    const fileName = `${walletAddress}_${Date.now()}.jpg`;
-
-    // Upload compressed file
-    const { data, error } = await supabase.storage
-      .from('litvm-raffle-avatars')
-      .upload(fileName, compressedFile, {
-        cacheControl: '3600',
-        upsert: true,
-      });
-
-    if (error) {
-      console.error('Error uploading file:', error);
-      return null;
-    }
-
-    // Get public URL
-    const { data: publicUrlData } = supabase.storage
-      .from('litvm-raffle-avatars')
-      .getPublicUrl(fileName);
-
-    return publicUrlData.publicUrl;
-  } catch (err) {
-    console.error('Error in uploadAvatar:', err);
-    return null;
-  }
-};
-
-/**
- * Delete old avatar when uploading new one
- */
-export const deleteOldAvatar = async (imageUrl: string): Promise<void> => {
-  try {
-    if (!imageUrl) return;
-
-    // Extract filename from URL
-    const urlParts = imageUrl.split('/');
-    const fileName = urlParts[urlParts.length - 1];
-
-    await supabase.storage
-      .from('litvm-raffle-avatars')
-      .remove([fileName]);
-  } catch (err) {
-    console.error('Error deleting old avatar:', err);
-  }
-}; 

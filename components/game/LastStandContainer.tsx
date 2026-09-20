@@ -5,13 +5,11 @@ import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import LastStandGame from './LastStandGame';
 import { useState, useEffect, useCallback } from 'react';
-import { useMultiUser } from '@/lib/hooks/useMultiUser';
 import { useGameSession } from '@/lib/hooks/useGameSession';
 import { usePayToPlay } from '@/lib/hooks/usePayToPlay';
 
 export default function LastStandContainer() {
-  const { isConnected } = useAccount();
-  const { user } = useMultiUser();
+  const { isConnected, address } = useAccount();
   const [gameStarted, setGameStarted] = useState(false);
   const [currentScore, setCurrentScore] = useState(0);
   const [hasPlayedBefore, setHasPlayedBefore] = useState(false);
@@ -40,7 +38,7 @@ export default function LastStandContainer() {
     error: sessionError,
     createSession,
     checkActiveSession
-  } = useGameSession({ walletAddress: user?.wallet_address });
+  } = useGameSession({ walletAddress: address });
 
   // Exit game when wallet disconnects during gameplay
   useEffect(() => {
@@ -51,7 +49,7 @@ export default function LastStandContainer() {
 
   // Handle payment and session creation
   const handlePayToPlay = useCallback(async () => {
-    if (!user?.wallet_address) return;
+    if (!address) return;
 
     resetPayment();
 
@@ -61,12 +59,12 @@ export default function LastStandContainer() {
     } catch (err) {
       console.error('Payment error:', err);
     }
-  }, [user?.wallet_address, pay, resetPayment]);
+  }, [address, pay, resetPayment]);
 
   // Create session after payment is confirmed
   useEffect(() => {
     const createSessionAfterPayment = async () => {
-      if (paymentSuccess && txHash && user?.wallet_address) {
+      if (paymentSuccess && txHash && address) {
         const newSession = await createSession(txHash);
 
         if (newSession) {
@@ -78,7 +76,7 @@ export default function LastStandContainer() {
     };
 
     createSessionAfterPayment();
-  }, [paymentSuccess, txHash, user?.wallet_address, createSession, resetPayment]);
+  }, [paymentSuccess, txHash, address, createSession, resetPayment]);
 
   // Start game if user has active session
   const handleStartWithSession = useCallback(() => {
@@ -119,7 +117,7 @@ export default function LastStandContainer() {
             </div>
             <LastStandGame
               onScoreUpdate={setCurrentScore}
-              walletAddress={user?.wallet_address}
+              walletAddress={address}
               sessionId={session?.sessionId}
               onSessionEnd={() => {
                 setGameStarted(false);

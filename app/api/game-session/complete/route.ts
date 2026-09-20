@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import supabase from '@/lib/supabase/game-client';
+import { getAddress, isAddress } from 'viem';
+import { createServiceClient } from '@/lib/supabase/server';
 import type { ScoreUpdateResponse } from '@/lib/supabase/types';
 import { verifyScoreSignature, isScorePlausible } from '@/lib/utils/scoreAuth';
 
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!walletAddress || typeof walletAddress !== 'string') {
+    if (!walletAddress || typeof walletAddress !== 'string' || !isAddress(walletAddress)) {
       return NextResponse.json(
         { error: 'Valid wallet address is required' },
         { status: 400 }
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     if (!signature || typeof signature !== 'string') {
       return NextResponse.json(
         { error: 'Score signature is required' },
-        { status: 400 }
+        { status: 401 }
       );
     }
 
@@ -49,11 +50,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const supabase = await createServiceClient();
+
     // Plausibility: reject scores impossible for the session's elapsed time.
     // Reads the immutable created_at of THIS session (not client-supplied).
     const { data: sessionRow, error: sessionErr } = await supabase
       .from('litvm_raffle_game_sessions')
-      .select('created_at')
+      .select('created_at, user_id')
       .eq('id', sessionId)
       .single();
 
@@ -61,6 +64,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Session not found' },
         { status: 404 }
+      );
+    }
+
+    // The session must belong to the signing wallet. Use the stored wallet
+    // value in the RPC because the SQL function matches case-sensitively.
+    const { data: sessionUser, error: userErr } = await supabase
+      .from('litvm_raffle_game_users')
+      .select('wallet_address')
+      .eq('id', sessionRow.user_id)
+      .single();
+
+    if (userErr || !sessionUser) {
+      return NextResponse.json(
+        { error: 'Session owner not found' },
+        { status: 404 }
+      );
+    }
+
+    if (getAddress(sessionUser.wallet_address) !== getAddress(walletAddress)) {
+      return NextResponse.json(
+        { error: 'Session does not belong to this wallet' },
+        { status: 401 }
       );
     }
 
@@ -74,7 +99,7 @@ export async function POST(request: NextRequest) {
     // Complete session and update score atomically
     const { data, error } = await supabase.rpc('litvm_raffle_complete_game_session', {
       p_session_id: sessionId,
-      p_user_wallet: walletAddress,
+      p_user_wallet: sessionUser.wallet_address,
       p_final_score: score
     });
 
@@ -106,7 +131,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Return response compatible with existing ScoreUpdateResponse
-    const response: ScoreUpdateResponse & { 
+    const response: ScoreUpdateResponse & {
       sessionCompleted: boolean;
       finalScore: number;
     } = {

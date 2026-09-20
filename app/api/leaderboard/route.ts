@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import supabase from '@/lib/supabase/game-client';
+import { createServiceClient } from '@/lib/supabase/server';
 import type { LeaderboardResponse, LeaderboardEntry } from '@/lib/supabase/types';
 import { CACHE } from '@/lib/utils/cache';
 
@@ -9,6 +9,8 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 50); // Cap at 50
     const offset = (page - 1) * limit;
+
+    const supabase = await createServiceClient();
 
     // Call the database function to get leaderboard data
     const { data, error } = await supabase

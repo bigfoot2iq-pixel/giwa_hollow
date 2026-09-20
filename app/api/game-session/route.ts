@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import supabase from '@/lib/supabase/game-client';
+import { isAddress } from 'viem';
+import { createServiceClient } from '@/lib/supabase/server';
+import { ensureGameUser, findGameUser } from '@/lib/utils/gameUsersServer';
 import { verifyPayment } from '@/lib/utils/verifyPayment';
 
 // POST - Create a new game session after payment verification
@@ -9,7 +11,7 @@ export async function POST(request: NextRequest) {
     const { walletAddress, txHash } = body;
 
     // Validate input
-    if (!walletAddress || typeof walletAddress !== 'string') {
+    if (!walletAddress || typeof walletAddress !== 'string' || !isAddress(walletAddress)) {
       return NextResponse.json(
         { error: 'Valid wallet address is required' },
         { status: 400 }
@@ -33,9 +35,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create game session
+    // Server-side (service role) from here on: the browser no longer has a
+    // direct write path to the database.
+    const supabase = await createServiceClient();
+
+    // The profile row is created lazily here (verified payment) instead of on
+    // every wallet connect, which keeps anonymous traffic from spamming it.
+    let user;
+    try {
+      user = await ensureGameUser(supabase, walletAddress);
+    } catch (ensureError) {
+      console.error('Error ensuring game user:', ensureError);
+      return NextResponse.json(
+        { error: 'Failed to create game session' },
+        { status: 500 }
+      );
+    }
+
+    // Create game session. Pass the stored wallet value because the SQL
+    // function matches wallet_address case-sensitively.
     const { data, error } = await supabase.rpc('litvm_raffle_create_game_session', {
-      user_wallet: walletAddress,
+      user_wallet: user.wallet_address,
       payment_tx_hash: txHash
     });
 
@@ -81,15 +101,26 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const walletAddress = searchParams.get('walletAddress');
 
-    if (!walletAddress) {
+    if (!walletAddress || !isAddress(walletAddress)) {
       return NextResponse.json(
-        { error: 'Wallet address is required' },
+        { error: 'Valid wallet address is required' },
         { status: 400 }
       );
     }
 
+    const supabase = await createServiceClient();
+
+    // No profile row yet means no session can exist for this wallet.
+    const user = await findGameUser(supabase, walletAddress);
+    if (!user) {
+      return NextResponse.json({
+        success: true,
+        hasActiveSession: false
+      });
+    }
+
     const { data, error } = await supabase.rpc('litvm_raffle_get_active_session', {
-      p_user_wallet: walletAddress
+      p_user_wallet: user.wallet_address
     });
 
     if (error) {

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useAccount } from 'wagmi';
 import { useLeaderboard } from '@/lib/hooks/useLeaderboard';
 import { useTokenHolders } from '@/lib/hooks/useTokenHolders';
-import { useMultiUser } from '@/lib/hooks/useMultiUser';
 import { contracts } from '@/lib/contracts/config';
 import type { LeaderboardEntry } from '@/lib/supabase/types';
 
@@ -35,7 +35,7 @@ const copyToClipboard = (text: string) => {
 export default function Leaderboard() {
   const [copiedWallet, setCopiedWallet] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'game' | 'ariwa'>('ariwa');
-  const { user } = useMultiUser();
+  const { address } = useAccount();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -75,7 +75,7 @@ export default function Leaderboard() {
     limit: 10,
     autoRefresh: activeTab === 'game',
     refreshInterval: 30000,
-    currentUserWallet: user?.wallet_address || null
+    currentUserWallet: address || null
   });
 
   const {
@@ -213,8 +213,9 @@ export default function Leaderboard() {
             {activeTab === 'game' ? (
               // Game Score Table
               leaderboardData.map((player) => {
-                const isCurrentUser = user?.wallet_address &&
-                  player.wallet_address.toLowerCase() === user.wallet_address.toLowerCase();
+                const isCurrentUser = Boolean(
+                  address && player.wallet_address.toLowerCase() === address.toLowerCase()
+                );
 
                 return (
                   <div
