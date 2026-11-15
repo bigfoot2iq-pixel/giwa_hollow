@@ -15,12 +15,10 @@ export function GlobalLoader() {
     let isCancelled = false;
 
     const requiredFonts = [
-      '400 1em "Plus Jakarta Sans"',
-      '500 1em "Plus Jakarta Sans"',
-      '600 1em "Plus Jakarta Sans"',
-      '700 1em "Plus Jakarta Sans"',
-      '700 1em "Space Grotesk"',
-      '400 1em "DM Serif Display"',
+      '400 1em "DM Sans"',
+      '500 1em "DM Sans"',
+      '600 1em "DM Sans"',
+      '700 1em "Bricolage Grotesque"',
       '400 1em "Material Symbols Outlined"',
     ];
 
@@ -72,23 +70,47 @@ export function GlobalLoader() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(to bottom, #003597 0%, #0062df 100%)",
+        background: "var(--loader-bg)",
         opacity: isFading ? 0 : 1,
         transition: "opacity 0.4s ease-out",
         pointerEvents: isFading ? "none" : "auto",
       }}
     >
       {/* Spinner */}
-<div
+      <div
         style={{
           width: 36,
           height: 36,
-          border: "3px solid rgba(255,255,255,0.25)",
-          borderTopColor: "#ffffff",
+          border: "3px solid var(--line-strong)",
+          borderTopColor: "var(--ariwa-iris)",
           borderRadius: "50%",
           animation: "globalLoaderSpin 0.8s linear infinite",
         }}
       />
+      <p
+        style={{
+          marginTop: 18,
+          fontFamily: "var(--font-bricolage), ui-sans-serif, sans-serif",
+          fontSize: 12,
+          fontWeight: 800,
+          letterSpacing: "0.26em",
+          color: "var(--ariwa-ink)",
+        }}
+      >
+        ARIWA
+      </p>
+      <p
+        style={{
+          marginTop: 6,
+          fontFamily: "var(--font-geist-mono), monospace",
+          fontSize: 8,
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: "var(--ariwa-iris)",
+        }}
+      >
+        the hollow
+      </p>
 
       <style
         dangerouslySetInnerHTML={{

@@ -232,7 +232,7 @@ export function RaffleEntryForm({
 
     return (
       <div className="text-center py-6">
-        <span className="material-symbols-outlined text-red-400 text-4xl mb-2 block">block</span>
+        <span className="material-symbols-outlined text-red-600 dark:text-red-300 text-4xl mb-2 block">block</span>
         <p className="text-muted-blue">{stateMessage}</p>
         <p className="text-xs text-muted-blue/60 mt-2">On-chain state: {onChainState}</p>
       </div>
@@ -263,7 +263,7 @@ export function RaffleEntryForm({
   if (maxEntries <= 0) {
     return (
       <div className="text-center py-6">
-        <span className="material-symbols-outlined text-[#0062df] text-4xl mb-2 block">check_circle</span>
+        <span className="material-symbols-outlined text-iris text-4xl mb-2 block">check_circle</span>
         <p className="text-muted-blue">You have reached the maximum entries for this raffle</p>
       </div>
     );
@@ -281,8 +281,8 @@ export function RaffleEntryForm({
       className="space-y-6"
     >
       <div>
-        <label className="text-[10px] font-bold uppercase text-muted-blue tracking-widest block mb-2">
-          Number of Entries
+        <label className="mb-2 block font-mono text-[9px] uppercase tracking-[0.16em] text-ink-mute">
+          Number of entries
         </label>
         <input
           type="number"
@@ -290,29 +290,29 @@ export function RaffleEntryForm({
           max={maxEntries}
           value={entryCount}
           onChange={(e) => setEntryCount(Math.max(1, Math.min(maxEntries, parseInt(e.target.value) || 1)))}
-          className="w-full bg-dark-navy border border-black/10 rounded px-4 py-3 text-text-primary text-lg font-display font-bold focus:outline-none focus:ring-1 focus:ring-[#0062df]"
+          className="field h-12 text-lg font-header font-extrabold"
         />
-        <p className="text-xs text-muted-blue mt-2">
+        <p className="mt-2 text-[11px] text-ink-mute">
           Max {maxEntries} entries remaining
         </p>
       </div>
 
-      <div className="p-4 bg-dark-navy rounded border border-black/10 space-y-2">
-        <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-blue">
-          <span>Entry Cost</span>
-          <span className="text-text-primary">{raffle.tokens_required} {tokenSymbol}</span>
+      <div className="space-y-2 rounded-2xl border border-ink/[0.08] bg-paper/60 p-4">
+        <div className="flex justify-between font-mono text-[9px] uppercase tracking-[0.12em] text-ink-mute">
+          <span>Entry cost</span>
+          <span className="text-ink">{raffle.tokens_required} {tokenSymbol}</span>
         </div>
-        <div className="h-[1px] bg-black/10"></div>
-        <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-blue">
+        <div className="h-px bg-ink/[0.08]" />
+        <div className="flex justify-between font-mono text-[9px] uppercase tracking-[0.12em] text-ink-mute">
           <span>Total</span>
-          <span className="text-[#0062df]">{entryCount * raffle.tokens_required} {tokenSymbol}</span>
+          <span className="text-iris-deep">{entryCount * raffle.tokens_required} {tokenSymbol}</span>
         </div>
         {balance !== undefined && (
           <>
-            <div className="h-[1px] bg-black/10"></div>
-            <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-blue">
-              <span>Your Balance</span>
-              <span className={hasInsufficientBalance ? "text-red-400" : "text-text-primary"}>
+            <div className="h-px bg-ink/[0.08]" />
+            <div className="flex justify-between font-mono text-[9px] uppercase tracking-[0.12em] text-ink-mute">
+              <span>Your balance</span>
+              <span className={hasInsufficientBalance ? "text-red-600 dark:text-red-300" : "text-ink"}>
                 {formatTokenBalance(balance)} {tokenSymbol}
               </span>
             </div>
@@ -321,7 +321,7 @@ export function RaffleEntryForm({
       </div>
 
       {hasInsufficientBalance && (
-        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded text-amber-400 text-sm text-center flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-center text-[11.5px] text-amber-700 dark:text-amber-300">
           <span className="material-symbols-outlined text-lg">warning</span>
           <span>Insufficient balance. You need {entryCount * raffle.tokens_required} {tokenSymbol} to enter.</span>
         </div>
@@ -330,7 +330,7 @@ export function RaffleEntryForm({
       <button
         type="submit"
         disabled={isLoading || hasInsufficientBalance}
-        className="w-full py-4 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-[0.15em] text-sm transition-all shadow-[0_0_20px_rgba(0,98,223,0.25)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="btn-iris h-12 w-full text-[11px]"
       >
         {isLoading && (
           <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -348,13 +348,13 @@ export function RaffleEntryForm({
       </button>
 
       {status === "success" && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded text-emerald-500 text-sm text-center">
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded text-emerald-700 dark:text-emerald-300 text-sm text-center">
           Successfully entered the raffle!
         </div>
       )}
 
       {status === "error" && error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded text-red-400 text-sm text-center">
+        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded text-red-600 dark:text-red-300 text-sm text-center">
           {error}
         </div>
       )}

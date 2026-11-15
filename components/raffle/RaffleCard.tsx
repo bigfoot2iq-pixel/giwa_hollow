@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { ArrowUpRight, Coins, ImageIcon, Trophy } from "lucide-react";
 import type { PrizeType, Raffle, RaffleStatus } from "@/lib/supabase";
 import { CountdownTimer } from "./CountdownTimer";
 import { getTokenMetadataCached, fromTokenUnits } from "@/lib/utils/erc20";
@@ -107,124 +108,121 @@ export function RaffleCard({ raffle, basePath = "/raffles" }: RaffleCardProps) {
   }, [primaryPrize]);
 
   const displayPrize = prizeLabel || (primaryPrize ? prizeTypeLabels[primaryPrize.prize_type] : "TBD");
+  const ended = isEnded || backupRafflesThatAreEnded;
 
   return (
-    <Link href={`${basePath}/${raffle.slug || raffle.id}`}>
-      <div className={`ui-container rounded overflow-hidden flex flex-col group transition-transform hover:translate-y-[-4px] ${isEnded || backupRafflesThatAreEnded ? "opacity-50" : ""}`}>
-        {/* Image */}
-        <div className={`h-72 overflow-hidden relative bg-dark-navy ${isNFT ? "" : "flex items-center justify-center border-b border-black/10"}`}>
+    <Link href={`${basePath}/${raffle.slug || raffle.id}`} className="group block">
+      <article
+        className={`art-frame flex h-full flex-col overflow-hidden rounded-[24px] transition duration-300 group-hover:-translate-y-1.5 group-hover:shadow-[0_30px_60px_-36px_rgba(39,33,50,0.55)] dark:group-hover:shadow-[0_30px_60px_-26px_rgba(0,0,0,0.9)] ${
+          ended ? "opacity-60" : ""
+        }`}
+      >
+        <div
+          className={`relative h-60 overflow-hidden ${
+            isNFT ? "bg-lilac/25" : "flex items-center justify-center bg-[linear-gradient(135deg,#FFF8DE_0%,#FBE7EF_55%,#E4F0FB_100%)] dark:bg-[linear-gradient(135deg,#221c0f_0%,#2a1620_55%,#162230_100%)]"
+          }`}
+        >
           {raffle.image_url ? (
             <Image
               alt={raffle.title}
               fill
-              className="object-contain group-hover:scale-105 transition-transform duration-700"
+              className="object-contain p-2 transition-transform duration-700 group-hover:scale-[1.04]"
               src={raffle.image_url}
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
             />
           ) : isNFT ? (
-            <div className="w-full h-full bg-dark-navy flex items-center justify-center">
-              <span className="material-symbols-outlined text-muted-blue text-6xl">image</span>
+            <div className="flex size-full items-center justify-center">
+              <ImageIcon className="size-12 text-ink-faint" />
             </div>
           ) : (
-            <Image
-              alt="RH"
-              width={90}
-              height={56}
-              unoptimized
-              className="object-contain group-hover:scale-110 transition-transform duration-700"
-              src="/ariwa-logo.png"
-            />
+            <div className="flex flex-col items-center gap-2">
+              <span className="flex size-14 items-center justify-center rounded-2xl border border-ink/10 bg-white/50 text-butter-ink dark:border-white/10 dark:bg-white/[0.06]">
+                <Coins className="size-6" />
+              </span>
+              <span className="font-mono text-[8px] uppercase tracking-[0.18em] text-ink-mute">
+                token prize
+              </span>
+            </div>
           )}
-          <div className="absolute top-3 left-3 flex gap-1.5">
-            <span className="bg-[#ffffff] text-[#0062df] text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">
-              Type: {typeLabel}
+
+          <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+            <span className="rounded-full border border-ink/10 bg-paper/85 px-2.5 py-1 font-mono text-[8px] uppercase tracking-[0.14em] text-ink-soft backdrop-blur">
+              {typeLabel}
             </span>
-            <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-widest ${
-              isActive
-                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                : (isEnded || backupRafflesThatAreEnded)
-                ? "bg-black/10 text-muted-blue border border-black/10"
-                : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-            }`}>
-              {raffle.status === "active" ? "Live" : raffle.status === "pending" ? "Upcoming" : "Ended"}
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[8px] uppercase tracking-[0.14em] backdrop-blur ${
+                isActive
+                  ? "border-success/25 bg-success-strong/90 text-white"
+                  : ended
+                    ? "border-ink/10 bg-paper/85 text-ink-mute"
+                    : "border-iris/20 bg-iris-strong/90 text-white"
+              }`}
+            >
+              {isActive && <span className="size-1.5 rounded-full bg-white" />}
+              {isActive ? "Live" : raffle.status === "pending" ? "Upcoming" : "Ended"}
             </span>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-4 flex flex-col flex-1">
-          {/* 1. Countdown — urgency first */}
-          {raffle.status === "pending" && raffle.start_date && (
-            <div className="mb-3 p-2.5 rounded border bg-blue-500/5 border-blue-500/20">
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="text-[8px] font-bold uppercase text-blue-400 tracking-widest">Starts in</span>
-                <span className="text-[9px] text-muted-blue">{formatDateTime(raffle.start_date)}</span>
-              </div>
+        <div className="flex flex-1 flex-col p-4">
+          <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-ink/[0.07] bg-cream/60 px-3 py-2">
+            <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-ink-mute">
+              {isActive ? "Ends in" : raffle.status === "pending" ? "Starts in" : "Ended"}
+            </span>
+            {raffle.status === "pending" && raffle.start_date ? (
               <CountdownTimer endDate={raffle.start_date} />
-            </div>
-          )}
+            ) : isActive && raffle.end_date ? (
+              <CountdownTimer endDate={raffle.end_date} />
+            ) : (
+              <span className="font-mono text-[9px] text-ink-mute">
+                {raffle.end_date ? formatDateTime(raffle.end_date) : "—"}
+              </span>
+            )}
+          </div>
 
-          {(isActive || isEnded || backupRafflesThatAreEnded) && raffle.end_date && (
-            <div className={`mb-3 p-2.5 rounded border ${isActive ? "bg-gradient-to-r from-black/10 to-transparent border-black/20" : "bg-black/5 border-black/10"}`}>
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <span className={`text-[8px] font-bold uppercase tracking-widest ${isActive ? "text-[#0062df]" : "text-muted-blue"}`}>
-                  {isActive ? "Ends in" : "Ended"}
-                </span>
-                <span className="text-[9px] text-muted-blue">{formatDateTime(raffle.end_date)}</span>
-              </div>
-              {isActive && <CountdownTimer endDate={raffle.end_date} />}
-              {isActive && (
-                <p className="text-[9px] text-muted-blue/70 mt-1.5 leading-tight">
-                  Ends early if all {raffle.max_participants.toLocaleString()} spots fill up.
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* 2. Title + description (left) with stats stacked on the right */}
-          <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="text-lg font-header text-text-primary truncate">{raffle.title}</h3>
-              <p className="text-muted-blue text-[11px] leading-snug mt-1 line-clamp-2">
+              <h3 className="truncate font-header text-lg font-extrabold tracking-[-0.03em] text-ink">
+                {raffle.title}
+              </h3>
+              <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-ink-mute">
                 {raffle.description}
               </p>
             </div>
-            <div className="flex-shrink-0 text-right space-y-1.5">
-              <div>
-                <p className="text-base font-display font-bold text-text-primary leading-none">
-                  {raffle.participants_count.toLocaleString()}
-                </p>
-                <p className="text-[8px] font-bold uppercase text-muted-blue tracking-widest">Joined</p>
-              </div>
-              <div>
-                <p className="text-sm font-display font-bold text-text-primary leading-none">
-                  {raffle.tokens_required.toFixed(2)}
-                </p>
-                <p className="text-[8px] font-bold uppercase text-muted-blue tracking-widest">{tokenSymbol} entry</p>
-              </div>
+            <div className="shrink-0 text-right">
+              <p className="font-header text-base font-extrabold leading-none text-ink">
+                {raffle.participants_count.toLocaleString()}
+              </p>
+              <p className="mt-1 font-mono text-[7.5px] uppercase tracking-[0.14em] text-ink-mute">
+                joined
+              </p>
             </div>
           </div>
 
-          {/* 3. Prize hero — what you win (replaces price) */}
-          <div className="mt-auto pt-3 border-t border-black/10 flex items-end justify-between gap-2">
+          <div className="mt-4 flex items-end justify-between gap-2 border-t border-ink/[0.07] pt-3">
             <div className="min-w-0">
-              <p className="text-[8px] font-bold uppercase text-black/60 tracking-widest mb-0.5 flex items-center gap-1">
-                <span className="material-symbols-outlined text-[12px] leading-none">emoji_events</span>
-                You Win
+              <p className="flex items-center gap-1 font-mono text-[8px] uppercase tracking-[0.14em] text-ink-mute">
+                <Trophy className="size-2.5" />
+                You win
               </p>
-              <p className="text-base font-display font-bold text-text-primary truncate drop-shadow-[0_0_12px_rgba(26, 36, 52,0.35)]">
+              <p className="mt-1 truncate font-header text-[15px] font-extrabold tracking-[-0.02em] text-ink">
                 {displayPrize}
                 {extraPrizeCount > 0 && (
-                  <span className="text-muted-blue text-[10px] font-bold ml-1 align-middle">+{extraPrizeCount} more</span>
+                  <span className="ml-1 align-middle font-mono text-[8px] font-normal uppercase tracking-[0.1em] text-ink-mute">
+                    +{extraPrizeCount} more
+                  </span>
                 )}
               </p>
+              <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.12em] text-ink-faint">
+                {raffle.tokens_required.toFixed(2)} {tokenSymbol} entry
+              </p>
             </div>
-            <button className="flex-shrink-0 px-3 py-1.5 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-[9px] transition-all shadow-[0_0_15px_rgba(0,98,223,0.25)]">
-              {isActive ? "Enter" : "View"}
-            </button>
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-ink/10 text-ink-mute transition group-hover:border-iris/30 group-hover:bg-iris/10 group-hover:text-iris">
+              <ArrowUpRight className="size-3.5" />
+            </span>
           </div>
         </div>
-      </div>
+      </article>
     </Link>
   );
 }

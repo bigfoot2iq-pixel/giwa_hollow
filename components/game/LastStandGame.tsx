@@ -298,11 +298,11 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
   if (!imagesLoaded) {
     return (
       <div
-        className="flex items-center justify-center rounded-xl bg-[#060b1c] ring-1 ring-[#0062df]/25"
+        className="flex items-center justify-center rounded-xl bg-[#060b1c] ring-1 ring-[#6c55e0]/25"
         style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}
       >
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#4c8dff] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-12 h-12 border-4 border-[#b9acf5] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-[#cde0ff]">Loading game assets...</p>
         </div>
       </div>
@@ -312,7 +312,7 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
   return (
     <div className="relative w-full max-w-4xl mx-auto">
       {/* Arcade console shell */}
-      <div className="relative rounded-2xl p-1.5 sm:p-2.5 bg-gradient-to-b from-[#0b1636] to-[#05091c] ring-1 ring-[#0062df]/40 shadow-[0_18px_50px_-16px_rgba(0,98,223,0.55)]">
+      <div className="relative rounded-2xl p-1.5 sm:p-2.5 bg-gradient-to-b from-[#0b1636] to-[#05091c] ring-1 ring-[#6c55e0]/40 shadow-[0_18px_50px_-16px_rgba(108,85,224,0.55)]">
         {/* Top bezel bar */}
         <div className="flex items-center justify-between px-2 pb-1.5 sm:pb-2">
           <div className="flex items-center gap-1.5">
@@ -321,10 +321,10 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
             <span className="h-2.5 w-2.5 rounded-full bg-[#2dd4bf] shadow-[0_0_6px_#2dd4bf]" />
           </div>
           <span className="text-[10px] sm:text-xs font-bold tracking-[0.3em] text-[#6aa6ff]">GIWA · ARIWA</span>
-          <span className="text-[10px] sm:text-xs font-mono text-[#4c8dff]/60">ARIWA</span>
+          <span className="text-[10px] sm:text-xs font-mono text-[#b9acf5]/60">ARIWA</span>
         </div>
 
-        <div className="relative rounded-xl overflow-hidden ring-1 ring-[#0062df]/30">
+        <div className="relative rounded-xl overflow-hidden ring-1 ring-[#6c55e0]/30">
           <canvas
             ref={canvasRef}
             width={CANVAS_WIDTH}
@@ -335,10 +335,10 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
           />
           {/* Screen glare + corner bolts */}
           <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-white/[0.06] via-transparent to-transparent" />
-          <span className="pointer-events-none absolute top-1.5 left-1.5 h-1.5 w-1.5 rounded-full bg-[#0062df]/50" />
-          <span className="pointer-events-none absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[#0062df]/50" />
-          <span className="pointer-events-none absolute bottom-1.5 left-1.5 h-1.5 w-1.5 rounded-full bg-[#0062df]/50" />
-          <span className="pointer-events-none absolute bottom-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[#0062df]/50" />
+          <span className="pointer-events-none absolute top-1.5 left-1.5 h-1.5 w-1.5 rounded-full bg-[#6c55e0]/50" />
+          <span className="pointer-events-none absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[#6c55e0]/50" />
+          <span className="pointer-events-none absolute bottom-1.5 left-1.5 h-1.5 w-1.5 rounded-full bg-[#6c55e0]/50" />
+          <span className="pointer-events-none absolute bottom-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[#6c55e0]/50" />
         </div>
       </div>
 
@@ -348,14 +348,14 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
           {/* Left side - Movement */}
           <div className="flex gap-2">
             <button
-              className="w-12 h-12 sm:w-14 sm:h-14 bg-white border-2 border-[#0062df]/25 rounded-xl text-[#003597] font-bold text-lg sm:text-xl active:bg-[#0062df] active:text-white transition-colors touch-none shadow-sm"
+              className="w-12 h-12 sm:w-14 sm:h-14 bg-white border-2 border-[#6c55e0]/25 rounded-xl text-[#272132] font-bold text-lg sm:text-xl active:bg-[#6c55e0] active:text-white transition-colors touch-none shadow-sm"
               onTouchStart={() => controlsRef.current.left = true}
               onTouchEnd={() => controlsRef.current.left = false}
             >
               ←
             </button>
             <button
-              className="w-12 h-12 sm:w-14 sm:h-14 bg-white border-2 border-[#0062df]/25 rounded-xl text-[#003597] font-bold text-lg sm:text-xl active:bg-[#0062df] active:text-white transition-colors touch-none shadow-sm"
+              className="w-12 h-12 sm:w-14 sm:h-14 bg-white border-2 border-[#6c55e0]/25 rounded-xl text-[#272132] font-bold text-lg sm:text-xl active:bg-[#6c55e0] active:text-white transition-colors touch-none shadow-sm"
               onTouchStart={() => controlsRef.current.right = true}
               onTouchEnd={() => controlsRef.current.right = false}
             >
@@ -366,21 +366,21 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
           {/* Right side - Actions */}
           <div className="flex gap-2">
             <button
-              className="w-12 h-12 sm:w-14 sm:h-14 bg-white border-2 border-[#0062df]/25 rounded-xl text-[#003597] font-bold text-[10px] sm:text-xs active:bg-[#0062df] active:text-white transition-colors touch-none shadow-sm"
+              className="w-12 h-12 sm:w-14 sm:h-14 bg-white border-2 border-[#6c55e0]/25 rounded-xl text-[#272132] font-bold text-[10px] sm:text-xs active:bg-[#6c55e0] active:text-white transition-colors touch-none shadow-sm"
               onTouchStart={() => controlsRef.current.dodge = true}
               onTouchEnd={() => controlsRef.current.dodge = false}
             >
               DODGE
             </button>
             <button
-              className="w-12 h-12 sm:w-14 sm:h-14 bg-white border-2 border-[#0062df]/40 rounded-xl text-[#0062df] font-bold text-[10px] sm:text-xs active:bg-[#0062df] active:text-white transition-colors touch-none shadow-sm"
+              className="w-12 h-12 sm:w-14 sm:h-14 bg-white border-2 border-[#6c55e0]/40 rounded-xl text-[#6c55e0] font-bold text-[10px] sm:text-xs active:bg-[#6c55e0] active:text-white transition-colors touch-none shadow-sm"
               onTouchStart={() => controlsRef.current.jump = true}
               onTouchEnd={() => controlsRef.current.jump = false}
             >
               JUMP
             </button>
             <button
-              className="w-14 h-12 sm:w-16 sm:h-14 bg-[#0062df] border-2 border-[#0062df] rounded-xl text-white font-bold text-[10px] sm:text-xs active:brightness-95 transition-all touch-none shadow-md shadow-[#0062df]/30"
+              className="w-14 h-12 sm:w-16 sm:h-14 bg-[#6c55e0] border-2 border-[#6c55e0] rounded-xl text-white font-bold text-[10px] sm:text-xs active:brightness-95 transition-all touch-none shadow-md shadow-[#6c55e0]/30"
               onTouchStart={() => controlsRef.current.attack = true}
               onTouchEnd={() => controlsRef.current.attack = false}
             >
@@ -392,37 +392,37 @@ export default function LastStandGame({ onScoreUpdate, walletAddress, sessionId,
 
       {/* Desktop Control instructions */}
       {!isMobile && (
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-4 lg:gap-6 px-2 sm:px-4 py-3 bg-white/70 border border-[#0062df]/15 rounded-lg backdrop-blur-sm shadow-sm">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-4 lg:gap-6 px-2 sm:px-4 py-3 bg-[#0b1636]/85 border border-[#6c55e0]/25 rounded-lg backdrop-blur-sm shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)]">
           <div className="flex items-center gap-2">
-            <span className="text-gray-300 text-xs sm:text-sm font-semibold">Move:</span>
+            <span className="text-[#a8bfe6] text-xs sm:text-sm font-semibold">Move:</span>
             <div className="flex gap-1">
-              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">A</kbd>
-              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">D</kbd>
+              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white/10 border border-white/15 rounded text-[#dbe7ff] font-mono text-[10px] sm:text-xs shadow-md">A</kbd>
+              <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white/10 border border-white/15 rounded text-[#dbe7ff] font-mono text-[10px] sm:text-xs shadow-md">D</kbd>
             </div>
           </div>
 
-          <div className="w-px h-4 sm:h-6 bg-[#0062df]/20" />
+          <div className="w-px h-4 sm:h-6 bg-[#6c55e0]/30" />
 
           <div className="flex items-center gap-2">
-            <span className="text-gray-300 text-xs sm:text-sm font-semibold">Jump:</span>
-            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">W</kbd>
-            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">Space</kbd>
+            <span className="text-[#a8bfe6] text-xs sm:text-sm font-semibold">Jump:</span>
+            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white/10 border border-white/15 rounded text-[#dbe7ff] font-mono text-[10px] sm:text-xs shadow-md">W</kbd>
+            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white/10 border border-white/15 rounded text-[#dbe7ff] font-mono text-[10px] sm:text-xs shadow-md">Space</kbd>
           </div>
 
-          <div className="w-px h-4 sm:h-6 bg-[#0062df]/20" />
+          <div className="w-px h-4 sm:h-6 bg-[#6c55e0]/30" />
 
           <div className="flex items-center gap-2">
-            <span className="text-gray-300 text-xs sm:text-sm font-semibold">Attack:</span>
-            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">J</kbd>
-            <span className="text-gray-500 text-[10px] sm:text-xs hidden sm:inline">(hold for charged)</span>
+            <span className="text-[#a8bfe6] text-xs sm:text-sm font-semibold">Attack:</span>
+            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white/10 border border-white/15 rounded text-[#dbe7ff] font-mono text-[10px] sm:text-xs shadow-md">J</kbd>
+            <span className="text-[#7f93b8] text-[10px] sm:text-xs hidden sm:inline">(hold for charged)</span>
           </div>
 
-          <div className="w-px h-4 sm:h-6 bg-[#0062df]/20 hidden lg:block" />
+          <div className="w-px h-4 sm:h-6 bg-[#6c55e0]/30 hidden lg:block" />
 
           <div className="flex items-center gap-2">
-            <span className="text-gray-300 text-xs sm:text-sm font-semibold">Dodge:</span>
-            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">L</kbd>
-            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/10 border border-black/20 rounded text-text-primary font-mono text-[10px] sm:text-xs shadow-md">Shift</kbd>
+            <span className="text-[#a8bfe6] text-xs sm:text-sm font-semibold">Dodge:</span>
+            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white/10 border border-white/15 rounded text-[#dbe7ff] font-mono text-[10px] sm:text-xs shadow-md">L</kbd>
+            <kbd className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white/10 border border-white/15 rounded text-[#dbe7ff] font-mono text-[10px] sm:text-xs shadow-md">Shift</kbd>
           </div>
         </div>
       )}

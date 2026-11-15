@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useAccount, useSignMessage, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseEther, formatEther } from "viem";
 import { format } from "date-fns";
 import type { Raffle } from "@/lib/supabase";
@@ -11,7 +11,12 @@ import {
   useClaimAmount,
   useClaimFee,
 } from "@/lib/hooks";
+import { useAdminAuth } from "@/lib/hooks/useAdminAuth";
 import { contracts, AriwaTokenABI, THE_ARIWA_GAME_ADDRESS, THE_ARIWA_GAME_ABI } from "@/lib/contracts";
+import { RafflesMaintenanceToggle } from "@/components/admin/RafflesMaintenanceToggle";
+import { LaunchpadSettings } from "@/components/admin/LaunchpadSettings";
+import { LaunchpadRequests } from "@/components/admin/LaunchpadRequests";
+import { SwapPoolSettings } from "@/components/admin/SwapPoolSettings";
 
 interface AdminData {
   raffles: Array<
@@ -34,52 +39,27 @@ interface AdminData {
 type RaffleScope = "all" | "platform" | "community";
 const PAGE_SIZE = 20;
 
+type AdminTab = "launchpad" | "trade" | "token" | "game" | "raffles";
+
+const ADMIN_TABS = [
+  { id: "launchpad", label: "Launchpad", icon: "rocket_launch" },
+  { id: "trade", label: "Swap pool", icon: "swap_horiz" },
+  { id: "token", label: "ARIWA token", icon: "toll" },
+  { id: "game", label: "Game", icon: "sports_esports" },
+  { id: "raffles", label: "Raffles", icon: "confirmation_number" },
+] as const;
+
 export default function AdminDashboard() {
-  const { address } = useAccount();
-  const { signMessageAsync } = useSignMessage();
+  const { getAdminAuth, wallet: walletLower } = useAdminAuth();
   const [data, setData] = useState<AdminData | null>(null);
   const [loading, setLoading] = useState(true);
   const [scope, setScope] = useState<RaffleScope>("all");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
-  const authRef = useRef<{ wallet: string; signature: string; timestamp: string } | null>(null);
-  const authPromiseRef = useRef<Promise<{ wallet: string; signature: string; timestamp: string }> | null>(null);
-  const walletLower = address?.toLowerCase();
-  const [activeTab, setActiveTab] = useState<"token" | "game" | "raffles">("token");
-
-  const getAdminAuth = useCallback(async () => {
-    if (!walletLower) {
-      throw new Error("Wallet not connected");
-    }
-
-    const now = Date.now();
-    const cached = authRef.current;
-    if (cached && cached.wallet === walletLower && now - Number(cached.timestamp) < 5 * 60 * 1000) {
-      return cached;
-    }
-
-    if (authPromiseRef.current) {
-      return authPromiseRef.current;
-    }
-
-    const timestamp = now.toString();
-    const message = `GIWA Raffles Admin\nTimestamp: ${timestamp}`;
-
-    authPromiseRef.current = signMessageAsync({ message })
-      .then((signature) => {
-        const auth = { wallet: walletLower, signature, timestamp };
-        authRef.current = auth;
-        authPromiseRef.current = null;
-        return auth;
-      })
-      .catch((error) => {
-        authPromiseRef.current = null;
-        throw error;
-      });
-
-    return authPromiseRef.current;
-  }, [walletLower, signMessageAsync]);
+  // The launchpad is the default view; raffle data (and its admin signature
+  // prompt) only loads once the raffles tab is opened.
+  const [activeTab, setActiveTab] = useState<AdminTab>("launchpad");
 
   const loadRaffles = useCallback(async () => {
     if (!walletLower) return;
@@ -125,8 +105,9 @@ export default function AdminDashboard() {
   }, [walletLower, getAdminAuth, scope, offset]);
 
   useEffect(() => {
+    if (activeTab !== "raffles") return;
     loadRaffles();
-  }, [loadRaffles]);
+  }, [activeTab, loadRaffles]);
 
   const changeScope = (next: RaffleScope) => {
     setScope(next);
@@ -243,16 +224,6 @@ export default function AdminDashboard() {
     }
   };
 
-  if (loading && !data) {
-    return (
-      <div className="space-y-6">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="ui-container rounded h-24 animate-pulse" />
-        ))}
-      </div>
-    );
-  }
-
   const total = data?.total || 0;
   const pageStart = total === 0 ? 0 : offset + 1;
   const pageEnd = Math.min(offset + PAGE_SIZE, total);
@@ -260,60 +231,103 @@ export default function AdminDashboard() {
   const hasNext = offset + PAGE_SIZE < total;
 
   return (
-    <div className="space-y-8">
+    <div className="page-shell space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-5xl font-header text-foreground">Admin Dashboard</h2>
-        <div className="flex items-center gap-3">
-          <Link href="/admin/raffles/create">
-            <button className="px-6 py-3 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-sm transition-all shadow-[0_0_20px_rgba(0,98,223,0.25)] flex items-center gap-2">
-              <span className="material-symbols-outlined text-lg">add</span>
-              Create Raffle
-            </button>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="eyebrow">Owner&apos;s console</p>
+          <h1 className="display mt-4 text-[clamp(2.2rem,5vw,3.6rem)] text-ink">
+            Admin dashboard
+          </h1>
+          <p className="mt-3 max-w-xl text-[13px] leading-6 text-ink-soft">
+            The launchpad, the swap pool, the ARIWA token, the game and the
+            raffles in one quiet back room.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link href="/admin/raffles/create" className="btn-iris h-11 px-4 text-[11px]">
+            <span className="material-symbols-outlined text-base">add</span>
+            Create raffle
           </Link>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="ui-container p-6 rounded border-l-4 border-[#0062df]">
-          <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-2">Total Raffles</p>
-          <p className="text-3xl font-display font-bold text-text-primary">{data?.stats?.total_raffles || 0}</p>
-        </div>
-        <div className="ui-container p-6 rounded">
-          <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-2">Active Raffles</p>
-          <p className="text-3xl font-display font-bold text-text-primary">{data?.stats?.active_raffles || 0}</p>
-        </div>
-        <div className="ui-container p-6 rounded">
-          <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-2">Total Entries</p>
-          <p className="text-3xl font-display font-bold text-text-primary">{data?.stats?.total_entries || 0}</p>
-        </div>
-        <div className="ui-container p-6 rounded">
-          <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-2">Total Users</p>
-          <p className="text-3xl font-display font-bold text-text-primary">{data?.stats?.total_users || 0}</p>
-        </div>
-      </div>
-
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-black/10">
-        {([
-          { id: "token", label: "ARIWA Token Config" },
-          { id: "game", label: "Game Config" },
-          { id: "raffles", label: "Raffles" },
-        ] as const).map((tab) => (
+      <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-ink/[0.08] bg-paper/55 p-1">
+        {ADMIN_TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-5 py-3 text-xs font-bold uppercase tracking-widest transition-all border-b-2 -mb-px ${
+            aria-current={activeTab === tab.id ? "page" : undefined}
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[11px] font-semibold transition-colors ${
               activeTab === tab.id
-                ? "text-foreground border-foreground"
-                : "text-foreground/60 border-transparent hover:text-foreground"
+                ? "bg-ink text-cream shadow-[0_6px_14px_-8px_rgba(39,33,50,0.7)]"
+                : "text-ink-soft hover:bg-ink/[0.05] hover:text-ink"
             }`}
           >
+            <span className="material-symbols-outlined text-[15px]">{tab.icon}</span>
             {tab.label}
           </button>
         ))}
       </div>
+
+      {/* Launchpad */}
+      {activeTab === "launchpad" && (
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="font-header text-2xl font-extrabold tracking-[-0.03em] text-ink">
+                NFT Launchpad
+              </h2>
+              <p className="mt-2 max-w-2xl text-[13px] leading-6 text-ink-soft">
+                Control the public mint phase, pricing, per-wallet cap and holder
+                gate, mint to any wallet, then review community collection
+                requests.
+              </p>
+            </div>
+            <Link
+              href="/launchpad"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-soft h-11 px-4 text-[11px]"
+            >
+              <span className="material-symbols-outlined text-base">open_in_new</span>
+              View public page
+            </Link>
+          </div>
+
+          <LaunchpadSettings />
+          <LaunchpadRequests />
+        </div>
+      )}
+
+      {/* Swap pool */}
+      {activeTab === "trade" && (
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="font-header text-2xl font-extrabold tracking-[-0.03em] text-ink">
+                Swap pool
+              </h2>
+              <p className="mt-2 max-w-2xl text-[13px] leading-6 text-ink-soft">
+                Set the fixed ARIWA/ETH rate, pause or resume trading, and
+                withdraw the pool&apos;s ETH or ARIWA reserves.
+              </p>
+            </div>
+            <Link
+              href="/trade"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-soft h-11 px-4 text-[11px]"
+            >
+              <span className="material-symbols-outlined text-base">open_in_new</span>
+              View public page
+            </Link>
+          </div>
+
+          <SwapPoolSettings />
+        </div>
+      )}
 
       {/* ARIWA Token Config */}
       {activeTab === "token" && <AriwaTokenConfig />}
@@ -321,177 +335,208 @@ export default function AdminDashboard() {
       {/* Game Play Fee Config */}
       {activeTab === "game" && <GameConfig />}
 
-      {/* Raffles Table */}
+      {/* Raffles */}
       {activeTab === "raffles" && (
-      <div className="ui-container rounded overflow-hidden">
-        <div className="px-6 py-4 border-b border-black/10 flex items-center justify-between gap-4 flex-wrap">
-          <h3 className="text-xl font-header text-text-primary">
-            All Raffles {total > 0 && <span className="text-muted-blue text-sm font-normal">({total})</span>}
-          </h3>
-          <div className="flex gap-1 bg-black/5 rounded p-1">
-            {([
-              { id: "all", label: "All" },
-              { id: "platform", label: "Platform" },
-              { id: "community", label: "Community" },
-            ] as const).map((s) => (
-              <button
-                key={s.id}
-                onClick={() => changeScope(s.id)}
-                className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded transition-all ${
-                  scope === s.id
-                    ? "bg-accent-warm text-background border border-transparent"
-                    : "text-muted-blue hover:text-[#0062df]"
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        {loadError && (
-          <div className="px-6 py-4 border-b border-red-500/20 bg-red-500/10 flex items-center justify-between gap-4 flex-wrap">
-            <p className="text-sm text-red-400">{loadError}</p>
-            <button
-              onClick={() => loadRaffles()}
-              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-bold rounded uppercase tracking-widest transition-all border border-red-500/30"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-        {data?.raffles && data.raffles.length > 0 ? (
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-black/5 border-b border-black/10">
-              <tr>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Title</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Source</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Status</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Type</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Participants</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">End Date</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-black/10">
-              {data.raffles.map((raffle) => (
-                <tr key={raffle.id} className="hover:bg-black/5 transition-colors">
-                  <td className="px-6 py-5">
-                    <p className="font-bold text-text-primary">{raffle.title}</p>
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded border ${
-                      raffle.is_community
-                        ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
-                        : "bg-black/10 text-[#0062df] border-[#0062df]/20"
-                    }`}>
-                      {raffle.is_community ? "Community" : "Platform"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded border ${
-                      raffle.status === "active"
-                        ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                        : raffle.status === "pending"
-                        ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                        : "bg-black/5 text-muted-blue border-black/10"
-                    }`}>
-                      {raffle.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className="text-sm text-text-primary capitalize">
-                      {raffle.prize_types && raffle.prize_types.length > 0
-                        ? raffle.prize_types.length === 1
-                          ? raffle.prize_types[0]
-                          : "multiple"
-                        : "unknown"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className="text-sm font-display font-bold text-text-primary">
-                      {(raffle.participants_count || 0)}/{raffle.max_participants}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5">
-                    <p className="text-sm text-text-primary">{format(new Date(raffle.end_date), "MMM d, yyyy")}</p>
-                  </td>
-                  <td className="px-6 py-5 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {raffle.status === "pending" && (
-                        <button
-                          onClick={() => handleActivateRaffle(raffle.id)}
-                          disabled={actionLoading[`activate-${raffle.id}`]}
-                          className="px-3 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-500 text-xs font-bold rounded uppercase tracking-widest transition-all border border-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {actionLoading[`activate-${raffle.id}`] ? "..." : "Activate"}
-                        </button>
-                      )}
-                      {raffle.status === "active" && (
-                        <button
-                          onClick={() => handleEndRaffle(raffle.id)}
-                          disabled={actionLoading[`end-${raffle.id}`]}
-                          className="px-3 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-500 text-xs font-bold rounded uppercase tracking-widest transition-all border border-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {actionLoading[`end-${raffle.id}`] ? "..." : "End"}
-                        </button>
-                      )}
-                      {(raffle.status === "active" || raffle.status === "pending") && raffle.chain_raffle_id != null && (
-                        <button
-                          onClick={() => handleCancelRaffle(raffle.id)}
-                          disabled={actionLoading[`cancel-${raffle.id}`]}
-                          title="Cancel on-chain and return the escrowed prize. No winner is drawn. Not time-locked."
-                          className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 text-xs font-bold rounded uppercase tracking-widest transition-all border border-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {actionLoading[`cancel-${raffle.id}`] ? "..." : "Cancel"}
-                        </button>
-                      )}
-                      <Link href={`/admin/raffles/${raffle.slug || raffle.id}`}>
-                        <button className="px-4 py-2 bg-black/5 hover:bg-black/10 text-text-primary text-xs font-bold rounded uppercase tracking-widest transition-all border border-black/10">
-                          Manage
-                        </button>
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : loadError ? null : (
-          <div className="p-8 text-center">
-            <span className="material-symbols-outlined text-muted-blue text-4xl mb-2 block">confirmation_number</span>
-            <p className="text-muted-blue">
-              {scope === "community"
-                ? "No community raffles yet"
-                : scope === "platform"
-                ? "No platform raffles yet"
-                : "No raffles created yet"}
-            </p>
-          </div>
-        )}
-        {total > 0 && (
-          <div className="px-6 py-4 border-t border-black/10 flex items-center justify-between gap-4 flex-wrap">
-            <p className="text-xs text-muted-blue uppercase tracking-widest">
-              Showing {pageStart}–{pageEnd} of {total}
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
-                disabled={!hasPrev || loading}
-                className="px-4 py-2 bg-black/5 hover:bg-black/10 text-text-primary text-xs font-bold rounded uppercase tracking-widest transition-all border border-black/10 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Prev
-              </button>
-              <button
-                onClick={() => setOffset((o) => o + PAGE_SIZE)}
-                disabled={!hasNext || loading}
-                className="px-4 py-2 bg-black/5 hover:bg-black/10 text-text-primary text-xs font-bold rounded uppercase tracking-widest transition-all border border-black/10 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
+        <div className="space-y-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="ui-container rounded-[22px] border-l-2 border-l-iris p-5">
+              <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-mute">Total raffles</p>
+              <p className="mt-2 font-header text-3xl font-extrabold tracking-[-0.04em] text-ink">{data?.stats?.total_raffles || 0}</p>
+            </div>
+            <div className="ui-container rounded-[22px] p-5">
+              <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-mute">Active raffles</p>
+              <p className="mt-2 font-header text-3xl font-extrabold tracking-[-0.04em] text-ink">{data?.stats?.active_raffles || 0}</p>
+            </div>
+            <div className="ui-container rounded-[22px] p-5">
+              <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-mute">Total entries</p>
+              <p className="mt-2 font-header text-3xl font-extrabold tracking-[-0.04em] text-ink">{data?.stats?.total_entries || 0}</p>
+            </div>
+            <div className="ui-container rounded-[22px] p-5">
+              <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-mute">Total users</p>
+              <p className="mt-2 font-header text-3xl font-extrabold tracking-[-0.04em] text-ink">{data?.stats?.total_users || 0}</p>
             </div>
           </div>
-        )}
-      </div>
+
+          <div className="ui-container overflow-hidden rounded-[26px]">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ink/[0.08] px-6 py-4">
+              <h3 className="font-header text-lg font-extrabold tracking-[-0.03em] text-ink">
+                All raffles {total > 0 && <span className="font-mono text-[10px] font-normal text-ink-mute">({total})</span>}
+              </h3>
+              <div className="flex flex-wrap items-center gap-3">
+                <RafflesMaintenanceToggle />
+                <div className="flex gap-1 rounded-full bg-ink/[0.04] p-1">
+                  {([
+                    { id: "all", label: "All" },
+                    { id: "platform", label: "Platform" },
+                    { id: "community", label: "Community" },
+                  ] as const).map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => changeScope(s.id)}
+                      className={`rounded-full px-3.5 py-1.5 text-[10px] font-semibold transition-all ${
+                        scope === s.id
+                          ? "bg-ink text-cream"
+                          : "text-ink-mute hover:text-ink"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          {loadError && (
+            <div className="px-6 py-4 border-b border-red-500/20 bg-red-500/10 flex items-center justify-between gap-4 flex-wrap">
+              <p className="text-sm text-red-600 dark:text-red-300">{loadError}</p>
+              <button
+                onClick={() => loadRaffles()}
+                className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-600 dark:text-red-300 text-xs font-bold rounded uppercase tracking-widest transition-all border border-red-500/30"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          {loading && !data ? (
+            <div className="space-y-3 p-6">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-12 animate-pulse rounded bg-ink/[0.06]" />
+              ))}
+            </div>
+          ) : data?.raffles && data.raffles.length > 0 ? (
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-ink/[0.04] border-b border-ink/10">
+                <tr>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Title</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Source</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Status</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Type</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">Participants</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue">End Date</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-muted-blue text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ink/10">
+                {data.raffles.map((raffle) => (
+                  <tr key={raffle.id} className="hover:bg-ink/[0.04] transition-colors">
+                    <td className="px-6 py-5">
+                      <p className="font-bold text-text-primary">{raffle.title}</p>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded border ${
+                        raffle.is_community
+                          ? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20"
+                          : "bg-ink/[0.07] text-iris border-iris/20"
+                      }`}>
+                        {raffle.is_community ? "Community" : "Platform"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded border ${
+                        raffle.status === "active"
+                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                          : raffle.status === "pending"
+                          ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20"
+                          : "bg-ink/[0.04] text-muted-blue border-ink/10"
+                      }`}>
+                        {raffle.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className="text-sm text-text-primary capitalize">
+                        {raffle.prize_types && raffle.prize_types.length > 0
+                          ? raffle.prize_types.length === 1
+                            ? raffle.prize_types[0]
+                            : "multiple"
+                          : "unknown"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className="text-sm font-display font-bold text-text-primary">
+                        {(raffle.participants_count || 0)}/{raffle.max_participants}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <p className="text-sm text-text-primary">{format(new Date(raffle.end_date), "MMM d, yyyy")}</p>
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {raffle.status === "pending" && (
+                          <button
+                            onClick={() => handleActivateRaffle(raffle.id)}
+                            disabled={actionLoading[`activate-${raffle.id}`]}
+                            className="px-3 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded uppercase tracking-widest transition-all border border-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {actionLoading[`activate-${raffle.id}`] ? "..." : "Activate"}
+                          </button>
+                        )}
+                        {raffle.status === "active" && (
+                          <button
+                            onClick={() => handleEndRaffle(raffle.id)}
+                            disabled={actionLoading[`end-${raffle.id}`]}
+                            className="px-3 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-700 dark:text-orange-300 text-xs font-bold rounded uppercase tracking-widest transition-all border border-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {actionLoading[`end-${raffle.id}`] ? "..." : "End"}
+                          </button>
+                        )}
+                        {(raffle.status === "active" || raffle.status === "pending") && raffle.chain_raffle_id != null && (
+                          <button
+                            onClick={() => handleCancelRaffle(raffle.id)}
+                            disabled={actionLoading[`cancel-${raffle.id}`]}
+                            title="Cancel on-chain and return the escrowed prize. No winner is drawn. Not time-locked."
+                            className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-600 dark:text-red-300 text-xs font-bold rounded uppercase tracking-widest transition-all border border-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {actionLoading[`cancel-${raffle.id}`] ? "..." : "Cancel"}
+                          </button>
+                        )}
+                        <Link href={`/admin/raffles/${raffle.slug || raffle.id}`}>
+                          <button className="px-4 py-2 bg-ink/[0.04] hover:bg-ink/[0.07] text-text-primary text-xs font-bold rounded uppercase tracking-widest transition-all border border-ink/10">
+                            Manage
+                          </button>
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : loadError ? null : (
+            <div className="p-8 text-center">
+              <span className="material-symbols-outlined text-muted-blue text-4xl mb-2 block">confirmation_number</span>
+              <p className="text-muted-blue">
+                {scope === "community"
+                  ? "No community raffles yet"
+                  : scope === "platform"
+                  ? "No platform raffles yet"
+                  : "No raffles created yet"}
+              </p>
+            </div>
+          )}
+          {total > 0 && (
+            <div className="px-6 py-4 border-t border-ink/10 flex items-center justify-between gap-4 flex-wrap">
+              <p className="text-xs text-muted-blue uppercase tracking-widest">
+                Showing {pageStart}–{pageEnd} of {total}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
+                  disabled={!hasPrev || loading}
+                  className="px-4 py-2 bg-ink/[0.04] hover:bg-ink/[0.07] text-text-primary text-xs font-bold rounded uppercase tracking-widest transition-all border border-ink/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Prev
+                </button>
+                <button
+                  onClick={() => setOffset((o) => o + PAGE_SIZE)}
+                  disabled={!hasNext || loading}
+                  className="px-4 py-2 bg-ink/[0.04] hover:bg-ink/[0.07] text-text-primary text-xs font-bold rounded uppercase tracking-widest transition-all border border-ink/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -545,10 +590,10 @@ function ClaimConfigField() {
   };
 
   return (
-    <div className="space-y-4 p-5 rounded-xl border border-black/10 bg-black/5 max-w-md">
+    <div className="space-y-4 p-5 rounded-xl border border-ink/10 bg-ink/[0.04] max-w-md">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-bold text-text-primary">Claim Config</h4>
-        {isSuccess && <span className="text-[10px] text-green-400 font-bold">Saved!</span>}
+        {isSuccess && <span className="text-[10px] text-green-700 dark:text-green-300 font-bold">Saved!</span>}
       </div>
       <div className="space-y-3">
         <div>
@@ -558,7 +603,7 @@ function ClaimConfigField() {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="1"
-            className="w-full px-3 py-2.5 bg-black/5 border border-black/10 rounded text-text-primary text-sm focus:outline-none focus:border-[#0062df]/50 placeholder-black/30"
+            className="w-full px-3 py-2.5 bg-ink/[0.04] border border-ink/10 rounded text-text-primary text-sm focus:outline-none focus:border-iris/50 placeholder-ink-faint"
           />
         </div>
         <div>
@@ -568,7 +613,7 @@ function ClaimConfigField() {
             value={fee}
             onChange={(e) => setFee(e.target.value)}
             placeholder="0"
-            className="w-full px-3 py-2.5 bg-black/5 border border-black/10 rounded text-text-primary text-sm focus:outline-none focus:border-[#0062df]/50 placeholder-black/30"
+            className="w-full px-3 py-2.5 bg-ink/[0.04] border border-ink/10 rounded text-text-primary text-sm focus:outline-none focus:border-iris/50 placeholder-ink-faint"
           />
         </div>
       </div>
@@ -579,7 +624,7 @@ function ClaimConfigField() {
       >
         {isPending ? "Sign..." : confirming ? "Confirming..." : "Save Claim Config"}
       </button>
-      {error && <p className="text-red-400 text-xs">{error.message.split("\n")[0]}</p>}
+      {error && <p className="text-red-600 dark:text-red-300 text-xs">{error.message.split("\n")[0]}</p>}
     </div>
   );
 }
@@ -628,7 +673,7 @@ function AriwaTokenConfig() {
 
   return (
     <div className="ui-container rounded overflow-hidden">
-      <div className="px-6 py-4 border-b border-black/10">
+      <div className="px-6 py-4 border-b border-ink/10">
         <h3 className="text-xl font-header text-text-primary">ARIWA Token Config</h3>
         <p className="text-[11px] text-muted-blue mt-1">
           Set the mint amount and fee (in ETH) for a claim. Users pay the fee to mint tokens.
@@ -636,7 +681,7 @@ function AriwaTokenConfig() {
       </div>
 
       {/* Claim config */}
-      <div className="p-6 border-b border-black/10">
+      <div className="p-6 border-b border-ink/10">
         <ClaimConfigField />
       </div>
 
@@ -647,7 +692,7 @@ function AriwaTokenConfig() {
             <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-1">Claim Cooldown (seconds)</p>
             <p className="text-[10px] text-muted-blue mb-1">Window between claims per address.</p>
             <p className="text-sm text-text-primary/60">
-              Current: <span className="text-[#0062df] font-bold">{currentCooldown !== undefined ? `${Number(currentCooldown)}s (${formatCooldownDisplay(Number(currentCooldown))})` : "..."}</span>
+              Current: <span className="text-iris font-bold">{currentCooldown !== undefined ? `${Number(currentCooldown)}s (${formatCooldownDisplay(Number(currentCooldown))})` : "..."}</span>
             </p>
           </div>
           <div className="flex gap-2">
@@ -657,7 +702,7 @@ function AriwaTokenConfig() {
               onChange={(e) => setCooldownInput(e.target.value)}
               placeholder="86400"
               min="0"
-              className="flex-1 px-4 py-3 bg-black/5 border border-black/10 rounded text-text-primary text-sm focus:outline-none focus:border-[#0062df]/50 placeholder-black/30"
+              className="flex-1 px-4 py-3 bg-ink/[0.04] border border-ink/10 rounded text-text-primary text-sm focus:outline-none focus:border-iris/50 placeholder-ink-faint"
             />
             <button
               onClick={handleSetCooldown}
@@ -681,16 +726,16 @@ function AriwaTokenConfig() {
                 onClick={() => setCooldownInput(preset.value)}
                 className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded border transition-all ${
                   cooldownInput === preset.value
-                    ? "bg-black/10 text-[#0062df] border-[#0062df]/30"
-                    : "bg-black/5 text-muted-blue border-black/10 hover:bg-black/10"
+                    ? "bg-ink/[0.07] text-iris border-iris/30"
+                    : "bg-ink/[0.04] text-muted-blue border-ink/10 hover:bg-ink/[0.07]"
                 }`}
               >
                 {preset.label}
               </button>
             ))}
           </div>
-          {cooldownSuccess && <p className="text-green-400 text-xs">Cooldown updated successfully!</p>}
-          {cooldownError && <p className="text-red-400 text-xs">{cooldownError.message.split("\n")[0]}</p>}
+          {cooldownSuccess && <p className="text-green-700 dark:text-green-300 text-xs">Cooldown updated successfully!</p>}
+          {cooldownError && <p className="text-red-600 dark:text-red-300 text-xs">{cooldownError.message.split("\n")[0]}</p>}
         </div>
       </div>
     </div>
@@ -743,7 +788,7 @@ function GameConfig() {
 
   return (
     <div className="ui-container rounded overflow-hidden">
-      <div className="px-6 py-4 border-b border-black/10">
+      <div className="px-6 py-4 border-b border-ink/10">
         <h3 className="text-xl font-header text-text-primary">Game Config</h3>
       </div>
       <div className="p-6">
@@ -751,7 +796,7 @@ function GameConfig() {
           <div>
             <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-1">Play Fee (ARIWA)</p>
             <p className="text-sm text-text-primary/60">
-              Current: <span className="text-[#0062df] font-bold">{currentFee !== undefined ? formatEther(currentFee as bigint) : "..."} ARIWA</span>
+              Current: <span className="text-iris font-bold">{currentFee !== undefined ? formatEther(currentFee as bigint) : "..."} ARIWA</span>
             </p>
             <p className="text-[10px] text-muted-blue mt-1">Amount of ARIWA each player pays to play. Must be greater than 0.</p>
           </div>
@@ -761,7 +806,7 @@ function GameConfig() {
               value={feeInput}
               onChange={(e) => setFeeInput(e.target.value)}
               placeholder="10"
-              className="flex-1 px-4 py-3 bg-black/5 border border-black/10 rounded text-text-primary text-sm focus:outline-none focus:border-[#0062df]/50 placeholder-black/30"
+              className="flex-1 px-4 py-3 bg-ink/[0.04] border border-ink/10 rounded text-text-primary text-sm focus:outline-none focus:border-iris/50 placeholder-ink-faint"
             />
             <button
               onClick={handleSetFee}
@@ -771,8 +816,8 @@ function GameConfig() {
               {feePending ? "Sign..." : feeConfirming ? "Confirming..." : "Update"}
             </button>
           </div>
-          {feeSuccess && <p className="text-green-400 text-xs">Play fee updated successfully!</p>}
-          {feeError && <p className="text-red-400 text-xs">{feeError.message.split('\n')[0]}</p>}
+          {feeSuccess && <p className="text-green-700 dark:text-green-300 text-xs">Play fee updated successfully!</p>}
+          {feeError && <p className="text-red-600 dark:text-red-300 text-xs">{feeError.message.split('\n')[0]}</p>}
         </div>
       </div>
     </div>

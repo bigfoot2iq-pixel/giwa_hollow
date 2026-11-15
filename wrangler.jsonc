@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "giwa-hollow",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": [
+    // Node.js API compatibility (crypto, buffer, stream, ...)
+    "nodejs_compat",
+    // Required by @opennextjs/cloudflare so `fetch` to public URLs keeps working
+    "global_fetch_strictly_public"
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      // Self-reference used internally by OpenNext (ISR/cache revalidation).
+      // Must match "name" above.
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "giwa-hollow"
+    }
+  ],
+  "images": {
+    // Backs next/image optimization (/_next/image).
+    "binding": "IMAGES"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

@@ -7,6 +7,7 @@ function abiOf(artifactPath) {
 const token = abiOf("artifacts/contracts/AriwaToken.sol/AriwaToken.json");
 const raffles = abiOf("artifacts/contracts/AriwaRaffles.sol/AriwaRaffles.json");
 const game = abiOf("artifacts/contracts/TheAriwaGame.sol/TheAriwaGame.json");
+const swapPool = abiOf("artifacts/contracts/AriwaSwapPool.sol/AriwaSwapPool.json");
 
 writeFileSync(
   "lib/contracts/AriwaTokenABI.ts",
@@ -16,6 +17,11 @@ writeFileSync(
 writeFileSync(
   "lib/contracts/RobinhoodRafflesABI.ts",
   `export const RobinhoodRafflesABI = ${JSON.stringify(raffles, null, 2)} as const;\n`,
+);
+
+writeFileSync(
+  "lib/contracts/AriwaSwapPoolABI.ts",
+  `export const AriwaSwapPoolABI = ${JSON.stringify(swapPool, null, 2)} as const;\n`,
 );
 
 writeFileSync(
@@ -29,4 +35,5 @@ writeFileSync(
 console.log("ABIs written:");
 console.log("  AriwaTokenABI.ts       fns:", token.length);
 console.log("  RobinhoodRafflesABI.ts  fns:", raffles.length);
+console.log("  AriwaSwapPoolABI.ts    fns:", swapPool.length);
 console.log("  theAriwaGame.ts        fns:", game.length);

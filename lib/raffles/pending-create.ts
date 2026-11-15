@@ -22,9 +22,9 @@ export interface PendingRaffleCreate {
   txHash: string;
   /** Metadata to replay into the confirm endpoint. Shape is route-specific. */
   raffleData: unknown;
-  /** "admin" -> /api/admin/raffles/confirm, "community" -> /api/raffles/create */
-  kind: "admin" | "community";
-  /** Wallet that sent the transaction; the community endpoint verifies it. */
+  /** The endpoint that completes the create: /api/admin/raffles/confirm. */
+  kind: "admin";
+  /** Wallet that sent the transaction. */
   wallet: string;
   savedAt: number;
 }

@@ -47,6 +47,24 @@ export const contracts = {
   raffles: {
     address: process.env.NEXT_PUBLIC_RAFFLES_CONTRACT_ADDRESS as `0x${string}`,
   },
+  launchpadNft: {
+    address: process.env.NEXT_PUBLIC_LAUNCHPAD_NFT_ADDRESS as `0x${string}`,
+  },
+  swapPool: {
+    address: process.env.NEXT_PUBLIC_SWAP_POOL_ADDRESS as `0x${string}`,
+  },
 } as const;
+
+export const LAUNCHPAD_NFT_ADDRESS =
+  process.env.NEXT_PUBLIC_LAUNCHPAD_NFT_ADDRESS as `0x${string}` | undefined;
+
+export const SWAP_POOL_ADDRESS =
+  process.env.NEXT_PUBLIC_SWAP_POOL_ADDRESS as `0x${string}` | undefined;
+
+// Safe to render the page's "not configured" state when the deploy has not
+// happened yet, instead of firing reads at an undefined address.
+export const IS_SWAP_POOL_CONFIGURED = Boolean(
+  process.env.NEXT_PUBLIC_SWAP_POOL_ADDRESS,
+);
 
 export const ADMIN_WALLET = process.env.NEXT_PUBLIC_ADMIN_WALLET as `0x${string}`;

@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { Suspense } from 'react';
-import Leaderboard from '@/components/game/Leaderboard';
+import { Suspense } from "react";
+import Leaderboard from "@/components/game/Leaderboard";
 
 function LeaderboardLoading() {
   return (
-    <div className="ui-container rounded-2xl overflow-hidden">
+    <div className="ui-container overflow-hidden rounded-[26px]">
       <div className="p-12 text-center">
-        <div className="inline-block w-8 h-8 border-4 border-black/20 border-t-accent-warm rounded-full animate-spin mb-4"></div>
-        <p className="text-muted-blue">Loading leaderboard...</p>
+        <div className="mb-4 inline-block size-8 animate-spin rounded-full border-4 border-iris/15 border-t-iris" />
+        <p className="text-sm text-ink-mute">Loading the leaderboard…</p>
       </div>
     </div>
   );
@@ -16,17 +16,29 @@ function LeaderboardLoading() {
 
 export default function LeaderboardPage() {
   return (
-    <div className="space-y-6 lg:space-y-8">
-      {/* Page Title */}
-      <div className="mb-6 lg:mb-8">
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-header text-foreground mb-2">Leaderboard</h2>
-        <p className="text-muted-blue text-xs sm:text-sm">Top warriors ranked by their highest scores</p>
+    <div className="page-shell">
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <p className="eyebrow">The pecking order</p>
+          <h1 className="display mt-4 text-[clamp(2.2rem,5vw,3.6rem)] text-ink">
+            Leaderboard
+          </h1>
+          <p className="mt-3 max-w-xl text-[13px] leading-6 text-ink-soft">
+            Ranked by ARIWA holdings and historical game scores. The quiet ones
+            at the top are usually the ones who kept showing up.
+          </p>
+        </div>
+        <span className="pill">
+          <span className="live-dot" />
+          live standings
+        </span>
       </div>
 
-      {/* Leaderboard */}
-      <Suspense fallback={<LeaderboardLoading />}>
-        <Leaderboard />
-      </Suspense>
+      <div className="mt-8">
+        <Suspense fallback={<LeaderboardLoading />}>
+          <Leaderboard />
+        </Suspense>
+      </div>
     </div>
   );
 }

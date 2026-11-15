@@ -8,12 +8,10 @@ import { useAdminStatus } from "@/lib/hooks";
 import { useState } from "react";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
   { href: "/faucet", label: "Faucet", icon: "water_drop" },
-  { href: "/claim", label: "Claim token", icon: "redeem" },
-  { href: "/game", label: "Game", icon: "sports_esports" },
+  { href: "/trade", label: "Trade ARIWA", icon: "swap_horiz" },
+  { href: "/launchpad", label: "Launchpad", icon: "rocket_launch" },
   { href: "/raffles", label: "Raffles", icon: "confirmation_number" },
-  { href: "/community-raffles", label: "Community Raffles", icon: "groups" },
   { href: "/leaderboard", label: "Leaderboard", icon: "emoji_events" },
 ];
 
@@ -28,7 +26,7 @@ export function Sidebar() {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-dark-navy/95 border border-[#edeef1] rounded text-text-primary shadow-sm"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-dark-navy/95 border border-ink/10 rounded text-text-primary shadow-sm"
       >
         <span className="material-symbols-outlined">
           {mobileMenuOpen ? "close" : "menu"}
@@ -45,15 +43,27 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <aside className={`
-        w-64 flex-shrink-0 border-r border-[#edeef1] bg-dark-navy/95 flex flex-col justify-between p-6
+        w-64 flex-shrink-0 border-r border-ink/10 bg-dark-navy/95 flex flex-col justify-between p-6
         lg:relative lg:translate-x-0
         fixed inset-y-0 left-0 z-40 transition-transform duration-300
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
       <div className="flex flex-col gap-8">
         {/* Logo */}
-        <Link href="/dashboard" className="flex items-center">
-          <img src="/ariwa-logo.png" alt="Ariwa" className="w-full h-16 object-cover rounded-lg" />
+        <Link href="/" className="flex items-center gap-3">
+          <img
+            src="/brand/ariwa-icon.webp"
+            alt="Ariwa"
+            className="h-10 w-10 shrink-0 rounded-xl object-cover"
+          />
+          <span className="min-w-0">
+            <span className="block font-display text-lg font-bold tracking-tight text-text-primary">
+              ARIWA
+            </span>
+            <span className="block text-[9px] font-bold uppercase tracking-[0.22em] text-iris">
+              The Hollow
+            </span>
+          </span>
         </Link>
 
         {/* Navigation */}
@@ -69,8 +79,8 @@ export function Sidebar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded transition-all cursor-pointer ${
                   isActive
-                    ? "bg-[#0062df] text-[#ffffff]"
-                    : "text-muted-blue hover:bg-[#f4f5f7] hover:text-text-primary"
+                    ? "bg-iris-strong text-white"
+                    : "text-muted-blue hover:bg-ink/[0.04] hover:text-text-primary"
                 }`}
               >
                 <span className="material-symbols-outlined">{item.icon}</span>
@@ -87,8 +97,8 @@ export function Sidebar() {
               onClick={() => setMobileMenuOpen(false)}
               className={`flex items-center gap-3 px-4 py-3 rounded transition-all cursor-pointer ${
                 pathname.startsWith("/admin")
-                  ? "bg-[#0062df] text-[#ffffff]"
-                  : "text-muted-blue hover:bg-[#ffffff]/30 hover:text-text-primary"
+                  ? "bg-iris-strong text-white"
+                  : "text-muted-blue hover:bg-ink/[0.06] hover:text-text-primary"
               }`}
             >
               <span className="material-symbols-outlined">admin_panel_settings</span>
@@ -106,7 +116,7 @@ export function Sidebar() {
           href="https://x.com/ARIWA_on_Giwa"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-3 px-4 py-3 rounded text-muted-blue hover:bg-[#f4f5f7] hover:text-text-primary transition-all"
+          className="flex items-center gap-3 px-4 py-3 rounded text-muted-blue hover:bg-ink/[0.04] hover:text-text-primary transition-all"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" className="w-5 h-5 fill-current">
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -124,7 +134,7 @@ export function Sidebar() {
               return (
                 <button
                   onClick={openConnectModal}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#0062df] hover:brightness-110 text-[#ffffff] text-sm font-bold rounded transition-all uppercase tracking-widest"
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-iris-strong hover:brightness-110 text-white text-sm font-bold rounded transition-all uppercase tracking-widest"
                 >
                   <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
                   Connect Wallet
@@ -147,9 +157,9 @@ export function Sidebar() {
             return (
               <button
                 onClick={openAccountModal}
-                className="flex items-center gap-3 p-3 bg-[#fafafa] rounded border border-[#edeef1] hover:bg-[#f4f5f7] transition-colors cursor-pointer w-full"
+                className="flex items-center gap-3 p-3 bg-paper rounded border border-ink/10 hover:bg-ink/[0.04] transition-colors cursor-pointer w-full"
               >
-                <div className="h-10 w-10 rounded bg-[#0062df] flex items-center justify-center text-[#ffffff] text-sm font-bold flex-shrink-0">
+                <div className="h-10 w-10 rounded bg-iris-strong flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                   G
                 </div>
                 <div className="flex flex-col overflow-hidden flex-1 text-left">

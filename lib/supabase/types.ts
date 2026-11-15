@@ -121,8 +121,44 @@ export interface Database {
         Insert: Database["public"]["Tables"]["litvm_raffle_admin"]["Row"];
         Update: Partial<Database["public"]["Tables"]["litvm_raffle_admin"]["Row"]>;
       };
+      litvm_launchpad_requests: {
+        Row: LaunchpadRequestRow;
+        Insert: Omit<LaunchpadRequestRow, "id" | "created_at" | "updated_at" | "status" | "admin_notes"> &
+          Partial<Pick<LaunchpadRequestRow, "status" | "admin_notes">>;
+        Update: Partial<Omit<LaunchpadRequestRow, "id" | "created_at">>;
+      };
     };
   };
+}
+
+export type LaunchpadRequestStatus =
+  | "pending"
+  | "reviewing"
+  | "approved"
+  | "rejected"
+  | "launched";
+
+export interface LaunchpadRequestRow {
+  id: string;
+  collection_name: string;
+  symbol: string;
+  description: string;
+  chain: string;
+  supply: number;
+  mint_price: string;
+  launch_date: string;
+  creator_wallet: string | null;
+  contact_email: string | null;
+  contact_x: string | null;
+  website_url: string | null;
+  x_url: string | null;
+  discord_url: string | null;
+  artwork_url: string | null;
+  notes: string | null;
+  status: LaunchpadRequestStatus;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export type Raffle = Database["public"]["Tables"]["litvm_raffle_raffles"]["Row"];
@@ -133,6 +169,8 @@ export type Transaction = Database["public"]["Tables"]["litvm_raffle_transaction
 export type AdminLog = Database["public"]["Tables"]["litvm_raffle_admin_logs"]["Row"];
 export type AdminWallet = Database["public"]["Tables"]["litvm_raffle_admin"]["Row"];
 export type Prize = Database["public"]["Tables"]["litvm_raffle_prizes"]["Row"];
+export type LaunchpadRequest =
+  Database["public"]["Tables"]["litvm_launchpad_requests"]["Row"];
 
 // Game-related types
 export type WalletType = 'evm';

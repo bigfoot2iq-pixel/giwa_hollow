@@ -622,20 +622,20 @@ export default function CreateRafflePage() {
           <span className="material-symbols-outlined text-emerald-500 text-4xl">check_circle</span>
         </div>
         <h1 className="text-2xl font-header text-text-primary mb-2">Raffle Created!</h1>
-        <p className="text-muted-blue">Redirecting to dashboard...</p>
+        <p className="text-muted-blue">Redirecting to admin...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="page-shell space-y-8">
       {/* Header */}
       <div className="flex items-center gap-4">
         <button
           onClick={() => router.back()}
-          className="p-2 bg-black/5 hover:bg-black/10 rounded transition-all"
+          className="p-2 bg-ink/[0.04] hover:bg-ink/[0.07] rounded transition-all"
         >
-          <span className="material-symbols-outlined text-[#0062df]">arrow_back</span>
+          <span className="material-symbols-outlined text-iris">arrow_back</span>
         </button>
         <h2 className="text-5xl font-header text-text-primary">Create New Raffle</h2>
       </div>
@@ -672,7 +672,7 @@ export default function CreateRafflePage() {
                 setPendingTxHash(null);
                 setPendingConfirmData(null);
               }}
-              className="px-5 py-2.5 bg-black/5 hover:bg-black/10 text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all border border-black/10"
+              className="px-5 py-2.5 bg-ink/[0.04] hover:bg-ink/[0.07] text-text-primary font-bold rounded uppercase tracking-widest text-xs transition-all border border-ink/10"
             >
               Discard
             </button>
@@ -683,7 +683,7 @@ export default function CreateRafflePage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Basic Information */}
         <div className="ui-container rounded overflow-hidden">
-          <div className="px-6 py-4 border-b border-black/10 bg-black/5">
+          <div className="px-6 py-4 border-b border-ink/10 bg-ink/[0.04]">
             <h3 className="text-lg font-header text-text-primary">Basic Information</h3>
           </div>
           <div className="p-6 space-y-4">
@@ -691,7 +691,7 @@ export default function CreateRafflePage() {
               <label className="text-[10px] font-bold uppercase text-muted-blue tracking-widest block mb-2">Title</label>
               <input
                 {...register("title")}
-                className="w-full bg-dark-navy border border-black/10 rounded px-4 py-3 text-text-primary focus:outline-none focus:ring-1 focus:ring-[#0062df]"
+                className="w-full bg-dark-navy border border-ink/10 rounded px-4 py-3 text-text-primary focus:outline-none focus:ring-1 focus:ring-iris"
               />
               {errors.title && <p className="text-red-400 text-xs mt-1">{errors.title.message}</p>}
             </div>
@@ -701,7 +701,7 @@ export default function CreateRafflePage() {
               <textarea
                 {...register("description")}
                 rows={4}
-                className="w-full bg-dark-navy border border-black/10 rounded px-4 py-3 text-text-primary focus:outline-none focus:ring-1 focus:ring-[#0062df] resize-none"
+                className="w-full bg-dark-navy border border-ink/10 rounded px-4 py-3 text-text-primary focus:outline-none focus:ring-1 focus:ring-iris resize-none"
               />
               {errors.description && <p className="text-red-400 text-xs mt-1">{errors.description.message}</p>}
             </div>
@@ -711,7 +711,7 @@ export default function CreateRafflePage() {
               <input
                 {...register("image_url")}
                 placeholder="https://..."
-                className="w-full bg-dark-navy border border-black/10 rounded px-4 py-3 text-text-primary placeholder-muted-blue focus:outline-none focus:ring-1 focus:ring-[#0062df]"
+                className="w-full bg-dark-navy border border-ink/10 rounded px-4 py-3 text-text-primary placeholder-muted-blue focus:outline-none focus:ring-1 focus:ring-iris"
               />
               {errors.image_url && <p className="text-red-400 text-xs mt-1">{errors.image_url.message}</p>}
             </div>
@@ -720,7 +720,7 @@ export default function CreateRafflePage() {
 
         {/* Entry Settings */}
         <div className="ui-container rounded overflow-hidden">
-          <div className="px-6 py-4 border-b border-black/10 bg-black/5">
+          <div className="px-6 py-4 border-b border-ink/10 bg-ink/[0.04]">
             <h3 className="text-lg font-header text-text-primary">Entry Settings</h3>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -729,7 +729,7 @@ export default function CreateRafflePage() {
               <input
                 type="number"
                 {...register("tokens_required", { valueAsNumber: true })}
-                className="w-full bg-dark-navy border border-black/10 rounded px-4 py-3 text-text-primary focus:outline-none focus:ring-1 focus:ring-[#0062df]"
+                className="w-full bg-dark-navy border border-ink/10 rounded px-4 py-3 text-text-primary focus:outline-none focus:ring-1 focus:ring-iris"
               />
               {errors.tokens_required && <p className="text-red-400 text-xs mt-1">{errors.tokens_required.message}</p>}
             </div>
@@ -739,7 +739,7 @@ export default function CreateRafflePage() {
               <input
                 type="number"
                 {...register("max_entries_per_user", { valueAsNumber: true })}
-                className="w-full bg-dark-navy border border-black/10 rounded px-4 py-3 text-text-primary focus:outline-none focus:ring-1 focus:ring-[#0062df]"
+                className="w-full bg-dark-navy border border-ink/10 rounded px-4 py-3 text-text-primary focus:outline-none focus:ring-1 focus:ring-iris"
               />
               {errors.max_entries_per_user && <p className="text-red-400 text-xs mt-1">{errors.max_entries_per_user.message}</p>}
             </div>
@@ -749,7 +749,7 @@ export default function CreateRafflePage() {
               <input
                 type="number"
                 {...register("max_participants", { valueAsNumber: true })}
-                className="w-full bg-dark-navy border border-black/10 rounded px-4 py-3 text-text-primary focus:outline-none focus:ring-1 focus:ring-[#0062df]"
+                className="w-full bg-dark-navy border border-ink/10 rounded px-4 py-3 text-text-primary focus:outline-none focus:ring-1 focus:ring-iris"
               />
               {errors.max_participants && <p className="text-red-400 text-xs mt-1">{errors.max_participants.message}</p>}
             </div>
@@ -758,7 +758,7 @@ export default function CreateRafflePage() {
 
         {/* Schedule */}
         <div className="ui-container rounded overflow-hidden">
-          <div className="px-6 py-4 border-b border-black/10 bg-black/5">
+          <div className="px-6 py-4 border-b border-ink/10 bg-ink/[0.04]">
             <h3 className="text-lg font-header text-text-primary">Schedule</h3>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -798,7 +798,7 @@ export default function CreateRafflePage() {
 
         {/* Prize */}
         <div className="ui-container rounded overflow-hidden">
-          <div className="px-6 py-4 border-b border-black/10 bg-black/5">
+          <div className="px-6 py-4 border-b border-ink/10 bg-ink/[0.04]">
             <h3 className="text-lg font-header text-text-primary">Prize</h3>
           </div>
           <div className="p-6 space-y-4">
@@ -806,7 +806,7 @@ export default function CreateRafflePage() {
               <label className="text-[10px] font-bold uppercase text-muted-blue tracking-widest block mb-2">Prize Type</label>
               <select
                 {...register("prize_type")}
-                className="w-full bg-dark-navy border border-black/10 rounded px-4 py-3 text-text-primary focus:outline-none focus:ring-1 focus:ring-[#0062df]"
+                className="w-full bg-dark-navy border border-ink/10 rounded px-4 py-3 text-text-primary focus:outline-none focus:ring-1 focus:ring-iris"
               >
                 <option value="erc20">ERC20 Token</option>
                 <option value="erc721">NFT (ERC721)</option>
@@ -819,7 +819,7 @@ export default function CreateRafflePage() {
               <input
                 {...register("prize_token_address")}
                 placeholder="0x..."
-                className="w-full bg-dark-navy border border-black/10 rounded px-4 py-3 text-text-primary font-mono placeholder-muted-blue focus:outline-none focus:ring-1 focus:ring-[#0062df]"
+                className="w-full bg-dark-navy border border-ink/10 rounded px-4 py-3 text-text-primary font-mono placeholder-muted-blue focus:outline-none focus:ring-1 focus:ring-iris"
               />
               {errors.prize_token_address && <p className="text-red-400 text-xs mt-1">{errors.prize_token_address.message}</p>}
             </div>
@@ -851,13 +851,13 @@ export default function CreateRafflePage() {
                       <input
                         {...register(`prize_amounts.${index}.value`)}
                         placeholder={tokenSymbol ? `100 ${tokenSymbol}` : "100"}
-                        className="flex-1 bg-dark-navy border border-black/10 rounded px-4 py-3 text-text-primary placeholder-muted-blue focus:outline-none focus:ring-1 focus:ring-[#0062df]"
+                        className="flex-1 bg-dark-navy border border-ink/10 rounded px-4 py-3 text-text-primary placeholder-muted-blue focus:outline-none focus:ring-1 focus:ring-iris"
                       />
                       {prizeAmountFields.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removePrizeAmount(index)}
-                          className="px-3 py-2 bg-black/5 hover:bg-black/10 text-muted-blue text-[10px] font-bold uppercase tracking-widest rounded"
+                          className="px-3 py-2 bg-ink/[0.04] hover:bg-ink/[0.07] text-muted-blue text-[10px] font-bold uppercase tracking-widest rounded"
                         >
                           Remove
                         </button>
@@ -872,7 +872,7 @@ export default function CreateRafflePage() {
                 <button
                   type="button"
                   onClick={() => appendPrizeAmount({ value: "" })}
-                  className="px-4 py-2 bg-black/5 hover:bg-black/10 text-muted-blue text-[10px] font-bold uppercase tracking-widest rounded"
+                  className="px-4 py-2 bg-ink/[0.04] hover:bg-ink/[0.07] text-muted-blue text-[10px] font-bold uppercase tracking-widest rounded"
                 >
                   Add Prize Amount
                 </button>
@@ -888,13 +888,13 @@ export default function CreateRafflePage() {
                       <input
                         {...register(`prize_token_ids.${index}.value`)}
                         placeholder="1"
-                        className="flex-1 bg-dark-navy border border-black/10 rounded px-4 py-3 text-text-primary font-mono placeholder-muted-blue focus:outline-none focus:ring-1 focus:ring-[#0062df]"
+                        className="flex-1 bg-dark-navy border border-ink/10 rounded px-4 py-3 text-text-primary font-mono placeholder-muted-blue focus:outline-none focus:ring-1 focus:ring-iris"
                       />
                       {prizeTokenIdFields.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removePrizeTokenId(index)}
-                          className="px-3 py-2 bg-black/5 hover:bg-black/10 text-muted-blue text-[10px] font-bold uppercase tracking-widest rounded"
+                          className="px-3 py-2 bg-ink/[0.04] hover:bg-ink/[0.07] text-muted-blue text-[10px] font-bold uppercase tracking-widest rounded"
                         >
                           Remove
                         </button>
@@ -909,7 +909,7 @@ export default function CreateRafflePage() {
                 <button
                   type="button"
                   onClick={() => appendPrizeTokenId({ value: "" })}
-                  className="px-4 py-2 bg-black/5 hover:bg-black/10 text-muted-blue text-[10px] font-bold uppercase tracking-widest rounded"
+                  className="px-4 py-2 bg-ink/[0.04] hover:bg-ink/[0.07] text-muted-blue text-[10px] font-bold uppercase tracking-widest rounded"
                 >
                   Add Token ID
                 </button>
@@ -917,7 +917,7 @@ export default function CreateRafflePage() {
             )}
 
             {/* Verification Section */}
-            <div className="pt-4 border-t border-black/10">
+            <div className="pt-4 border-t border-ink/10">
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <label className="text-[10px] font-bold uppercase text-muted-blue tracking-widest block mb-1">
@@ -948,7 +948,7 @@ export default function CreateRafflePage() {
                     (prizeType === "erc20" && (!prizeAmountsWatch || prizeAmountsWatch.every((f) => !f.value?.trim()))) ||
                     (prizeType !== "erc20" && (!prizeTokenIdsWatch || prizeTokenIdsWatch.every((f) => !f.value?.trim())))
                   }
-                  className="px-4 py-2 bg-black/10 hover:bg-black/20 text-[#0062df] text-[10px] font-bold uppercase tracking-widest rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 py-2 bg-ink/[0.07] hover:bg-ink/20 text-iris text-[10px] font-bold uppercase tracking-widest rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {verificationStatus === "verifying" && (
                     <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1004,7 +1004,7 @@ export default function CreateRafflePage() {
               )}
 
               {verificationStatus === "idle" && (
-                <div className="p-4 bg-black/5 border border-black/10 rounded">
+                <div className="p-4 bg-ink/[0.04] border border-ink/10 rounded">
                   <p className="text-xs text-muted-blue">
                     Verify that the prize tokens/NFTs exist and are owned by your connected admin wallet before creating the raffle. You will transfer prizes to the contract.
                   </p>
@@ -1037,7 +1037,7 @@ export default function CreateRafflePage() {
         <button
           type="submit"
           disabled={isSubmitting || step !== "form"}
-          className="w-full py-4 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-[0.15em] text-sm transition-all shadow-[0_0_20px_rgba(0,98,223,0.25)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full py-4 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-[0.15em] text-sm transition-all shadow-[0_0_20px_rgba(108,85,224,0.25)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {isSubmitting && (
             <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

@@ -1,24 +1,31 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
+import { Bricolage_Grotesque, DM_Sans, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import { Web3Provider } from "@/components/providers";
-import { Header, Sidebar } from "@/components/layout";
+import { ThemeProvider, THEME_INIT_SCRIPT } from "@/components/providers/ThemeProvider";
+import { ThemeToaster } from "@/components/providers/ThemeToaster";
+import { SiteFooter, SiteHeader } from "@/components/layout";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { GiwaAmbientBackground } from "@/components/ui/GiwaAmbientBackground";
-import { Toaster } from "sonner";
 
-const plusJakarta = Plus_Jakarta_Sans({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-plus-jakarta",
+  variable: "--font-dm-sans",
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
+const geistMono = Geist_Mono({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-space-grotesk",
+  variable: "--font-geist-mono",
+  display: "swap",
+});
+
+// Display face for the collection identity. Bricolage carries the plush,
+// illustrated confidence of the residents without the usual web3 gloss.
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-bricolage",
   display: "swap",
 });
 
@@ -30,8 +37,58 @@ const materialSymbols = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Ariwa - Win Crypto Prizes",
-  description: "Decentralized raffles platform on GIWA Sepolia. Enter raffles, win prizes!",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://www.ariwa.xyz",
+  ),
+  title: {
+    default: "ARIWA — The First PFP Collection on GIWA",
+    template: "%s · ARIWA",
+  },
+  description:
+    "The first PFP NFT collection on GIWA, featuring 2,222 unique NFTs. ARIWA brings NFTs, token trading, community rewards, and NFT launches into one ecosystem.",
+  applicationName: "ARIWA",
+  keywords: [
+    "ARIWA",
+    "The Hollow",
+    "GIWA",
+    "GIWA Sepolia",
+    "NFT collection",
+    "PFP collection",
+    "NFT launchpad",
+    "token trading",
+    "raffles",
+  ],
+  authors: [{ name: "ARIWA" }],
+  creator: "ARIWA",
+  openGraph: {
+    type: "website",
+    siteName: "ARIWA",
+    title: "ARIWA — The First PFP Collection on GIWA",
+    description:
+      "2,222 unique NFTs on GIWA. Trade the token, enter raffles, and launch a collection in one ecosystem.",
+    images: ["/art/nft/1.webp"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@ARIWA_on_Giwa",
+    creator: "@ARIWA_on_Giwa",
+    title: "ARIWA — The First PFP Collection on GIWA",
+    description:
+      "2,222 unique NFTs on GIWA. Trade the token, enter raffles, and launch a collection in one ecosystem.",
+    images: ["/art/nft/1.webp"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FBF7EF" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c0a11" },
+  ],
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({
@@ -40,32 +97,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${plusJakarta.variable} ${spaceGrotesk.variable} ${materialSymbols.variable}`}>
-      <head />
-      <body className="antialiased min-h-screen">
-        <GiwaAmbientBackground />
-        <GlobalLoader />
-        <Toaster
-          theme="light"
-          toastOptions={{
-            style: {
-              background: "#ffffff",
-              border: "1px solid rgba(0, 98, 223, 0.2)",
-              color: "#1a2434",
-            },
-          }}
-        />
-        <Web3Provider>
-          <div className="flex h-screen overflow-hidden">
-            <Sidebar />
-            <main className="flex-1 overflow-y-auto w-full">
-              <Header />
-              <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8">
-                {children}
-              </div>
-            </main>
-          </div>
-        </Web3Provider>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${dmSans.variable} ${geistMono.variable} ${bricolage.variable} ${materialSymbols.variable}`}
+    >
+      <head>
+        {/* Applies the stored theme before the first paint, so a dark-mode
+            visitor never sees a flash of cream. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
+      <body className="relative flex min-h-screen flex-col antialiased">
+        <ThemeProvider>
+          <GiwaAmbientBackground />
+          <div className="site-grain" aria-hidden="true" />
+          <GlobalLoader />
+          <ThemeToaster />
+          <Web3Provider>
+            <SiteHeader />
+            <main className="flex-1">{children}</main>
+            <SiteFooter />
+          </Web3Provider>
+        </ThemeProvider>
       </body>
     </html>
   );

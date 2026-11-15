@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# one-off exports (contain request logs / wallet addresses)
+giwa-hollow-log-export-*.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -39,6 +42,12 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# cloudflare (opennext / wrangler build output + local vars)
+/.open-next/
+/.wrangler/
+.dev.vars
+cloudflare-env.d.ts
 
 # typescript
 *.tsbuildinfo

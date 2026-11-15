@@ -52,6 +52,10 @@ export const CACHE = {
   config: cacheControl({ browser: 300, cdn: 3600, swr: 86400 }),
   /** Upstream price feed is already minute-resolution. */
   tokenPrices: cacheControl({ browser: 30, cdn: 60, swr: 300 }),
+  /** Launchpad token metadata: immutable per token, proxied from Pinata. */
+  launchpadMetadata: cacheControl({ browser: 86_400, cdn: 604_800, swr: 2_592_000 }),
+  /** Launchpad artwork: content-addressed and immutable. */
+  launchpadImage: cacheControl({ browser: 31_536_000, cdn: 31_536_000 }),
   /**
    * Admin check is keyed by wallet. Private so per-wallet answers never land in
    * a shared cache — the browser cache alone removes almost all of these,

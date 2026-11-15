@@ -1,5 +1,11 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { LaunchpadMint } from "@/components/launchpad/LaunchpadMint";
+import { launchpadMetadata } from "@/lib/launchpad/metadata";
 
-export default function HomePage() {
-  redirect("/claim");
+// The launchpad is the default entry point. The full landing page lives at
+// "/home" and is reachable from the header.
+export const metadata: Metadata = launchpadMetadata;
+
+export default function RootPage() {
+  return <LaunchpadMint />;
 }

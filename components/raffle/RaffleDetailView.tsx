@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useParams, usePathname } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { format } from "date-fns";
@@ -41,8 +41,6 @@ interface PrizeWithMetadata extends Prize {
 
 export default function RaffleDetailView() {
   const params = useParams();
-  const pathname = usePathname();
-  const isCommunity = pathname.startsWith("/community-raffles");
   const [data, setData] = useState<RaffleData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -212,8 +210,8 @@ export default function RaffleDetailView() {
   if (error || !data) {
     return (
       <div className="ui-container rounded p-16 text-center">
-        <span className="material-symbols-outlined text-red-400 text-6xl mb-4 block">error</span>
-        <p className="text-lg text-red-400">{error || "Raffle not found"}</p>
+        <span className="material-symbols-outlined text-red-600 dark:text-red-300 text-6xl mb-4 block">error</span>
+        <p className="text-lg text-red-600 dark:text-red-300">{error || "Raffle not found"}</p>
       </div>
     );
   }
@@ -241,14 +239,14 @@ export default function RaffleDetailView() {
     : "TBD";
 
   return (
-    <div className="space-y-8">
+    <div className="page-shell space-y-8">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm">
-        <Link href={isCommunity ? "/community-raffles" : "/raffles"} className="text-black hover:opacity-70 transition-opacity">
-          {isCommunity ? "Community Raffles" : "Raffles"}
+      <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em]">
+        <Link href="/raffles" className="text-ink-mute transition-colors hover:text-iris">
+          Raffles
         </Link>
-        <span className="text-black">/</span>
-        <span className="text-black">{raffle.title}</span>
+        <span className="text-ink-faint">/</span>
+        <span className="truncate text-ink">{raffle.title}</span>
       </div>
 
       {/* Main Content */}
@@ -256,8 +254,8 @@ export default function RaffleDetailView() {
         {/* Left Side - Details */}
         <div className="lg:col-span-2 space-y-6">
           {/* Hero Image */}
-          <div className="ui-container rounded overflow-hidden">
-            <div className={`h-64 relative ${isNFT ? "overflow-hidden" : "bg-dark-navy flex items-center justify-center"}`}>
+          <div className="ui-container overflow-hidden rounded-[26px]">
+            <div className={`relative h-64 sm:h-80 ${isNFT ? "overflow-hidden" : "flex items-center justify-center bg-[linear-gradient(135deg,#FFF8DE_0%,#FBE7EF_55%,#E4F0FB_100%)] dark:bg-[linear-gradient(135deg,#221c0f_0%,#2a1620_55%,#162230_100%)]"}`}>
               {raffle.image_url ? (
                 <Image
                   src={raffle.image_url}
@@ -272,41 +270,40 @@ export default function RaffleDetailView() {
                 </div>
               ) : (
                 <Image
-                  alt="LITVM"
-                  width={153}
-                  height={96}
-                  unoptimized
-                  className="object-contain"
-                  src="/ariwa-logo.png"
+                  alt="ARIWA"
+                  width={128}
+                  height={128}
+                  className="size-28 rounded-[26px] object-cover shadow-[0_18px_40px_-24px_rgba(39,33,50,0.6)] dark:shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)]"
+                  src="/brand/ariwa-icon.webp"
                 />
               )}
-              <div className="absolute top-4 left-4 flex gap-2">
-                <span className="bg-[#ffffff] text-[#0062df] text-[10px] font-bold px-3 py-1 rounded uppercase tracking-widest">
+              <div className="absolute left-4 top-4 flex gap-2">
+                <span className="rounded-full border border-ink/10 bg-paper/85 px-3 py-1 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-soft backdrop-blur">
                   {prizeLabel}
                 </span>
-                <span className={`text-[10px] font-bold px-3 py-1 rounded uppercase tracking-widest ${raffle.status === "active"
-                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                <span className={`rounded-full border px-3 py-1 font-mono text-[9px] uppercase tracking-[0.14em] backdrop-blur ${raffle.status === "active"
+                  ? "border-success/25 bg-success-strong/90 text-white"
                   : raffle.status === "pending"
-                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                    : "bg-black/10 text-muted-blue border border-black/10"
+                    ? "border-iris/20 bg-iris-strong/90 text-white"
+                    : "border-ink/10 bg-paper/85 text-ink-mute"
                   }`}>
                   {raffle.status}
                 </span>
               </div>
             </div>
-            <div className="p-6">
-              <h1 className="text-3xl font-header text-text-primary mb-4">{raffle.title}</h1>
-              <p className="text-muted-blue leading-relaxed">{raffle.description}</p>
+            <div className="p-6 sm:p-8">
+              <h1 className="font-header text-3xl font-extrabold tracking-[-0.04em] text-ink sm:text-4xl">{raffle.title}</h1>
+              <p className="mt-3 max-w-2xl text-[13px] leading-6 text-ink-soft">{raffle.description}</p>
             </div>
           </div>
 
           {/* Details Grid */}
-          <div className="ui-container rounded p-6">
-            <h3 className="text-xl font-header text-text-primary mb-6">Raffle Details</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="ui-container rounded-[26px] p-6 sm:p-8">
+            <h3 className="font-header text-xl font-extrabold tracking-[-0.03em] text-ink">Raffle details</h3>
+            <div className="mt-6 grid grid-cols-2 gap-6 md:grid-cols-4">
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-blue tracking-widest mb-1">Entry Cost</p>
-                <p className="text-lg font-display font-bold text-[#0062df]">{raffle.tokens_required} {entryTokenSymbol}</p>
+                <p className="text-lg font-display font-bold text-iris">{raffle.tokens_required} {entryTokenSymbol}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-blue tracking-widest mb-1">Max Entries / User</p>
@@ -338,16 +335,16 @@ export default function RaffleDetailView() {
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-blue tracking-widest mb-1">Prize</p>
-                <p className="text-sm font-bold text-[#0062df]">{prizeInfoLabel}</p>
+                <p className="text-sm font-bold text-iris">{prizeInfoLabel}</p>
               </div>
             </div>
           </div>
 
           {/* Entries */}
-          <div className="ui-container rounded overflow-hidden">
-            <div className="px-6 py-4 border-b border-black/10">
-              <h3 className="text-xl font-header text-text-primary">Entries</h3>
-              <p className="text-sm text-muted-blue mt-1">
+          <div className="ui-container overflow-hidden rounded-[26px]">
+            <div className="border-b border-ink/[0.08] px-6 py-5">
+              <h3 className="font-header text-xl font-extrabold tracking-[-0.03em] text-ink">Entries</h3>
+              <p className="mt-1 text-[11px] text-ink-mute">
                 {totalEntriesCount} entr{totalEntriesCount !== 1 ? 'ies' : 'y'} • {entriesCount} total entries
               </p>
 
@@ -360,7 +357,7 @@ export default function RaffleDetailView() {
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
                       placeholder="Search by wallet address..."
-                      className="w-full px-4 py-2 bg-black/5 border border-black/10 rounded text-text-primary placeholder-muted-blue focus:outline-none focus:border-[#0062df]/50 transition-colors"
+                      className="w-full px-4 py-2 bg-ink/[0.04] border border-ink/10 rounded text-text-primary placeholder-muted-blue focus:outline-none focus:border-iris/50 transition-colors"
                     />
                     {searchInput && (
                       <button
@@ -384,13 +381,13 @@ export default function RaffleDetailView() {
                 {walletSearch && (
                   <div className="mt-2 flex items-center gap-2 text-sm">
                     <span className="text-muted-blue">Filtering by:</span>
-                    <span className="px-2 py-1 bg-[#0062df]/10 text-[#0062df] rounded font-mono text-xs">
+                    <span className="px-2 py-1 bg-iris/10 text-iris rounded font-mono text-xs">
                       {walletSearch}
                     </span>
                     <button
                       type="button"
                       onClick={handleClearSearch}
-                      className="text-muted-blue hover:text-[#0062df] transition-colors text-xs underline"
+                      className="text-muted-blue hover:text-iris transition-colors text-xs underline"
                     >
                       Clear filter
                     </button>
@@ -410,23 +407,23 @@ export default function RaffleDetailView() {
                             href={`${EXPLORER_TX_URL}/${entry.tx_hash}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center justify-between p-4 bg-black/5 rounded border border-black/10 hover:bg-black/10 hover:border-[#0062df]/30 transition-all group"
+                            className="flex items-center justify-between p-4 bg-ink/[0.04] rounded border border-ink/10 hover:bg-ink/[0.07] hover:border-iris/30 transition-all group"
                           >
                             <div className="flex items-center gap-4">
-                              <div className="w-8 h-8 rounded-full bg-[#ffffff] flex items-center justify-center text-[#0062df] text-sm font-bold">
+                              <div className="w-8 h-8 rounded-full bg-paper flex items-center justify-center text-iris text-sm font-bold">
                                 {index + 1}
                               </div>
                               <div>
-                                <p className="font-mono text-text-primary text-sm group-hover:text-[#0062df] transition-colors">
+                                <p className="font-mono text-text-primary text-sm group-hover:text-iris transition-colors">
                                   {entry.wallet_address.slice(0, 10)}...{entry.wallet_address.slice(-8)}
                                 </p>
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
-                              <span className="text-sm font-display font-bold text-[#0062df]">
+                              <span className="text-sm font-display font-bold text-iris">
                                 {entry.entry_count} {entry.entry_count === 1 ? 'entry' : 'entries'}
                               </span>
-                              <span className="material-symbols-outlined text-muted-blue group-hover:text-[#0062df] transition-colors text-lg">
+                              <span className="material-symbols-outlined text-muted-blue group-hover:text-iris transition-colors text-lg">
                                 open_in_new
                               </span>
                             </div>
@@ -466,11 +463,11 @@ export default function RaffleDetailView() {
 
         {/* Right Side - Entry Form or Winners */}
         <div>
-          <div className="ui-container rounded overflow-hidden sticky top-24">
+          <div className="ui-container overflow-hidden rounded-[26px] sticky top-24">
             {raffle.status === "ended" ? (
               <>
-                <div className="px-6 py-4 border-b border-black/10 bg-black/5">
-                  <h3 className="text-xl font-header text-text-primary">Winners</h3>
+                <div className="border-b border-ink/[0.08] bg-cream/50 px-6 py-4">
+                  <h3 className="font-header text-xl font-extrabold tracking-[-0.03em] text-ink">Winners</h3>
                 </div>
                 <div className="p-6">
                   {winners && winners.length > 0 ? (
@@ -481,17 +478,17 @@ export default function RaffleDetailView() {
                             href={winner.distribution_tx_hash ? `${EXPLORER_TX_URL}/${winner.distribution_tx_hash}` : "#"}
                             target={winner.distribution_tx_hash ? "_blank" : undefined}
                             rel={winner.distribution_tx_hash ? "noopener noreferrer" : undefined}
-                            className={`flex items-center justify-between p-4 bg-black/5 rounded border border-black/10 ${winner.distribution_tx_hash
-                              ? "hover:bg-black/10 hover:border-[#0062df]/30 transition-all group cursor-pointer"
+                            className={`flex items-center justify-between p-4 bg-ink/[0.04] rounded border border-ink/10 ${winner.distribution_tx_hash
+                              ? "hover:bg-ink/[0.07] hover:border-iris/30 transition-all group cursor-pointer"
                               : ""
                               }`}
                           >
                             <div className="flex items-center gap-4">
-                              <div className="w-8 h-8 rounded-full bg-[#ffffff] flex items-center justify-center text-[#0062df] text-sm font-bold">
+                              <div className="w-8 h-8 rounded-full bg-paper flex items-center justify-center text-iris text-sm font-bold">
                                 {index + 1}
                               </div>
                               <div>
-                                <p className={`font-mono text-text-primary text-sm ${winner.distribution_tx_hash ? "group-hover:text-[#0062df] transition-colors" : ""}`}>
+                                <p className={`font-mono text-text-primary text-sm ${winner.distribution_tx_hash ? "group-hover:text-iris transition-colors" : ""}`}>
                                   {winner.wallet_address.slice(0, 10)}...{winner.wallet_address.slice(-8)}
                                 </p>
                                 {winner.distribution_tx_hash && (
@@ -502,7 +499,7 @@ export default function RaffleDetailView() {
                               </div>
                             </div>
                             {winner.distribution_tx_hash && (
-                              <span className="material-symbols-outlined text-muted-blue group-hover:text-[#0062df] transition-colors text-lg">
+                              <span className="material-symbols-outlined text-muted-blue group-hover:text-iris transition-colors text-lg">
                                 open_in_new
                               </span>
                             )}
@@ -520,8 +517,8 @@ export default function RaffleDetailView() {
               </>
             ) : (
               <>
-                <div className="px-6 py-4 border-b border-black/10 bg-black/5">
-                  <h3 className="text-xl font-header text-text-primary">Enter Raffle</h3>
+                <div className="border-b border-ink/[0.08] bg-cream/50 px-6 py-4">
+                  <h3 className="font-header text-xl font-extrabold tracking-[-0.03em] text-ink">Enter raffle</h3>
                 </div>
                 <div className="p-6">
                   <RaffleEntryForm

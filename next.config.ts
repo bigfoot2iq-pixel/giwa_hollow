@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  turbopack: {},
+  turbopack: {
+    // Pin the workspace root to this project; otherwise a lockfile in a parent
+    // directory makes Next infer that parent as root and module resolution fails.
+    root: process.cwd(),
+  },
   webpack: (config) => {
     config.externals.push("pino-pretty", "lokijs", "encoding");
     return config;
@@ -18,15 +22,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Handled by the routing layer, so hitting "/" costs no function invocation.
-  // Temporary rather than permanent so the landing page can be changed later
-  // without fighting browsers that cached a 308.
+  // The marketing landing page lives at "/". The old /dashboard route was
+  // removed, so keep any inbound links from 404ing.
   async redirects() {
     return [
       {
-        source: "/",
-        destination: "/claim",
-        permanent: false,
+        source: "/dashboard",
+        destination: "/",
+        permanent: true,
       },
     ];
   },
@@ -54,3 +57,9 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+// Lets `next dev` use the Cloudflare bindings defined in wrangler.jsonc.
+// No-op in production builds.
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
+initOpenNextCloudflareForDev();

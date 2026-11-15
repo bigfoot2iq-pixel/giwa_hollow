@@ -1,3 +1,4 @@
+import { Clock } from "lucide-react";
 import { useCountdown } from "@/lib/hooks/useCountdown";
 
 interface CountdownTimerProps {
@@ -12,39 +13,29 @@ export function CountdownTimer({ endDate, className = "" }: CountdownTimerProps)
   if (isExpired) {
     return (
       <div className={`flex items-center gap-1.5 ${className}`}>
-        <span className="material-symbols-outlined text-muted-blue text-sm">schedule</span>
-        <span className="text-xs font-bold text-muted-blue uppercase tracking-wider">Ended</span>
+        <Clock className="size-3 text-ink-mute" />
+        <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-ink-mute">
+          Ended
+        </span>
       </div>
     );
   }
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <span className="material-symbols-outlined text-[#0062df] text-sm animate-pulse">schedule</span>
-      <div className="flex items-center gap-1">
+    <div className={`flex items-center gap-1.5 ${className}`}>
+      <Clock className="size-3 animate-pulse text-iris" />
+      <div className="flex items-center gap-1 font-mono text-[10px] font-semibold tabular-nums text-ink">
         {showDays && (
           <>
-            <div className="flex flex-col items-center">
-              <span className="text-sm font-display font-bold text-text-primary leading-none">{days}</span>
-              <span className="text-[7px] font-bold text-muted-blue uppercase tracking-wider">days</span>
-            </div>
-            <span className="text-text-tertiary/40 text-xs mb-2">:</span>
+            <span>{days}d</span>
+            <span className="text-ink-faint">:</span>
           </>
         )}
-        <div className="flex flex-col items-center">
-          <span className="text-sm font-display font-bold text-text-primary leading-none">{hours}</span>
-          <span className="text-[7px] font-bold text-muted-blue uppercase tracking-wider">hrs</span>
-        </div>
-        <span className="text-text-tertiary/40 text-xs mb-2">:</span>
-        <div className="flex flex-col items-center">
-          <span className="text-sm font-display font-bold text-text-primary leading-none">{minutes}</span>
-          <span className="text-[7px] font-bold text-muted-blue uppercase tracking-wider">min</span>
-        </div>
-        <span className="text-text-tertiary/40 text-xs mb-2">:</span>
-        <div className="flex flex-col items-center">
-          <span className="text-sm font-display font-bold text-text-primary leading-none">{seconds}</span>
-          <span className="text-[7px] font-bold text-muted-blue uppercase tracking-wider">sec</span>
-        </div>
+        <span>{hours}h</span>
+        <span className="text-ink-faint">:</span>
+        <span>{minutes}m</span>
+        <span className="text-ink-faint">:</span>
+        <span>{seconds}s</span>
       </div>
     </div>
   );

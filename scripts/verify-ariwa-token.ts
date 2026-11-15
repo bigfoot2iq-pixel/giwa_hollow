@@ -1,12 +1,14 @@
 import pkg from "hardhat";
-const { run } = pkg;
+const { ethers, run } = pkg;
 
 const ARIWA_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS ?? "";
 
 const ARIWA_TOKEN_ARGS = [
   "ARIWA",
   "ARIWA",
-  "86400",
+  ethers.parseEther("1"),
+  0n,
+  43200,
 ];
 
 async function main() {

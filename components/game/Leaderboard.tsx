@@ -115,7 +115,7 @@ export default function Leaderboard() {
           className={`px-4 py-2 font-bold text-xs uppercase tracking-widest rounded transition-all ${
             activeTab === 'ariwa'
               ? 'bg-accent-warm border border-transparent text-background'
-              : 'bg-black/5 text-foreground hover:bg-black/10 border border-black/20'
+              : 'bg-ink/[0.04] text-foreground hover:bg-ink/[0.07] border border-ink/15'
           }`}
         >
           Ariwa Token
@@ -125,7 +125,7 @@ export default function Leaderboard() {
           className={`px-4 py-2 font-bold text-xs uppercase tracking-widest rounded transition-all ${
             activeTab === 'game'
               ? 'bg-accent-warm border border-transparent text-background'
-              : 'bg-black/5 text-foreground hover:bg-black/10 border border-black/20'
+              : 'bg-ink/[0.04] text-foreground hover:bg-ink/[0.07] border border-ink/15'
           }`}
         >
           Game Score
@@ -141,7 +141,7 @@ export default function Leaderboard() {
         <button
           onClick={refresh}
           disabled={isRefreshing || isLoading}
-          className="px-4 py-2 bg-black/5 hover:bg-black/10 text-foreground font-bold rounded uppercase tracking-widest text-xs transition-all border border-black/20 disabled:opacity-50"
+          className="px-4 py-2 bg-ink/[0.04] hover:bg-ink/[0.07] text-foreground font-bold rounded uppercase tracking-widest text-xs transition-all border border-ink/15 disabled:opacity-50"
         >
           {isRefreshing ? 'Refreshing...' : 'Refresh'}
         </button>
@@ -150,7 +150,7 @@ export default function Leaderboard() {
       {/* Leaderboard Table */}
       <div className="ui-container rounded overflow-hidden">
         {/* Header - Desktop */}
-        <div className="hidden md:block bg-black/5 border-b border-black/10 px-4 lg:px-6 py-4">
+        <div className="hidden md:block bg-ink/[0.04] border-b border-ink/10 px-4 lg:px-6 py-4">
           {activeTab === 'game' ? (
             <div className="grid grid-cols-12 gap-4 text-[10px] font-bold uppercase tracking-widest text-muted-blue">
               <div className="col-span-1">Rank</div>
@@ -168,7 +168,7 @@ export default function Leaderboard() {
         </div>
 
         {/* Header - Mobile */}
-        <div className="md:hidden bg-black/5 border-b border-black/10 px-4 py-3">
+        <div className="md:hidden bg-ink/[0.04] border-b border-ink/10 px-4 py-3">
           <div className="grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-blue">
             <div className="col-span-2">Rank</div>
             <div className="col-span-6">Wallet</div>
@@ -179,7 +179,7 @@ export default function Leaderboard() {
         {/* Loading State - Only show when no existing data */}
         {isLoading && (
           <div className="p-12 text-center">
-            <div className="inline-block w-8 h-8 border-4 border-black/20 border-t-[#0062df] rounded-full animate-spin mb-4"></div>
+            <div className="inline-block w-8 h-8 border-4 border-ink/15 border-t-[#6c55e0] rounded-full animate-spin mb-4"></div>
             <p className="text-muted-blue">
               {activeTab === 'game' ? 'Loading warriors...' : 'Loading holders...'}
             </p>
@@ -202,14 +202,14 @@ export default function Leaderboard() {
               {activeTab === 'game' ? 'No warriors yet' : 'No holders yet'}
             </p>
             <p className="text-sm text-muted-blue">
-              {activeTab === 'game' ? 'Be the first to achieve a high score!' : 'Be the first to claim Ariwa Tokens!'}
+              {activeTab === 'game' ? 'Be the first to achieve a high score!' : 'Be the first to hold Ariwa Tokens!'}
             </p>
           </div>
         )}
 
         {/* Leaderboard Entries */}
         {(!isLoading || leaderboardData.length > 0 || holders.length > 0) && !isEmpty && (
-          <div className="divide-y divide-black/10">
+          <div className="divide-y divide-ink/10">
             {activeTab === 'game' ? (
               // Game Score Table
               leaderboardData.map((player) => {
@@ -220,8 +220,8 @@ export default function Leaderboard() {
                 return (
                   <div
                     key={player.wallet_address}
-                    className={`hover:bg-black/5 transition-colors ${
-                      isCurrentUser ? 'bg-[#0062df]/10 border-l-4 border-[#0062df]' : ''
+                    className={`hover:bg-ink/[0.04] transition-colors ${
+                      isCurrentUser ? 'bg-iris-strong/10 border-l-4 border-iris' : ''
                     }`}
                   >
                     {/* Desktop Layout */}
@@ -236,7 +236,7 @@ export default function Leaderboard() {
                         <code className="font-mono text-xs lg:text-sm text-muted-blue">{formatWallet(player.wallet_address)}</code>
                         <button
                           onClick={() => handleCopy(player.wallet_address)}
-                          className="opacity-0 hover:opacity-100 transition-opacity p-1 hover:bg-black/10 rounded"
+                          className="opacity-0 hover:opacity-100 transition-opacity p-1 hover:bg-ink/[0.07] rounded"
                           title="Copy address"
                         >
                           <span className="material-symbols-outlined text-xs text-muted-blue">
@@ -247,7 +247,7 @@ export default function Leaderboard() {
 
                       {/* Score */}
                       <div className="col-span-3 flex items-center justify-end">
-                        <p className={`text-lg lg:text-xl font-display font-bold ${isCurrentUser ? 'text-[#0062df]' : 'text-text-primary'}`}>
+                        <p className={`text-lg lg:text-xl font-display font-bold ${isCurrentUser ? 'text-iris' : 'text-text-primary'}`}>
                           {player.game_score.toLocaleString()}
                         </p>
                       </div>
@@ -267,7 +267,7 @@ export default function Leaderboard() {
 
                       {/* Score */}
                       <div className="col-span-4 flex items-center justify-end">
-                        <p className={`text-base font-display font-bold ${isCurrentUser ? 'text-[#0062df]' : 'text-text-primary'}`}>
+                        <p className={`text-base font-display font-bold ${isCurrentUser ? 'text-iris' : 'text-text-primary'}`}>
                           {player.game_score.toLocaleString()}
                         </p>
                       </div>
@@ -280,7 +280,7 @@ export default function Leaderboard() {
               holders.map((holder) => (
                 <div
                   key={holder.address}
-                  className="hover:bg-black/5 transition-colors"
+                  className="hover:bg-ink/[0.04] transition-colors"
                 >
                   {/* Desktop Layout */}
                   <div className="hidden md:grid grid-cols-12 gap-4 px-4 lg:px-6 py-4">
@@ -297,7 +297,7 @@ export default function Leaderboard() {
                       )}
                       <button
                         onClick={() => handleCopy(holder.address)}
-                        className="opacity-0 hover:opacity-100 transition-opacity p-1 hover:bg-black/10 rounded"
+                        className="opacity-0 hover:opacity-100 transition-opacity p-1 hover:bg-ink/[0.07] rounded"
                         title="Copy address"
                       >
                         <span className="material-symbols-outlined text-xs text-muted-blue">
@@ -316,9 +316,9 @@ export default function Leaderboard() {
                     {/* Percentage */}
                     <div className="col-span-2 flex flex-col items-end justify-center pl-6">
                       <p className="text-sm font-bold text-text-primary mb-1">{holder.percentage}</p>
-                      <div className="w-full h-1.5 bg-black/10 rounded overflow-hidden">
+                      <div className="w-full h-1.5 bg-ink/[0.07] rounded overflow-hidden">
                         <div 
-                          className="h-full bg-[#0062df] rounded" 
+                          className="h-full bg-iris-strong rounded"
                           style={{ width: holder.percentage }}
                         ></div>
                       </div>
@@ -352,11 +352,11 @@ export default function Leaderboard() {
 
         {/* Load More */}
         {hasMore && !isLoading && (
-          <div className="p-4 lg:p-6 border-t border-black/10 flex justify-center">
+          <div className="p-4 lg:p-6 border-t border-ink/10 flex justify-center">
             <button
               onClick={loadMore}
               disabled={isLoadingMore}
-              className="px-6 lg:px-8 py-2.5 lg:py-3 bg-black/5 hover:bg-black/10 text-text-primary font-bold rounded uppercase tracking-widest text-xs lg:text-sm transition-all border border-black/10 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="px-6 lg:px-8 py-2.5 lg:py-3 bg-ink/[0.04] hover:bg-ink/[0.07] text-text-primary font-bold rounded uppercase tracking-widest text-xs lg:text-sm transition-all border border-ink/10 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isLoadingMore ? (
                 <>
@@ -373,12 +373,12 @@ export default function Leaderboard() {
 
       {/* Call to Action */}
       <div className="ui-container rounded p-6 lg:p-8 text-center">
-        <p className="text-muted-blue text-sm lg:text-base mb-4">Ready to claim your place among the legends?</p>
+        <p className="text-muted-blue text-sm lg:text-base mb-4">Ready to put your ARIWA to work?</p>
         <button
-          onClick={() => router.push('/game')}
+          onClick={() => router.push('/raffles')}
           className="px-6 lg:px-8 py-2.5 lg:py-3 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-xs lg:text-sm transition-all"
         >
-          Play Now
+          Explore Raffles
         </button>
       </div>
     </div>

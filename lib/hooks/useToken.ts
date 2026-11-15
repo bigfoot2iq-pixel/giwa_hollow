@@ -29,7 +29,7 @@ export function useTokenAllowance(owner: `0x${string}` | undefined, spender: `0x
 }
 
 export function useApproveTokens() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { writeContract, data: hash, isPending, error, reset } = useWriteContract();
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -52,6 +52,7 @@ export function useApproveTokens() {
     isConfirming,
     isSuccess,
     error,
+    reset,
   };
 }
 

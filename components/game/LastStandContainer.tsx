@@ -99,7 +99,7 @@ export default function LastStandContainer() {
     <div className="space-y-4 lg:space-y-6">
 
       {/* Game Area */}
-      <div className="ui-container rounded p-4 sm:p-6 lg:p-8">
+      <div className="ui-container rounded-[28px] p-4 sm:p-6 lg:p-8">
         {gameStarted && hasActiveSession ? (
           // Game Running
           <div className="space-y-4">
@@ -111,7 +111,7 @@ export default function LastStandContainer() {
               {session && (
                 <div className="text-left sm:text-right">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-blue mb-1">Session Expires</p>
-                  <p className="text-sm text-[#0062df]">{formatExpiryTime(session.expiresAt)}</p>
+                  <p className="text-sm text-iris">{formatExpiryTime(session.expiresAt)}</p>
                 </div>
               )}
             </div>
@@ -128,9 +128,11 @@ export default function LastStandContainer() {
         ) : !isConnected ? (
           // Wallet Connection Required
           <div className="text-center py-12 sm:py-16">
-            <span className="material-symbols-outlined text-muted-blue text-5xl sm:text-6xl mb-4 sm:mb-6 block">account_balance_wallet</span>
-            <h3 className="text-xl sm:text-2xl font-header text-text-primary mb-3 sm:mb-4">Connect Your Wallet</h3>
-            <p className="text-muted-blue text-sm sm:text-base mb-6 sm:mb-8 max-w-md mx-auto px-4">
+            <span className="mx-auto mb-5 flex size-16 items-center justify-center rounded-full border border-iris/15 bg-iris/[0.06] text-iris">
+              <span className="material-symbols-outlined text-3xl">account_balance_wallet</span>
+            </span>
+            <h3 className="font-header text-2xl font-extrabold tracking-[-0.03em] text-ink mb-3">Connect your wallet</h3>
+            <p className="text-ink-soft text-sm sm:text-base mb-6 sm:mb-8 max-w-md mx-auto px-4">
               Face the horde in ARIWA: Last Stand. Connect your wallet to begin your legendary defense.
             </p>
             <div className="flex justify-center">
@@ -141,20 +143,17 @@ export default function LastStandContainer() {
                     return (
                       <button
                         onClick={openChainModal}
-                        className="px-6 sm:px-8 py-3 sm:py-4 bg-red-500 hover:bg-red-600 text-text-primary font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all inline-flex items-center gap-2"
+                        className="inline-flex h-12 items-center gap-2 rounded-full border border-red-500/25 bg-red-500/10 px-6 text-[11px] font-bold uppercase tracking-[0.14em] text-red-600 dark:text-red-400 transition hover:bg-red-500/15"
                       >
                         <span className="material-symbols-outlined text-sm">warning</span>
-                        Wrong Network
+                        Wrong network
                       </button>
                     );
                   }
                   return (
-                    <button
-                      onClick={openConnectModal}
-                      className="px-6 sm:px-8 py-3 sm:py-4 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all inline-flex items-center gap-2"
-                    >
+                    <button onClick={openConnectModal} className="btn-iris h-12 px-6 text-[11px]">
                       <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
-                      Connect Wallet
+                      Connect wallet
                     </button>
                   );
                 }}
@@ -164,22 +163,24 @@ export default function LastStandContainer() {
         ) : (
           // Pay to Play / Session Selection
           <div className="text-center py-12 sm:py-16">
-            <span className="material-symbols-outlined text-[#0062df] text-5xl sm:text-6xl mb-4 sm:mb-6 block">swords</span>
-            <h3 className="text-xl sm:text-2xl font-header text-text-primary mb-2">ARIWA</h3>
-            <p className="text-muted-blue mb-6 sm:mb-8 text-sm sm:text-base">Last Stand Mode</p>
+            <span className="mx-auto mb-5 flex size-16 items-center justify-center rounded-full border border-iris/15 bg-iris/[0.06] text-iris">
+              <span className="material-symbols-outlined text-3xl">swords</span>
+            </span>
+            <h3 className="font-header text-2xl font-extrabold tracking-[-0.03em] text-ink mb-2">ARIWA</h3>
+            <p className="text-ink-mute mb-6 sm:mb-8 text-sm sm:text-base">Last Stand mode</p>
 
             <div className="max-w-md mx-auto space-y-4 sm:space-y-6 px-4">
               {/* Session Status */}
               {isSessionLoading ? (
                 <div className="flex items-center justify-center gap-2 text-muted-blue py-4">
-                  <div className="w-4 h-4 border-2 border-black/20 border-t-[#0062df] rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-ink/20 border-t-iris rounded-full animate-spin"></div>
                   <span>Checking session...</span>
                 </div>
               ) : hasActiveSession && session ? (
                 // Has Active Session
                 <div className="space-y-4">
                   <div className="ui-container p-4 rounded bg-green-500/10 border border-green-500/30">
-                    <div className="flex items-center justify-center gap-2 text-green-400 mb-2">
+                    <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400 mb-2">
                       <span className="material-symbols-outlined text-sm">schedule</span>
                       <span className="text-sm font-bold uppercase tracking-widest">Active Session</span>
                     </div>
@@ -190,36 +191,36 @@ export default function LastStandContainer() {
 
                   <button
                     onClick={handleStartWithSession}
-                    className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all"
+                    className="btn-iris h-12 w-full text-[11px]"
                   >
-                    <span className="material-symbols-outlined text-sm mr-2 inline-block">play_arrow</span>
-                    Continue Playing
+                    <span className="material-symbols-outlined text-sm">play_arrow</span>
+                    Continue playing
                   </button>
                 </div>
               ) : (
                 // No Active Session - Pay to Play
                 <div className="space-y-4">
                   {(paymentError || sessionError) && (
-                    <div className="ui-container p-4 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                    <div className="ui-container p-4 rounded bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-sm">
                       {paymentError || sessionError}
                     </div>
                   )}
 
                   {/* Play cost in ARIWA */}
-                  <div className="ui-container p-4 rounded bg-black/5 border border-black/10">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-blue mb-1">Play Cost</p>
-                    <p className="text-lg font-display font-bold text-text-primary">
+                  <div className="rounded-2xl border border-ink/[0.08] bg-paper/60 p-4">
+                    <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-mute mb-1">Play cost</p>
+                    <p className="font-header text-xl font-extrabold text-ink">
                       {isLoadingPrice ? '...' : playPriceFormatted}
                     </p>
                     {!hasEnoughBalance && (
-                      <p className="text-[11px] text-red-400 mt-1">Not enough ARIWA — claim tokens below.</p>
+                      <p className="text-[11px] text-red-500 mt-1">Not enough ARIWA — buy more below.</p>
                     )}
                   </div>
 
                   <button
                     onClick={handlePayToPlay}
                     disabled={isPaying || isConfirming || isCreatingSession || isLoadingPrice || step !== 'idle' || !hasEnoughBalance}
-                    className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-xs sm:text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn-iris h-12 w-full text-[11px]"
                   >
                     {step === 'approving' ? (
                       <>
@@ -256,15 +257,15 @@ export default function LastStandContainer() {
                   {/* Get ARIWA to pay, plus native gas for the tx */}
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
                     <Link
-                      href="/claim"
-                      className="flex items-center justify-center gap-2 text-xs font-bold text-[#0062df] transition-opacity hover:opacity-80"
+                      href="/trade"
+                      className="flex items-center justify-center gap-2 text-xs font-bold text-iris transition-opacity hover:opacity-80"
                     >
-                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>redeem</span>
-                      Need ARIWA? Claim tokens
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>swap_horiz</span>
+                      Need ARIWA? Buy on the desk
                     </Link>
                     <Link
                       href="/faucet"
-                      className="flex items-center justify-center gap-2 text-xs font-bold text-[#0062df] transition-opacity hover:opacity-80"
+                      className="flex items-center justify-center gap-2 text-xs font-bold text-iris transition-opacity hover:opacity-80"
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: 16 }}>water_drop</span>
                       Need gas? Get testnet ETH
@@ -279,25 +280,33 @@ export default function LastStandContainer() {
 
       {/* Game Features */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-        <div className="ui-container p-4 sm:p-5 lg:p-6 rounded text-center">
-          <span className="material-symbols-outlined text-[#0062df] text-3xl sm:text-4xl mb-2 sm:mb-3 block">swords</span>
-          <h4 className="text-text-primary font-bold mb-1 sm:mb-2 text-xs sm:text-sm lg:text-base">Charged Attacks</h4>
-          <p className="text-[10px] sm:text-xs lg:text-sm text-muted-blue">Hold to unleash powerful slashes</p>
+        <div className="ui-container rounded-[22px] p-5 text-center">
+          <span className="mx-auto mb-3 flex size-10 items-center justify-center rounded-xl bg-blush/45 text-blush-ink">
+            <span className="material-symbols-outlined text-2xl">swords</span>
+          </span>
+          <h4 className="text-ink font-bold mb-1 sm:mb-2 text-xs sm:text-sm lg:text-base">Charged Attacks</h4>
+          <p className="text-[10px] sm:text-xs lg:text-sm text-ink-mute">Hold to unleash powerful slashes</p>
         </div>
-        <div className="ui-container p-4 sm:p-5 lg:p-6 rounded text-center">
-          <span className="material-symbols-outlined text-[#0062df] text-3xl sm:text-4xl mb-2 sm:mb-3 block">favorite</span>
-          <h4 className="text-text-primary font-bold mb-1 sm:mb-2 text-xs sm:text-sm lg:text-base">3 Lives System</h4>
-          <p className="text-[10px] sm:text-xs lg:text-sm text-muted-blue">Every hit counts - survive!</p>
+        <div className="ui-container rounded-[22px] p-5 text-center">
+          <span className="mx-auto mb-3 flex size-10 items-center justify-center rounded-xl bg-mint/45 text-mint-ink">
+            <span className="material-symbols-outlined text-2xl">favorite</span>
+          </span>
+          <h4 className="text-ink font-bold mb-1 sm:mb-2 text-xs sm:text-sm lg:text-base">3 Lives System</h4>
+          <p className="text-[10px] sm:text-xs lg:text-sm text-ink-mute">Every hit counts - survive!</p>
         </div>
-        <div className="ui-container p-4 sm:p-5 lg:p-6 rounded text-center">
-          <span className="material-symbols-outlined text-[#0062df] text-3xl sm:text-4xl mb-2 sm:mb-3 block">target</span>
-          <h4 className="text-text-primary font-bold mb-1 sm:mb-2 text-xs sm:text-sm lg:text-base">Perfect Dodge</h4>
-          <p className="text-[10px] sm:text-xs lg:text-sm text-muted-blue">Time it right for slow-mo</p>
+        <div className="ui-container rounded-[22px] p-5 text-center">
+          <span className="mx-auto mb-3 flex size-10 items-center justify-center rounded-xl bg-butter/55 text-butter-ink">
+            <span className="material-symbols-outlined text-2xl">target</span>
+          </span>
+          <h4 className="text-ink font-bold mb-1 sm:mb-2 text-xs sm:text-sm lg:text-base">Perfect Dodge</h4>
+          <p className="text-[10px] sm:text-xs lg:text-sm text-ink-mute">Time it right for slow-mo</p>
         </div>
-        <div className="ui-container p-4 sm:p-5 lg:p-6 rounded text-center">
-          <span className="material-symbols-outlined text-[#0062df] text-3xl sm:text-4xl mb-2 sm:mb-3 block">emoji_events</span>
-          <h4 className="text-text-primary font-bold mb-1 sm:mb-2 text-xs sm:text-sm lg:text-base">Wave Survival</h4>
-          <p className="text-[10px] sm:text-xs lg:text-sm text-muted-blue">How long can you last?</p>
+        <div className="ui-container rounded-[22px] p-5 text-center">
+          <span className="mx-auto mb-3 flex size-10 items-center justify-center rounded-xl bg-sky/55 text-sky-ink">
+            <span className="material-symbols-outlined text-2xl">emoji_events</span>
+          </span>
+          <h4 className="text-ink font-bold mb-1 sm:mb-2 text-xs sm:text-sm lg:text-base">Wave Survival</h4>
+          <p className="text-[10px] sm:text-xs lg:text-sm text-ink-mute">How long can you last?</p>
         </div>
       </div>
     </div>

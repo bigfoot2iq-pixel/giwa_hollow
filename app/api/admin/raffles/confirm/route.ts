@@ -9,8 +9,7 @@ import { z } from "zod";
 // column, so no two raffles can ever collide — even with identical titles. The
 // admin path previously left slug unset and let the DB trigger derive it from the
 // title alone, so a second "Ariwa" raffle hit litvm_raffle_raffles_slug_key AFTER
-// its prize was already escrowed on-chain. Mirrors slugify() in
-// app/api/raffles/create/route.ts.
+// its prize was already escrowed on-chain.
 function slugify(title: string, chainRaffleId: number): string {
   const base = title
     .toLowerCase()

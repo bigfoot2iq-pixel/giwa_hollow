@@ -1,138 +1,1292 @@
 @import "tailwindcss";
 
-:root {
-  /* ── Upbit palette (light) ───────────────────────────────────────── */
-  --theme-colors-point_sub: #0062df;
-  --theme-colors-point_main: #003597;
-  --theme-colors-bg: #ffffff;
-  --theme-colors-bg_header: #d6d8db;
-  --theme-colors-bg_title: #f4f5f7;
-  --theme-colors-bg_btn_primary: #003597;
-  --theme-colors-bg_btn_secondary: #565d6a;
-  --theme-colors-bg_btn_tertiary: #f5f9ff;
-  --theme-colors-bg_list: #fafafa;
-  --theme-colors-bg_list_header: #fafafa;
-  --theme-colors-bg_list_hover: #f4f5f7;
-  --theme-colors-font_1: #1a2434;
-  --theme-colors-font_2: #565d6a;
-  --theme-colors-font_3: #8e929b;
-  --theme-colors-font_alert: #dd3c44;
-  --theme-colors-font_white: #ffffff;
-  --theme-colors-font_up: #dd3c44;
-  --theme-colors-font_down: #1375ec;
-  --theme-colors-font_btn_tertiary: #004cad;
-  --theme-colors-font_btn_dim: #ffffff;
-  --theme-colors-dim: #bec1c6;
-  --theme-colors-line_dark: #d6d8db;
-  --theme-colors-line_light: #edeef1;
-  --theme-colors-graph_bg_up: rgba(221, 60, 68, 0.08);
-  --theme-colors-graph_bg_down: rgba(19, 117, 236, 0.08);
-  --theme-colors-graph_bg_up_hover: rgba(221, 60, 68, 0.16);
-  --theme-colors-graph_bg_down_hover: rgba(19, 117, 236, 0.16);
-  --theme-colors-graph_up: rgba(221, 60, 68, 0.15);
-  --theme-colors-graph_down: rgba(19, 117, 236, 0.15);
-  --theme-colors-graph_up_hover: rgba(221, 60, 68, 0.23);
-  --theme-colors-graph_down_hover: rgba(19, 117, 236, 0.23);
-  --theme-colors-spinner_bg: #003597;
-  --theme-colors-spinner_spin_bg: rgba(0, 53, 151, 0.2);
-  --theme-colors-strong_font: #1a2434;
-  --theme-colors-md_bg: #ffffff;
-  --theme-colors-textfield_error_border: #dd3c44;
-  --theme-colors-top_bar: #003597;
-  --theme-colors-accent_main: #003597;
-  --theme-colors-green: #1da581;
-  --theme-colors-orange: #e97415;
-  --theme-colors-red: #dd3c44;
-  --theme-colors-star_yellow: #ffa800;
+/* The whole site can be flipped with a `.dark` class on <html>. Tailwind v4
+   needs the variant declared explicitly so `dark:` utilities follow the class
+   instead of the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
 
-  /* ── Semantic tokens (remapped from GIWA dark → Upbit light) ──────── */
-  --primary: #003597;        /* primary buttons / icons  (point_main) */
-  --accent-glow: #4c8dff;    /* light blue glow */
-  --accent-warm: #0062df;    /* main accent            (point_sub) */
-  --litecoin: #003597;       /* chain badges */
-  --dark-blue: #f4f5f7;      /* light title surface */
-  --light-blue: #1375ec;     /* secondary blue accent */
-  --dark-navy: #ffffff;      /* card / overlay surface */
-  --muted-blue: #565d6a;     /* secondary text (font_2) */
-  --background: #f4f5f7;      /* page background (light gray) */
-  --foreground: #1a2434;     /* page foreground (dark) */
+/* ---------------------------------------------------------------------------
+   ARIWA — "The Hollow"
+   The collection is a family of soft 3D residents: pastel skins, knitted hats,
+   one enormous glossy eye, one wink. The interface is built from that same
+   material: warm paper, plush pastel panels, ink outlines, and iris-violet
+   accents sampled straight from the eye.
 
-  /* Semantic text colors for light backgrounds */
-  --text-primary: #1a2434;   /* headings / primary values (font_1) */
-  --text-secondary: #565d6a; /* body text                 (font_2) */
-  --text-tertiary: #8e929b;  /* labels / placeholders     (font_3) */
-}
+   Every colour below resolves through a CSS variable so the same utility
+   classes work in both themes. `:root` holds the daylight palette, `.dark`
+   holds "the Hollow after dark": aubergine paper, lamp-lit plum panels, and
+   pastels that sink into deep jewel tones instead of glowing.
+   --------------------------------------------------------------------------- */
 
 @theme inline {
-  --color-primary: var(--primary);
-  --color-accent-glow: var(--accent-glow);
-  --color-accent-warm: var(--accent-warm);
-  --color-litecoin: var(--litecoin);
-  --color-dark-blue: var(--dark-blue);
-  --color-light-blue: var(--light-blue);
-  --color-dark-navy: var(--dark-navy);
-  --color-muted-blue: var(--muted-blue);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-tertiary: var(--text-tertiary);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-plus-jakarta), sans-serif;
-  --font-display: var(--font-space-grotesk), sans-serif;
-  --font-header: var(--font-space-grotesk), sans-serif;
+  /* Type */
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-dm-sans), ui-sans-serif,
+    system-ui, sans-serif;
+  --font-header: var(--font-bricolage), var(--font-dm-sans), ui-sans-serif,
+    system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Paper */
+  --color-cream: var(--ariwa-cream);
+  --color-cream-2: var(--ariwa-cream-2);
+  --color-cream-3: var(--ariwa-cream-3);
+  --color-paper: var(--ariwa-paper);
+
+  /* Ink */
+  --color-ink: var(--ariwa-ink);
+  --color-ink-soft: var(--ariwa-ink-soft);
+  --color-ink-mute: var(--ariwa-ink-mute);
+  --color-ink-faint: var(--ariwa-ink-faint);
+
+  /* Iris */
+  --color-iris: var(--ariwa-iris);
+  --color-iris-deep: var(--ariwa-iris-deep);
+  --color-iris-soft: var(--ariwa-iris-soft);
+  --color-iris-strong: var(--ariwa-iris-strong);
+
+  /* Pastel residents + their readable foregrounds */
+  --color-butter: var(--ariwa-butter);
+  --color-butter-ink: var(--ariwa-butter-ink);
+  --color-blush: var(--ariwa-blush);
+  --color-blush-ink: var(--ariwa-blush-ink);
+  --color-sky: var(--ariwa-sky);
+  --color-sky-ink: var(--ariwa-sky-ink);
+  --color-mint: var(--ariwa-mint);
+  --color-mint-ink: var(--ariwa-mint-ink);
+  --color-lilac: var(--ariwa-lilac);
+  --color-lilac-ink: var(--ariwa-lilac-ink);
+  --color-peach: var(--ariwa-peach);
+  --color-peach-ink: var(--ariwa-peach-ink);
+  --color-gold: var(--ariwa-gold);
+  --color-gold-ink: var(--ariwa-gold-ink);
+
+  --color-danger: var(--ariwa-danger);
+  --color-danger-strong: var(--ariwa-danger-strong);
+  --color-danger-ink: var(--ariwa-danger-ink);
+  --color-success: var(--ariwa-success);
+  --color-success-strong: var(--ariwa-success-strong);
+  --color-success-ink: var(--ariwa-success-ink);
+  --color-warning: var(--ariwa-warning);
+  --color-warning-strong: var(--ariwa-warning-strong);
+  --color-warning-ink: var(--ariwa-warning-ink);
+
+  /* Legacy semantic tokens — the whole app reads these, so remapping them
+     here restyles every screen without touching business logic. */
+  --color-primary: var(--ariwa-ink);
+  --color-primary-foreground: var(--ariwa-cream);
+  --color-accent-warm: var(--ariwa-iris);
+  --color-accent-glow: var(--ariwa-iris-soft);
+  --color-litecoin: var(--ariwa-ink);
+  --color-dark-blue: var(--ariwa-cream-2);
+  --color-light-blue: var(--ariwa-iris);
+  --color-dark-navy: var(--ariwa-paper);
+  --color-muted-blue: var(--ariwa-ink-mute);
+  --color-background: var(--ariwa-cream);
+  --color-foreground: var(--ariwa-ink);
+  --color-text-primary: var(--ariwa-ink);
+  --color-text-secondary: var(--ariwa-ink-soft);
+  --color-text-tertiary: var(--ariwa-ink-mute);
+}
+
+:root {
+  color-scheme: light;
+  --header-h: 76px;
+  --ring: rgba(108, 85, 224, 0.45);
+
+  /* Paper — warm, slightly creamy, never pure white */
+  --ariwa-cream: #fbf7ef;
+  --ariwa-cream-2: #f6efe4;
+  --ariwa-cream-3: #efe5d6;
+  --ariwa-paper: #fffdf9;
+
+  /* Ink — a soft aubergine black, easier on the eye than #000 */
+  --ariwa-ink: #272132;
+  --ariwa-ink-soft: #4c4459;
+  --ariwa-ink-mute: #7e768c;
+  --ariwa-ink-faint: #a9a1b4;
+
+  /* Iris — sampled from the big glossy eye */
+  --ariwa-iris: #6c55e0;
+  --ariwa-iris-deep: #4b36b8;
+  --ariwa-iris-soft: #b9acf5;
+  --ariwa-iris-strong: #6c55e0;
+
+  /* Pastel residents */
+  --ariwa-butter: #f7e3a0;
+  --ariwa-butter-ink: #8a6a11;
+  --ariwa-blush: #f6c7d8;
+  --ariwa-blush-ink: #9a4d6b;
+  --ariwa-sky: #bfddf4;
+  --ariwa-sky-ink: #3b6c90;
+  --ariwa-mint: #b9e5ce;
+  --ariwa-mint-ink: #3e7a5c;
+  --ariwa-lilac: #d8c9fa;
+  --ariwa-lilac-ink: #5f4b96;
+  --ariwa-peach: #f7c9ae;
+  --ariwa-peach-ink: #98522e;
+  --ariwa-gold: #e0a62f;
+  --ariwa-gold-ink: #8a6a11;
+
+  --ariwa-danger: #d95d6a;
+  --ariwa-danger-strong: #d95d6a;
+  --ariwa-danger-ink: #b04141;
+  --ariwa-success: #4f9d73;
+  --ariwa-success-strong: #4f9d73;
+  --ariwa-success-ink: #3e7a5c;
+  --ariwa-warning: #d5902f;
+  --ariwa-warning-strong: #d5902f;
+  --ariwa-warning-ink: #8a5a12;
+
+  /* Materials */
+  --line: rgba(39, 33, 50, 0.09);
+  --line-strong: rgba(39, 33, 50, 0.14);
+  --surface-glass: rgba(255, 253, 249, 0.82);
+  --surface-solid: rgba(255, 253, 249, 0.9);
+  --surface-soft: rgba(255, 253, 249, 0.72);
+  --surface-panel: #fffdf9;
+  --inset-highlight: rgba(255, 255, 255, 0.9);
+  --inset-highlight-soft: rgba(255, 255, 255, 0.6);
+  --shadow-rgb: 39, 33, 50;
+  --grid-color: rgba(39, 33, 50, 0.028);
+  --selection-bg: rgba(108, 85, 224, 0.22);
+  --selection-fg: #272132;
+  --scrollbar-track: #fbf7ef;
+  --scrollbar-thumb: #ddd0bd;
+  --scrollbar-thumb-hover: #c9b8a1;
+  --input-scheme: light;
+  --loader-bg: linear-gradient(160deg, #fbf7ef 0%, #fbe9f0 52%, #e9e2fb 100%);
+  --toast-shadow: 0 24px 60px -40px rgba(39, 33, 50, 0.55);
+
+  /* Art tone ramps (kept as variables so the collection panels can turn down
+     the lights with everything else). */
+  --tone-butter-1: #fff7d8;
+  --tone-butter-2: #fbefc6;
+  --tone-butter-3: #f7e3a0;
+  --tone-butter-border: #edd98a;
+  --tone-butter-chip: rgba(247, 227, 160, 0.6);
+  --tone-butter-chip-ink: #8a6a11;
+  --tone-butter-glow: rgba(247, 227, 160, 0.9);
+
+  --tone-blush-1: #fff2f6;
+  --tone-blush-2: #fbe0ea;
+  --tone-blush-3: #f6c7d8;
+  --tone-blush-border: #f0c3d5;
+  --tone-blush-chip: rgba(246, 199, 216, 0.6);
+  --tone-blush-chip-ink: #9a4d6b;
+  --tone-blush-glow: rgba(246, 199, 216, 0.9);
+
+  --tone-sky-1: #f1f9ff;
+  --tone-sky-2: #ddeefb;
+  --tone-sky-3: #bfddf4;
+  --tone-sky-border: #bfddf4;
+  --tone-sky-chip: rgba(191, 221, 244, 0.6);
+  --tone-sky-chip-ink: #3b6c90;
+  --tone-sky-glow: rgba(191, 221, 244, 0.9);
+
+  --tone-mint-1: #f1fbf5;
+  --tone-mint-2: #ddf3e7;
+  --tone-mint-3: #b9e5ce;
+  --tone-mint-border: #b9e5ce;
+  --tone-mint-chip: rgba(185, 229, 206, 0.6);
+  --tone-mint-chip-ink: #3e7a5c;
+  --tone-mint-glow: rgba(185, 229, 206, 0.9);
+
+  --tone-lilac-1: #f8f4ff;
+  --tone-lilac-2: #ebe1ff;
+  --tone-lilac-3: #d8c9fa;
+  --tone-lilac-border: #d8c9fa;
+  --tone-lilac-chip: rgba(216, 201, 250, 0.6);
+  --tone-lilac-chip-ink: #5f4b96;
+  --tone-lilac-glow: rgba(216, 201, 250, 0.9);
+
+  --tone-peach-1: #fff6f0;
+  --tone-peach-2: #fce4d6;
+  --tone-peach-3: #f7c9ae;
+  --tone-peach-border: #f7c9ae;
+  --tone-peach-chip: rgba(247, 201, 174, 0.6);
+  --tone-peach-chip-ink: #98522e;
+  --tone-peach-glow: rgba(247, 201, 174, 0.9);
+
+  --tone-ink-1: #3a3348;
+  --tone-ink-2: #2b2438;
+  --tone-ink-3: #1d1826;
+  --tone-ink-border: #3a3348;
+  --tone-ink-chip: rgba(255, 255, 255, 0.1);
+  --tone-ink-chip-ink: rgba(255, 255, 255, 0.7);
+  --tone-ink-glow: rgba(216, 201, 250, 0.5);
+}
+
+.dark {
+  color-scheme: dark;
+  --ring: rgba(165, 144, 255, 0.55);
+
+  /* The Hollow after dark: aubergine paper, never flat black */
+  --ariwa-cream: #0c0a11;
+  --ariwa-cream-2: #131019;
+  --ariwa-cream-3: #1b1624;
+  --ariwa-paper: #17131f;
+
+  --ariwa-ink: #f3edf9;
+  --ariwa-ink-soft: #cdc4da;
+  --ariwa-ink-mute: #a096b0;
+  --ariwa-ink-faint: #786e88;
+
+  --ariwa-iris: #a590ff;
+  --ariwa-iris-deep: #cbbdff;
+  --ariwa-iris-soft: #c3b5ff;
+  --ariwa-iris-strong: #6a4fe6;
+
+  --ariwa-butter: #3a3018;
+  --ariwa-butter-ink: #f0d99a;
+  --ariwa-blush: #3c1c29;
+  --ariwa-blush-ink: #f4b9ce;
+  --ariwa-sky: #193142;
+  --ariwa-sky-ink: #a7d5f3;
+  --ariwa-mint: #17362b;
+  --ariwa-mint-ink: #a4e2c7;
+  --ariwa-lilac: #2a2142;
+  --ariwa-lilac-ink: #d2c3f9;
+  --ariwa-peach: #3d271c;
+  --ariwa-peach-ink: #f4c4a6;
+  --ariwa-gold: #f0c568;
+  --ariwa-gold-ink: #f0cf8a;
+
+  --ariwa-danger: #f28a97;
+  --ariwa-danger-strong: #a83e4c;
+  --ariwa-danger-ink: #f6b8bf;
+  --ariwa-success: #6fc79b;
+  --ariwa-success-strong: #2e7a54;
+  --ariwa-success-ink: #a4e2c7;
+  --ariwa-warning: #e5b062;
+  --ariwa-warning-strong: #9c6c1c;
+  --ariwa-warning-ink: #f0cf95;
+
+  --line: rgba(243, 237, 249, 0.1);
+  --line-strong: rgba(243, 237, 249, 0.18);
+  --surface-glass: rgba(23, 19, 31, 0.72);
+  --surface-solid: rgba(23, 19, 31, 0.9);
+  --surface-soft: rgba(23, 19, 31, 0.6);
+  --surface-panel: #17131f;
+  --inset-highlight: rgba(255, 255, 255, 0.05);
+  --inset-highlight-soft: rgba(255, 255, 255, 0.03);
+  --shadow-rgb: 0, 0, 0;
+  --grid-color: rgba(243, 237, 249, 0.035);
+  --selection-bg: rgba(165, 144, 255, 0.3);
+  --selection-fg: #f3edf9;
+  --scrollbar-track: #0c0a11;
+  --scrollbar-thumb: #2e2740;
+  --scrollbar-thumb-hover: #40365a;
+  --input-scheme: dark;
+  --loader-bg:
+    radial-gradient(640px 460px at 80% 0%, rgba(165, 144, 255, 0.18), transparent 62%),
+    linear-gradient(160deg, #0c0a11 0%, #151021 52%, #1b1426 100%);
+  --toast-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.8);
+
+  --tone-butter-1: #221c0f;
+  --tone-butter-2: #2d2513;
+  --tone-butter-3: #3a3018;
+  --tone-butter-border: #4d411f;
+  --tone-butter-chip: rgba(240, 217, 154, 0.14);
+  --tone-butter-chip-ink: #f0d99a;
+  --tone-butter-glow: rgba(240, 217, 154, 0.22);
+
+  --tone-blush-1: #241017;
+  --tone-blush-2: #301620;
+  --tone-blush-3: #3c1c29;
+  --tone-blush-border: #51283a;
+  --tone-blush-chip: rgba(244, 185, 206, 0.14);
+  --tone-blush-chip-ink: #f4b9ce;
+  --tone-blush-glow: rgba(244, 185, 206, 0.22);
+
+  --tone-sky-1: #0f1d28;
+  --tone-sky-2: #142735;
+  --tone-sky-3: #193142;
+  --tone-sky-border: #26465f;
+  --tone-sky-chip: rgba(167, 213, 243, 0.14);
+  --tone-sky-chip-ink: #a7d5f3;
+  --tone-sky-glow: rgba(167, 213, 243, 0.2);
+
+  --tone-mint-1: #0f1f1a;
+  --tone-mint-2: #132a22;
+  --tone-mint-3: #17362b;
+  --tone-mint-border: #245040;
+  --tone-mint-chip: rgba(164, 226, 199, 0.14);
+  --tone-mint-chip-ink: #a4e2c7;
+  --tone-mint-glow: rgba(164, 226, 199, 0.2);
+
+  --tone-lilac-1: #1a1529;
+  --tone-lilac-2: #221c35;
+  --tone-lilac-3: #2a2142;
+  --tone-lilac-border: #3b3159;
+  --tone-lilac-chip: rgba(210, 195, 249, 0.14);
+  --tone-lilac-chip-ink: #d2c3f9;
+  --tone-lilac-glow: rgba(210, 195, 249, 0.24);
+
+  --tone-peach-1: #241610;
+  --tone-peach-2: #2f1d15;
+  --tone-peach-3: #3d271c;
+  --tone-peach-border: #533729;
+  --tone-peach-chip: rgba(244, 196, 166, 0.14);
+  --tone-peach-chip-ink: #f4c4a6;
+  --tone-peach-glow: rgba(244, 196, 166, 0.2);
+
+  --tone-ink-1: #211b2b;
+  --tone-ink-2: #191420;
+  --tone-ink-3: #0f0c16;
+  --tone-ink-border: #3a3348;
+  --tone-ink-chip: rgba(255, 255, 255, 0.08);
+  --tone-ink-chip-ink: rgba(255, 255, 255, 0.72);
+  --tone-ink-glow: rgba(216, 201, 250, 0.4);
+}
+
+* {
+  border-color: var(--line);
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--ariwa-cream);
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 body {
-  background: #f4f5f7;
-  background-attachment: fixed;
-  color: #1a2434;
-  font-family: var(--font-plus-jakarta), sans-serif;
-  min-height: 100vh;
+  background-color: var(--ariwa-cream);
+  color: var(--ariwa-ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  min-height: 100%;
+  /* `clip` stops horizontal overflow without creating a scroll container, so
+     the sticky header keeps working. `hidden` is the fallback for older
+     browsers that do not support `clip`. */
+  overflow-x: hidden;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-.font-display {
-  font-family: var(--font-space-grotesk), sans-serif;
+[data-rk] {
+  font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-.font-header {
-  font-family: var(--font-space-grotesk), sans-serif;
-  letter-spacing: -0.02em;
+::selection {
+  background: var(--selection-bg);
+  color: var(--selection-fg);
 }
 
-/* Glow utility for accent elements */
-.glow-teal {
-  box-shadow: 0 0 24px rgba(0, 98, 223, 0.25);
+::-webkit-scrollbar {
+  width: 10px;
 }
 
-.text-gradient-rh {
-  background: linear-gradient(120deg, #003597 0%, #0062df 50%, #4c8dff 100%);
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border: 2px solid var(--scrollbar-track);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+/* Chrome autofills with a pale yellow box; keep it on the theme surface. */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark textarea:-webkit-autofill {
+  -webkit-text-fill-color: var(--ariwa-ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--ariwa-cream-2) inset;
+  caret-color: var(--ariwa-ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Atmosphere
+   --------------------------------------------------------------------------- */
+
+.site-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  background:
+    radial-gradient(900px 620px at 88% -8%, rgba(246, 199, 216, 0.5), transparent 62%),
+    radial-gradient(760px 560px at -6% 18%, rgba(185, 229, 206, 0.42), transparent 64%),
+    radial-gradient(820px 620px at 52% 108%, rgba(247, 227, 160, 0.36), transparent 62%),
+    linear-gradient(180deg, #fbf7ef 0%, #fbf7ef 48%, #f8f1e6 100%);
+}
+
+.site-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 76px 76px;
+  mask-image: radial-gradient(ellipse at 50% -5%, black 12%, transparent 68%);
+  opacity: 0.7;
+}
+
+/* At night the same room is lit by the iris instead of the window: cooler
+   lavender pools, a trace of blush, and a very faint starfield grid. */
+.dark .site-bg {
+  background:
+    radial-gradient(920px 640px at 86% -10%, rgba(165, 144, 255, 0.18), transparent 64%),
+    radial-gradient(780px 580px at -8% 16%, rgba(111, 199, 155, 0.1), transparent 66%),
+    radial-gradient(820px 620px at 56% 108%, rgba(244, 185, 206, 0.09), transparent 64%),
+    linear-gradient(180deg, #0c0a11 0%, #0c0a11 46%, #110d18 100%);
+}
+
+.dark .site-bg::after {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(243, 237, 249, 0.11) 1px, transparent 0);
+  background-size: 84px 84px;
+  mask-image: radial-gradient(ellipse at 50% -5%, black 8%, transparent 70%);
+  opacity: 0.6;
+}
+
+.site-grain {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.045;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.dark .site-grain {
+  opacity: 0.06;
+  mix-blend-mode: soft-light;
+}
+
+/* ---------------------------------------------------------------------------
+   Layout
+   --------------------------------------------------------------------------- */
+
+.section-shell {
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+@media (min-width: 640px) {
+  .section-shell {
+    padding-inline: 32px;
+  }
+}
+
+.page-shell {
+  width: 100%;
+  max-width: 1320px;
+  margin-inline: auto;
+  padding: 40px 20px 72px;
+}
+
+@media (min-width: 640px) {
+  .page-shell {
+    padding: 48px 32px 88px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-shell {
+    padding: 56px 40px 104px;
+  }
+}
+
+.container {
+  width: 100%;
+  max-width: 1320px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Surfaces
+   --------------------------------------------------------------------------- */
+
+.ui-container {
+  position: relative;
+  background: var(--surface-glass);
+  border: 1px solid var(--line);
+  box-shadow:
+    0 30px 70px -56px rgba(var(--shadow-rgb), 0.55),
+    inset 0 1px 0 var(--inset-highlight);
+  backdrop-filter: blur(14px);
+}
+
+.surface {
+  background: var(--surface-solid);
+  border: 1px solid var(--line);
+  box-shadow:
+    0 30px 70px -56px rgba(var(--shadow-rgb), 0.5),
+    inset 0 1px 0 var(--inset-highlight);
+}
+
+.pastel-panel {
+  background:
+    radial-gradient(120% 130% at 90% 0%, rgba(255, 255, 255, 0.75), transparent 55%),
+    linear-gradient(135deg, #fbf0c9 0%, #fbe6ee 48%, #e3eefb 100%);
+}
+
+.dark .pastel-panel {
+  background:
+    radial-gradient(120% 130% at 90% 0%, rgba(165, 144, 255, 0.12), transparent 55%),
+    linear-gradient(135deg, #241f16 0%, #2a1c27 48%, #17222e 100%);
+}
+
+.art-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 26px;
+  background: var(--ariwa-paper);
+  border: 1px solid var(--line-strong);
+  box-shadow:
+    inset 0 1px 0 var(--inset-highlight),
+    0 26px 60px -38px rgba(var(--shadow-rgb), 0.55);
+}
+
+.art-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid var(--line);
+  pointer-events: none;
+}
+
+.sticker {
+  box-shadow:
+    6px 6px 0 0 rgba(108, 85, 224, 0.18),
+    12px 12px 0 0 rgba(var(--shadow-rgb), 0.06);
+}
+
+.dark .sticker {
+  box-shadow:
+    6px 6px 0 0 rgba(165, 144, 255, 0.22),
+    12px 12px 0 0 rgba(0, 0, 0, 0.4);
+}
+
+.hairline {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--line-strong) 18%,
+    var(--line-strong) 82%,
+    transparent
+  );
+}
+
+.ink-rule {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(108, 85, 224, 0.5),
+    var(--line-strong) 55%,
+    transparent
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Art tones
+   The pastel card panels live here so both themes can share one set of names.
+   In daylight they read as paper stickers; after dark they become the same
+   hues at lamp-light intensity.
+   --------------------------------------------------------------------------- */
+
+.tone-panel-butter,
+.tone-panel-blush,
+.tone-panel-sky,
+.tone-panel-mint,
+.tone-panel-lilac,
+.tone-panel-peach,
+.tone-panel-ink {
+  background-image: linear-gradient(135deg, var(--tone-1) 0%, var(--tone-2) 55%, var(--tone-3) 100%);
+}
+
+.tone-panel-butter { --tone-1: var(--tone-butter-1); --tone-2: var(--tone-butter-2); --tone-3: var(--tone-butter-3); }
+.tone-panel-blush { --tone-1: var(--tone-blush-1); --tone-2: var(--tone-blush-2); --tone-3: var(--tone-blush-3); }
+.tone-panel-sky { --tone-1: var(--tone-sky-1); --tone-2: var(--tone-sky-2); --tone-3: var(--tone-sky-3); }
+.tone-panel-mint { --tone-1: var(--tone-mint-1); --tone-2: var(--tone-mint-2); --tone-3: var(--tone-mint-3); }
+.tone-panel-lilac { --tone-1: var(--tone-lilac-1); --tone-2: var(--tone-lilac-2); --tone-3: var(--tone-lilac-3); }
+.tone-panel-peach { --tone-1: var(--tone-peach-1); --tone-2: var(--tone-peach-2); --tone-3: var(--tone-peach-3); }
+.tone-panel-ink { --tone-1: var(--tone-ink-1); --tone-2: var(--tone-ink-2); --tone-3: var(--tone-ink-3); }
+
+.tone-border-butter { border-color: var(--tone-butter-border); }
+.tone-border-blush { border-color: var(--tone-blush-border); }
+.tone-border-sky { border-color: var(--tone-sky-border); }
+.tone-border-mint { border-color: var(--tone-mint-border); }
+.tone-border-lilac { border-color: var(--tone-lilac-border); }
+.tone-border-peach { border-color: var(--tone-peach-border); }
+.tone-border-ink { border-color: var(--tone-ink-border); }
+
+.tone-chip-butter { background: var(--tone-butter-chip); color: var(--tone-butter-chip-ink); }
+.tone-chip-blush { background: var(--tone-blush-chip); color: var(--tone-blush-chip-ink); }
+.tone-chip-sky { background: var(--tone-sky-chip); color: var(--tone-sky-chip-ink); }
+.tone-chip-mint { background: var(--tone-mint-chip); color: var(--tone-mint-chip-ink); }
+.tone-chip-lilac { background: var(--tone-lilac-chip); color: var(--tone-lilac-chip-ink); }
+.tone-chip-peach { background: var(--tone-peach-chip); color: var(--tone-peach-chip-ink); }
+.tone-chip-ink { background: var(--tone-ink-chip); color: var(--tone-ink-chip-ink); }
+
+/* ---------------------------------------------------------------------------
+   Type helpers
+   --------------------------------------------------------------------------- */
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--color-iris);
+}
+
+.eyebrow::before {
+  content: "";
+  width: 16px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-iris), var(--color-blush));
+}
+
+.display {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.96;
+  text-wrap: balance;
+}
+
+.text-gradient {
+  background: linear-gradient(104deg, #4b36b8 0%, #6c55e0 38%, #c46ac0 68%, #e0a62f 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-/* Replaces the class previously injected by the Google Fonts <link> */
-.material-symbols-outlined {
-  font-family: var(--font-material-symbols);
-  font-weight: normal;
-  font-style: normal;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  direction: ltr;
-  font-feature-settings: 'liga';
-  -webkit-font-smoothing: antialiased;
+.dark .text-gradient {
+  background: linear-gradient(104deg, #cbbdff 0%, #a590ff 38%, #f0a8c8 68%, #f0c568 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
-.ui-container {
-  background-color: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0, 53, 151, 0.1);
+.text-gradient-rh {
+  background: linear-gradient(120deg, #4b36b8 0%, #6c55e0 52%, #b96ab8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.dark .text-gradient-rh {
+  background: linear-gradient(120deg, #cbbdff 0%, #a590ff 52%, #f0a8c8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+   Buttons
+   --------------------------------------------------------------------------- */
+
+.btn-ink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 52px;
+  padding-inline: 24px;
+  border-radius: 999px;
+  background: var(--ariwa-ink);
+  color: var(--ariwa-cream);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  border: 1px solid var(--line-strong);
+  box-shadow:
+    inset 0 1px 0 var(--inset-highlight-soft),
+    0 16px 32px -20px rgba(var(--shadow-rgb), 0.8);
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.18s ease;
+}
+
+.btn-ink:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: #352c45;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 22px 38px -20px rgba(var(--shadow-rgb), 0.85);
+}
+
+.dark .btn-ink {
+  color: #17121f;
+}
+
+.dark .btn-ink:hover:not(:disabled) {
+  background: #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 22px 38px -20px rgba(0, 0, 0, 0.9);
+}
+
+.btn-ink:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-ink:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-iris {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 52px;
+  padding-inline: 24px;
+  border-radius: 999px;
+  background:
+    radial-gradient(120% 160% at 12% -20%, rgba(255, 255, 255, 0.65), transparent 46%),
+    linear-gradient(120deg, #8b77f2 0%, #6c55e0 52%, #553cc9 100%);
+  color: #fffdf9;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border: 1px solid rgba(75, 54, 184, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 18px 36px -18px rgba(108, 85, 224, 0.7);
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.btn-iris:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 24px 44px -18px rgba(108, 85, 224, 0.85);
+}
+
+.dark .btn-iris {
+  background:
+    radial-gradient(120% 160% at 12% -20%, rgba(255, 255, 255, 0.22), transparent 46%),
+    linear-gradient(120deg, #8b78f2 0%, #6a4fe6 52%, #5233c9 100%);
+  border-color: rgba(170, 152, 255, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 18px 38px -18px rgba(0, 0, 0, 0.85),
+    0 0 34px -14px rgba(165, 144, 255, 0.55);
+}
+
+.dark .btn-iris:hover:not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 24px 44px -18px rgba(0, 0, 0, 0.9),
+    0 0 42px -12px rgba(165, 144, 255, 0.7);
+}
+
+.dark .btn-iris.is-countdown {
+  background: rgba(165, 144, 255, 0.1);
+  color: var(--ariwa-iris-deep);
+  border-color: rgba(165, 144, 255, 0.3);
+  box-shadow: none;
+}
+
+.btn-iris:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* A scheduled mint stays a visible countdown, not a faded disabled button. */
+.btn-iris.is-countdown {
+  background: rgba(108, 85, 224, 0.07);
+  color: var(--color-iris-deep);
+  border-color: rgba(108, 85, 224, 0.28);
+  box-shadow: none;
+}
+
+.btn-iris.is-countdown:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.btn-soft {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;
+  padding-inline: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-soft);
+  color: var(--ariwa-ink);
+  font-size: 13px;
+  font-weight: 600;
   backdrop-filter: blur(12px);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 
-/* Multi-step form transition */
+.btn-soft:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(108, 85, 224, 0.35);
+  background: var(--surface-solid);
+}
+
+.dark .btn-soft:hover:not(:disabled) {
+  border-color: rgba(165, 144, 255, 0.4);
+  background: rgba(35, 29, 46, 0.9);
+}
+
+.btn-soft:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;
+  border-radius: 999px;
+  background: linear-gradient(115deg, #8b77f2 0%, #6c55e0 52%, #553cc9 100%);
+  color: #fffdf9;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 16px 38px -16px rgba(108, 85, 224, 0.65);
+  transition:
+    filter 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+  box-shadow: 0 20px 44px -16px rgba(108, 85, 224, 0.8);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-soft);
+  color: var(--ariwa-ink);
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  border-color: rgba(108, 85, 224, 0.4);
+  background: rgba(108, 85, 224, 0.07);
+}
+
+.dark .btn-ghost:hover:not(:disabled) {
+  border-color: rgba(165, 144, 255, 0.4);
+  background: rgba(165, 144, 255, 0.1);
+}
+
+.btn-ghost:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+/* Soft pill used for tags and statuses */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  padding: 4px 10px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ariwa-ink-soft);
+}
+
+/* ---------------------------------------------------------------------------
+   Form fields
+   --------------------------------------------------------------------------- */
+
+.field {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-solid);
+  padding: 0 14px;
+  color: var(--ariwa-ink);
+  color-scheme: var(--input-scheme);
+  font-size: 13px;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.field::placeholder {
+  color: var(--ariwa-ink-faint);
+}
+
+.field:focus {
+  border-color: rgba(108, 85, 224, 0.5);
+  box-shadow: 0 0 0 3px rgba(108, 85, 224, 0.1);
+}
+
+.dark .field:focus {
+  border-color: rgba(165, 144, 255, 0.6);
+  box-shadow: 0 0 0 3px rgba(165, 144, 255, 0.14);
+}
+
+/* ---------------------------------------------------------------------------
+   Identity details
+   --------------------------------------------------------------------------- */
+
+/* Glossy eye bloom — used behind hero art and feature cards. */
+.eye-glow {
+  box-shadow:
+    0 0 0 1px rgba(108, 85, 224, 0.14),
+    0 0 48px -10px rgba(108, 85, 224, 0.45),
+    0 0 110px -30px rgba(246, 199, 216, 0.65);
+}
+
+.live-dot {
+  position: relative;
+  display: inline-flex;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #4f9d73;
+  box-shadow: 0 0 10px rgba(79, 157, 115, 0.7);
+}
+
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 1px solid rgba(79, 157, 115, 0.45);
+  animation: ping-soft 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.iris-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 32% 28%, #ffffff 0%, #b9acf5 26%, #6c55e0 72%, #4b36b8 100%);
+  box-shadow: 0 0 12px rgba(108, 85, 224, 0.5);
+}
+
+/* Hand-drawn underline, drawn in SVG in the components. */
+.marker-underline {
+  position: absolute;
+  left: 0;
+  bottom: -0.08em;
+  width: 100%;
+  height: 0.16em;
+  color: rgba(108, 85, 224, 0.55);
+}
+
+/* ---------------------------------------------------------------------------
+   X account link
+   The pill wears the collection's iris — the same violet the primary buttons
+   use — so the header stays in ARIWA's palette instead of borrowing X's blue.
+   A soft white bloom at the top-left keeps the gradient from reading flat, and
+   the deep end of the ramp still clears WCAG AA under white type.
+   --------------------------------------------------------------------------- */
+.x-account {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      38% 140% at -6% -50%,
+      rgba(255, 255, 255, 0.42),
+      transparent 68%
+    ),
+    linear-gradient(115deg, #8b77f2 0%, #6c55e0 52%, #553cc9 100%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 0 rgba(44, 27, 96, 0.45),
+    0 10px 26px -14px rgba(108, 85, 224, 0.95);
+  transition:
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.24s ease;
+}
+
+.x-account:hover {
+  filter: brightness(1.09) saturate(1.06);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.48),
+    inset 0 -1px 0 rgba(38, 23, 84, 0.28),
+    0 16px 34px -14px rgba(108, 85, 224, 1);
+}
+
+.x-account:active {
+  transform: translateY(0);
+}
+
+/* A narrow specular streak that crosses the pill every few seconds. */
+.x-account::after {
+  content: "";
+  position: absolute;
+  inset: -30% -45%;
+  z-index: -1;
+  background: linear-gradient(
+    100deg,
+    transparent 41%,
+    rgba(255, 255, 255, 0.2) 47%,
+    rgba(255, 255, 255, 0.52) 50%,
+    rgba(255, 255, 255, 0.2) 53%,
+    transparent 59%
+  );
+  transform: translateX(-120%);
+  animation: sheen 7s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.x-account-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(3, 22, 45, 0.5);
+}
+
+/* The verified badge keeps its official blue and rides on the avatar's white
+   border, the way X shows it on a profile. It carries no border of its own:
+   the white frame around the profile image is what separates the blue mark
+   from the iris pill, so the badge never needs one of its own. */
+.x-account-badge {
+  color: #1d9bf0;
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(3, 22, 45, 0.6);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.x-account:hover .x-account-badge {
+  transform: scale(1.15);
+}
+
+/* ---------------------------------------------------------------------------
+   Motion
+   --------------------------------------------------------------------------- */
+
+.animate-rise {
+  animation: rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-float {
+  animation: float 8s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float 12s ease-in-out infinite;
+}
+
+.animate-breathe {
+  animation: breathe 9s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin 18s linear infinite;
+}
+
+.animate-step {
+  animation: stepIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2.6s ease-in-out infinite;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 46s linear infinite;
+}
+
+.marquee-viewport:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* ---------------------------------------------------------------------------
+   Theme switch
+   The two page snapshots are wiped with a circle anchored on the theme toggle.
+   Going to light, the new (light) snapshot grows out of the button; going to
+   dark, the old (light) snapshot shrinks back into it, so the night arrives
+   from the edges of the room instead of flashing in all at once. Geometry is
+   measured in ThemeProvider on click and passed through custom properties.
+   --------------------------------------------------------------------------- */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  /* Replace the default cross-fade with the circular wipe. */
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Light: the incoming snapshot expands from the toggle. */
+html[data-theme-reveal="to-light"]::view-transition-new(root) {
+  z-index: 2;
+  animation: theme-reveal-open var(--theme-reveal-duration, 900ms)
+    var(--theme-reveal-ease, cubic-bezier(0.37, 0, 0.63, 1)) both;
+}
+
+html[data-theme-reveal="to-light"]::view-transition-old(root) {
+  z-index: 1;
+}
+
+/* Dark: the outgoing light snapshot sits on top and shrinks into the toggle,
+   uncovering the incoming night from the page edges inward. */
+html[data-theme-reveal="to-dark"]::view-transition-old(root) {
+  z-index: 2;
+  animation: theme-reveal-close var(--theme-reveal-duration, 900ms)
+    var(--theme-reveal-ease, cubic-bezier(0.37, 0, 0.63, 1)) both;
+}
+
+html[data-theme-reveal="to-dark"]::view-transition-new(root) {
+  z-index: 1;
+}
+
+@keyframes theme-reveal-open {
+  from {
+    clip-path: circle(0px at var(--theme-reveal-x, 50%) var(--theme-reveal-y, 50%));
+  }
+  to {
+    clip-path: circle(var(--theme-reveal-reach, 150vmax) at var(--theme-reveal-x, 50%) var(--theme-reveal-y, 50%));
+  }
+}
+
+@keyframes theme-reveal-close {
+  from {
+    clip-path: circle(var(--theme-reveal-reach, 150vmax) at var(--theme-reveal-x, 50%) var(--theme-reveal-y, 50%));
+  }
+  to {
+    clip-path: circle(0px at var(--theme-reveal-x, 50%) var(--theme-reveal-y, 50%));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme-reveal]::view-transition-old(root),
+  html[data-theme-reveal]::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .marquee-track {
+    animation: none;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(1.5deg);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes stepIn {
   from {
     opacity: 0;
@@ -144,60 +1298,99 @@ body {
   }
 }
 
-.animate-step {
-  animation: stepIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.container {
-  width: 100%;
-  max-width: 1440px;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 2rem;
-  padding-right: 2rem;
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 98, 223, 0.25);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 98, 223, 0.4);
-}
-
-/* Mobile optimizations */
-@media (max-width: 768px) {
-  body {
-    font-size: 14px;
+@keyframes ping-soft {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
   }
-
-  .ui-container {
-    border-width: 1px;
+  70%,
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
   }
 }
 
-/* Prevent text selection on touch controls */
-.touch-none {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
-/* Smooth scrolling for mobile */
-@media (max-width: 768px) {
-  * {
-    -webkit-overflow-scrolling: touch;
+@keyframes marquee {
+  from {
+    transform: translateX(0);
   }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes sheen {
+  0%,
+  64% {
+    transform: translateX(-130%);
+  }
+  86%,
+  100% {
+    transform: translateX(130%);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Material Symbols
+   --------------------------------------------------------------------------- */
+
+.material-symbols-outlined {
+  font-family: var(--font-material-symbols);
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  direction: ltr;
+  font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------------------------------------------------------------------------
+   Accordion
+   --------------------------------------------------------------------------- */
+
+details > summary {
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details[open] .accordion-plus {
+  transform: rotate(45deg);
+}
+
+/* Native date/time controls follow the active theme. */
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"] {
+  color-scheme: var(--input-scheme);
+}
+
+/* RainbowKit pulls a light font stack and paper backgrounds from its own
+   stylesheet; nudge its modal onto the same night palette. */
+.dark [data-rk] {
+  --rk-colors-modalBackground: var(--ariwa-paper);
+  --rk-colors-modalBorder: var(--line-strong);
+  --rk-colors-profileForeground: var(--ariwa-ink);
+  --rk-colors-menuItemBackground: var(--ariwa-cream-2);
+}
+
+/* Sonner toasts sit on the same material as the rest of the app. */
+.dark [data-sonner-toaster] [data-sonner-toast] {
+  box-shadow: var(--toast-shadow);
 }

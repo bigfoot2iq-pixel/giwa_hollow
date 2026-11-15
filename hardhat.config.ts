@@ -6,7 +6,7 @@ dotenv.config({ path: ".env.local" });
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.24",
+    version: "0.8.34",
     settings: {
       viaIR: true,
       // GIWA is an OP Stack chain (post-Ecotone) — enable Cancun so OpenZeppelin 5.4's
@@ -21,7 +21,9 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       chainId: 91342,
-      hardfork: "london",
+      // Contracts compile with evmVersion "cancun" (GIWA is post-Ecotone), so
+      // the local test chain must support Cancun opcodes too.
+      hardfork: "cancun",
       initialBaseFeePerGas: 0,
     },
     giwaSepolia: {

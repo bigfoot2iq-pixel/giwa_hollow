@@ -8,4 +8,6 @@ export * from "./useLeaderboard";
 export * from "./useHighScore";
 export * from "./useMultiUser";
 export * from "./useConfig";
+export * from "./useAdminAuth";
 export * from "./usePolling";
+export * from "./useSwapPool";
