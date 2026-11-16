@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTokenHolders } from '@/lib/hooks/useTokenHolders';
 import { contracts } from '@/lib/contracts/config';
+import { formatCompactNumber } from '@/lib/utils/format';
 
 const getRankBadge = (rank: number) => {
   if (rank === 1) return '🥇';
@@ -19,10 +20,11 @@ const formatWallet = (wallet: string) => {
 const formatQuantity = (quantity: string) => {
   const num = parseFloat(quantity.replace(/,/g, ''));
   if (isNaN(num)) return quantity;
-  if (num >= 1000) {
-    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-  return num.toFixed(2);
+  return formatCompactNumber(num, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    fallback: quantity,
+  });
 };
 
 const copyToClipboard = (text: string) => {

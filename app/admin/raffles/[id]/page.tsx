@@ -7,6 +7,8 @@ import { format } from "date-fns";
 import Link from "next/link";
 import type { Raffle } from "@/lib/supabase";
 import { getRaffleStatus } from "@/lib/utils/raffles";
+import { fromTokenUnits } from "@/lib/utils/erc20";
+import { formatCompactNumber } from "@/lib/utils/format";
 
 interface RaffleDetail {
   raffle: Raffle;
@@ -392,15 +394,15 @@ export default function RaffleDetailPage() {
         </div>
         <div className="ui-container p-6 rounded">
           <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-2">Participants</p>
-          <p className="text-3xl font-display font-bold text-text-primary">{entries.length}</p>
+          <p className="text-3xl font-display font-bold text-text-primary">{formatCompactNumber(entries.length)}</p>
         </div>
         <div className="ui-container p-6 rounded">
           <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-2">Prizes</p>
-          <p className="text-3xl font-display font-bold text-text-primary">{prizes.length}</p>
+          <p className="text-3xl font-display font-bold text-text-primary">{formatCompactNumber(prizes.length)}</p>
         </div>
         <div className="ui-container p-6 rounded">
           <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-2">Winners</p>
-          <p className="text-3xl font-display font-bold text-text-primary">{winners.length}</p>
+          <p className="text-3xl font-display font-bold text-text-primary">{formatCompactNumber(winners.length)}</p>
         </div>
       </div>
 
@@ -419,11 +421,11 @@ export default function RaffleDetailPage() {
           </div>
           <div>
             <span className="text-muted-blue">Tokens Required:</span>
-            <span className="text-text-primary ml-2">{raffle.tokens_required}</span>
+            <span className="text-text-primary ml-2">{formatCompactNumber(raffle.tokens_required, { maximumFractionDigits: 4 })}</span>
           </div>
           <div>
             <span className="text-muted-blue">Max Entries Per User:</span>
-            <span className="text-text-primary ml-2">{raffle.max_entries_per_user}</span>
+            <span className="text-text-primary ml-2">{formatCompactNumber(raffle.max_entries_per_user)}</span>
           </div>
         </div>
       </div>
@@ -452,7 +454,13 @@ export default function RaffleDetailPage() {
                     <span className="text-sm text-text-primary font-mono">{prize.prize_token_address.slice(0, 10)}...{prize.prize_token_address.slice(-8)}</span>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="text-sm text-text-primary">{prize.prize_amount || prize.prize_token_id || "N/A"}</span>
+                    <span className="text-sm text-text-primary">
+                      {prize.prize_type === "erc20" && prize.prize_amount
+                        ? formatCompactNumber(fromTokenUnits(prize.prize_amount, 18), {
+                            maximumFractionDigits: 4,
+                          })
+                        : prize.prize_amount || prize.prize_token_id || "N/A"}
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -575,7 +583,7 @@ export default function RaffleDetailPage() {
       {/* Entries */}
       <div className="ui-container rounded overflow-hidden">
         <div className="px-6 py-4 border-b border-ink/10">
-          <h3 className="text-xl font-header text-text-primary">Entries ({entries.length})</h3>
+          <h3 className="text-xl font-header text-text-primary">Entries ({formatCompactNumber(entries.length)})</h3>
         </div>
         {entries.length > 0 ? (
           <table className="w-full text-left border-collapse">
@@ -593,7 +601,7 @@ export default function RaffleDetailPage() {
                     <span className="text-sm text-text-primary font-mono">{entry.wallet_address}</span>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="text-sm font-display font-bold text-text-primary">{entry.tokens_spent}</span>
+                    <span className="text-sm font-display font-bold text-text-primary">{formatCompactNumber(entry.tokens_spent, { maximumFractionDigits: 4 })}</span>
                   </td>
                   <td className="px-6 py-5">
                     <span className="text-sm text-text-primary">{format(new Date(entry.created_at), "MMM d, yyyy HH:mm")}</span>

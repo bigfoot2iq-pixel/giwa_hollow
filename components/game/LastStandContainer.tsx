@@ -7,6 +7,7 @@ import LastStandGame from './LastStandGame';
 import { useState, useEffect, useCallback } from 'react';
 import { useGameSession } from '@/lib/hooks/useGameSession';
 import { usePayToPlay } from '@/lib/hooks/usePayToPlay';
+import { formatCompactNumber } from '@/lib/utils/format';
 
 export default function LastStandContainer() {
   const { isConnected, address } = useAccount();
@@ -106,7 +107,7 @@ export default function LastStandContainer() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-blue mb-1">Current Score</p>
-                <p className="text-2xl sm:text-3xl font-display font-bold text-text-primary">{currentScore}</p>
+                <p className="text-2xl sm:text-3xl font-display font-bold text-text-primary">{formatCompactNumber(currentScore)}</p>
               </div>
               {session && (
                 <div className="text-left sm:text-right">

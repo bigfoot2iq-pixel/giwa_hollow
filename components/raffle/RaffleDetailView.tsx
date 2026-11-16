@@ -9,6 +9,7 @@ import { RaffleEntryForm } from "@/components/raffle";
 import type { Prize, PrizeType, Raffle, RaffleStatus, Winner } from "@/lib/supabase";
 import { getTokenMetadataCached, fromTokenUnits } from "@/lib/utils/erc20";
 import { contracts, giwaSepolia } from "@/lib/contracts/config";
+import { formatCompactNumber } from "@/lib/utils/format";
 
 const EXPLORER_TX_URL = `${giwaSepolia.blockExplorers?.default.url ?? "https://sepolia-explorer.giwa.io"}/tx`;
 
@@ -234,7 +235,10 @@ export default function RaffleDetailView() {
   const prizeDisplayInfo = prizesWithMetadata.length > 0 ? prizesWithMetadata[0] : null;
   const prizeInfoLabel = prizeDisplayInfo
     ? prizeDisplayInfo.prize_type === "erc20"
-      ? `${prizeDisplayInfo.formattedAmount || "0"} ${prizeDisplayInfo.tokenSymbol || "Token"}`
+      ? `${formatCompactNumber(prizeDisplayInfo.formattedAmount || "0", {
+          maximumFractionDigits: 4,
+          fallback: prizeDisplayInfo.formattedAmount || "0",
+        })} ${prizeDisplayInfo.tokenSymbol || "Token"}`
       : `${prizeDisplayInfo.tokenName || "NFT"} #${prizeDisplayInfo.prize_token_id || "?"}`
     : "TBD";
 
@@ -303,21 +307,21 @@ export default function RaffleDetailView() {
             <div className="mt-6 grid grid-cols-2 gap-6 md:grid-cols-4">
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-blue tracking-widest mb-1">Entry Cost</p>
-                <p className="text-lg font-display font-bold text-iris">{raffle.tokens_required} {entryTokenSymbol}</p>
+                <p className="text-lg font-display font-bold text-iris">{formatCompactNumber(raffle.tokens_required, { maximumFractionDigits: 4 })} {entryTokenSymbol}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-blue tracking-widest mb-1">Max Entries / User</p>
-                <p className="text-lg font-display font-bold text-text-primary">{raffle.max_entries_per_user}</p>
+                <p className="text-lg font-display font-bold text-text-primary">{formatCompactNumber(raffle.max_entries_per_user)}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-blue tracking-widest mb-1">Participants</p>
                 <p className="text-lg font-display font-bold text-text-primary">
-                  {participantsCount} / {raffle.max_participants}
+                  {formatCompactNumber(participantsCount)} / {formatCompactNumber(raffle.max_participants)}
                 </p>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-blue tracking-widest mb-1">Total Entries</p>
-                <p className="text-lg font-display font-bold text-text-primary">{entriesCount}</p>
+                <p className="text-lg font-display font-bold text-text-primary">{formatCompactNumber(entriesCount)}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-blue tracking-widest mb-1">Start Date</p>
@@ -331,7 +335,7 @@ export default function RaffleDetailView() {
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-blue tracking-widest mb-1">Winners</p>
-                <p className="text-lg font-display font-bold text-text-primary">{prizes.length}</p>
+                <p className="text-lg font-display font-bold text-text-primary">{formatCompactNumber(prizes.length)}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-blue tracking-widest mb-1">Prize</p>
@@ -345,7 +349,7 @@ export default function RaffleDetailView() {
             <div className="border-b border-ink/[0.08] px-6 py-5">
               <h3 className="font-header text-xl font-extrabold tracking-[-0.03em] text-ink">Entries</h3>
               <p className="mt-1 text-[11px] text-ink-mute">
-                {totalEntriesCount} entr{totalEntriesCount !== 1 ? 'ies' : 'y'} • {entriesCount} total entries
+                {formatCompactNumber(totalEntriesCount)} entr{totalEntriesCount !== 1 ? 'ies' : 'y'} • {formatCompactNumber(entriesCount)} total entries
               </p>
 
               {/* Search Input */}
@@ -421,7 +425,7 @@ export default function RaffleDetailView() {
                             </div>
                             <div className="flex items-center gap-3">
                               <span className="text-sm font-display font-bold text-iris">
-                                {entry.entry_count} {entry.entry_count === 1 ? 'entry' : 'entries'}
+                                {formatCompactNumber(entry.entry_count)} {entry.entry_count === 1 ? 'entry' : 'entries'}
                               </span>
                               <span className="material-symbols-outlined text-muted-blue group-hover:text-iris transition-colors text-lg">
                                 open_in_new

@@ -6,6 +6,7 @@ import type { PrizeType, Raffle, RaffleStatus } from "@/lib/supabase";
 import { CountdownTimer } from "./CountdownTimer";
 import { getTokenMetadataCached, fromTokenUnits } from "@/lib/utils/erc20";
 import { contracts } from "@/lib/contracts/config";
+import { formatCompactNumber } from "@/lib/utils/format";
 
 export type CardPrize = {
   prize_type: PrizeType;
@@ -44,9 +45,10 @@ function formatDateTime(value: string | Date): string {
 }
 
 function formatPrizeAmount(amount: string): string {
-  const n = Number(amount);
-  if (!Number.isFinite(n)) return amount;
-  return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  return formatCompactNumber(amount, {
+    maximumFractionDigits: 4,
+    fallback: amount,
+  });
 }
 
 export function RaffleCard({ raffle, basePath = "/raffles" }: RaffleCardProps) {
@@ -191,7 +193,7 @@ export function RaffleCard({ raffle, basePath = "/raffles" }: RaffleCardProps) {
             </div>
             <div className="shrink-0 text-right">
               <p className="font-header text-base font-extrabold leading-none text-ink">
-                {raffle.participants_count.toLocaleString()}
+                {formatCompactNumber(raffle.participants_count)}
               </p>
               <p className="mt-1 font-mono text-[7.5px] uppercase tracking-[0.14em] text-ink-mute">
                 joined
@@ -214,7 +216,8 @@ export function RaffleCard({ raffle, basePath = "/raffles" }: RaffleCardProps) {
                 )}
               </p>
               <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.12em] text-ink-faint">
-                {raffle.tokens_required.toFixed(2)} {tokenSymbol} entry
+                {formatCompactNumber(raffle.tokens_required, { maximumFractionDigits: 2 })}{" "}
+                {tokenSymbol} entry
               </p>
             </div>
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-ink/10 text-ink-mute transition group-hover:border-iris/30 group-hover:bg-iris/10 group-hover:text-iris">

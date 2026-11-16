@@ -40,6 +40,7 @@ import {
 } from "@/lib/hooks";
 import { ART_TONES, NFT_PIECES } from "@/lib/art";
 import { cn } from "@/lib/utils/cn";
+import { formatCompactNumber } from "@/lib/utils/format";
 import {
   BPS_DENOMINATOR,
   DEFAULT_FEE_BPS,
@@ -75,14 +76,13 @@ function parseAmountInput(value: string): bigint | null {
   }
 }
 
-/** Format wei for display without floating-point loss, trimming zeros. */
+/** Format wei for display, keeping small amounts precise and shortening large ones. */
 function formatAmount(value: bigint | undefined, fractionDigits = 6): string {
   if (value === undefined) return "—";
-  const raw = formatEther(value);
-  const [whole, fraction = ""] = raw.split(".");
-  const trimmed = fraction.slice(0, fractionDigits).replace(/0+$/, "");
-  const formattedWhole = new Intl.NumberFormat("en-US").format(BigInt(whole));
-  return trimmed ? `${formattedWhole}.${trimmed}` : formattedWhole;
+  return formatCompactNumber(formatEther(value), {
+    maximumFractionDigits: fractionDigits,
+    fallback: "—",
+  });
 }
 
 /**

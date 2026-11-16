@@ -3,6 +3,7 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { formatEther, parseEther } from "viem";
 import { contracts, AriwaTokenABI } from "@/lib/contracts";
+import { formatCompactNumber } from "@/lib/utils/format";
 
 export function useTokenBalance(address: `0x${string}` | undefined) {
   return useReadContract({
@@ -60,20 +61,11 @@ export { formatEther, parseEther };
 
 export function formatTokenBalance(balance: bigint | undefined): string {
   if (balance === undefined) return "0.00";
-  return parseFloat(formatEther(balance)).toFixed(2);
-}
-
-const COMPACT_UNITS = [
-  { size: 1e15, suffix: "Q" },
-  { size: 1e12, suffix: "T" },
-  { size: 1e9, suffix: "B" },
-  { size: 1e6, suffix: "M" },
-  { size: 1e3, suffix: "K" },
-] as const;
-
-function trimTrailingZeros(fixed: string): string {
-  if (!fixed.includes(".")) return fixed;
-  return fixed.replace(/0+$/, "").replace(/\.$/, "");
+  return formatCompactNumber(formatEther(balance), {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+    fallback: "0.00",
+  });
 }
 
 /**
@@ -86,19 +78,9 @@ export function formatCompactBalance(balance: bigint | undefined): string {
   const value = parseFloat(formatEther(balance));
   if (!Number.isFinite(value) || value === 0) return "0";
 
-  let index = COMPACT_UNITS.findIndex((unit) => Math.abs(value) >= unit.size);
-  if (index === -1) return value.toFixed(2);
-
-  // Rounding can push 999,500 up to "1000K", so step up a unit when that happens.
-  for (; index >= 0; index -= 1) {
-    const scaled = value / COMPACT_UNITS[index].size;
-    const magnitude = Math.abs(scaled);
-    const digits = magnitude >= 100 ? 0 : magnitude >= 10 ? 1 : 2;
-    const rounded = trimTrailingZeros(scaled.toFixed(digits));
-    if (Math.abs(Number(rounded)) < 1000) {
-      return `${rounded}${COMPACT_UNITS[index].suffix}`;
-    }
-  }
-
-  return Math.round(value).toLocaleString("en-US");
+  return formatCompactNumber(value, {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+    fallback: "0",
+  });
 }

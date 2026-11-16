@@ -5,6 +5,7 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { format } from "date-fns";
 import { ChartCandlestick, ChartLine, TrendingDown, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { formatCompactNumber } from "@/lib/utils/format";
 import { TokenMark } from "./token-marks";
 
 /** A price sample as returned by AriwaSwapPool.getPriceHistory(). */
@@ -52,7 +53,7 @@ function toEthPerToken(tokensPerEth: bigint): number {
 function formatPrice(value: number | undefined): string {
   if (value === undefined || !Number.isFinite(value) || value <= 0) return "—";
   if (value >= 1_000) {
-    return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+    return formatCompactNumber(value, { maximumFractionDigits: 2 });
   }
   if (value >= 1) {
     return value.toLocaleString("en-US", {
@@ -70,10 +71,7 @@ function formatAxis(value: number): string {
   if (!Number.isFinite(value)) return "";
   if (value <= 0) return "0";
   if (value >= 1_000) {
-    return new Intl.NumberFormat("en-US", {
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(value);
+    return formatCompactNumber(value, { maximumFractionDigits: 1 });
   }
   return formatPrice(value);
 }
@@ -82,9 +80,9 @@ function formatRate(tokensPerEth: bigint | undefined): string {
   if (tokensPerEth === undefined || tokensPerEth === 0n) return "—";
   const value = Number(tokensPerEth) / PRICE_SCALE;
   if (!Number.isFinite(value)) return "—";
-  return value.toLocaleString("en-US", {
-    minimumFractionDigits: 0,
+  return formatCompactNumber(value, {
     maximumFractionDigits: value >= 100 ? 0 : 2,
+    fallback: "—",
   });
 }
 

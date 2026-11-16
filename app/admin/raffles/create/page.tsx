@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { privateKeyToAccount } from "viem/accounts";
 import { ERC20_DECIMALS_ABI, toTokenUnits } from "@/lib/utils/erc20";
+import { formatCompactNumber } from "@/lib/utils/format";
 import { RobinhoodRafflesABI, contracts } from "@/lib/contracts";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { savePendingCreate, loadPendingCreate, clearPendingCreate } from "@/lib/raffles/pending-create";
@@ -972,7 +973,13 @@ export default function CreateRafflePage() {
                             <p>Token: {verificationDetails.name} ({verificationDetails.symbol})</p>
                           )}
                           {verificationDetails.balance && (
-                            <p>Available Balance: {verificationDetails.balance}</p>
+                            <p>
+                              Available Balance:{" "}
+                              {formatCompactNumber(verificationDetails.balance, {
+                                maximumFractionDigits: 4,
+                                fallback: verificationDetails.balance,
+                              })}
+                            </p>
                           )}
                           {verificationDetails.ownerAddress && (
                             <p>Owner: {verificationDetails.ownerAddress}</p>

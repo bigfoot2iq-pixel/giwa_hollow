@@ -7,6 +7,7 @@ import { waitForTransactionReceipt } from '@wagmi/core'
 import { formatEther, maxUint256 } from 'viem'
 import { THE_ARIWA_GAME_ADDRESS, THE_ARIWA_GAME_ABI } from '@/lib/contracts/theAriwaGame'
 import { contracts, AriwaTokenABI } from '@/lib/contracts'
+import { formatCompactNumber } from '@/lib/utils/format'
 
 type PayStep = 'idle' | 'approving' | 'paying'
 
@@ -107,7 +108,7 @@ export function usePayToPlay(): UsePayToPlayReturn {
   }, [isSuccess, refetchBalance, refetchAllowance, queryClient])
 
   const playPriceFormatted = playPrice
-    ? `${formatEther(playPrice)} ${TOKEN_SYMBOL}`
+    ? `${formatCompactNumber(formatEther(playPrice), { maximumFractionDigits: 4 })} ${TOKEN_SYMBOL}`
     : '...'
 
   const hasEnoughBalance =

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Ticket } from "lucide-react";
 import { RaffleCard, type CardPrize } from "./RaffleCard";
 import type { PrizeType, Raffle, RaffleStatus } from "@/lib/supabase";
+import { formatCompactNumber } from "@/lib/utils/format";
 
 const statusFilters: { label: string; value: RaffleStatus | "all" }[] = [
   { label: "All raffles", value: "all" },
@@ -87,7 +88,7 @@ export function RafflesExplorer({ title, emptyHint }: RafflesExplorerProps) {
           ))}
         </div>
         <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-mute">
-          {total} {total === 1 ? "raffle" : "raffles"} in this room
+          {formatCompactNumber(total)} {total === 1 ? "raffle" : "raffles"} in this room
         </p>
       </div>
 

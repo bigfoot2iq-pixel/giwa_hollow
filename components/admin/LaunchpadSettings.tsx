@@ -24,6 +24,7 @@ import {
   serializeHolderRequirements,
   type HolderRequirement,
 } from "@/lib/launchpad/config";
+import { formatCompactNumber } from "@/lib/utils/format";
 
 const CONTRACT_ADDRESS =
   LAUNCHPAD_NFT_ADDRESS && isAddress(LAUNCHPAD_NFT_ADDRESS)
@@ -574,7 +575,7 @@ export function LaunchpadSettings() {
                   Minted:{" "}
                   <span className="font-bold text-text-primary">
                     {totalMinted !== undefined && maxSupply !== undefined
-                      ? `${totalMinted.toString()} / ${maxSupply.toString()}`
+                      ? `${formatCompactNumber(totalMinted)} / ${formatCompactNumber(maxSupply)}`
                       : "…"}
                   </span>
                 </p>
@@ -589,7 +590,7 @@ export function LaunchpadSettings() {
                 <p>
                   Max / wallet:{" "}
                   <span className="font-bold text-text-primary">
-                    {maxPerWallet !== undefined ? maxPerWallet.toString() : "…"}
+                    {maxPerWallet !== undefined ? formatCompactNumber(maxPerWallet) : "…"}
                   </span>
                 </p>
               </div>
@@ -743,7 +744,7 @@ export function LaunchpadSettings() {
             </div>
             <p className="text-[10px] leading-4 text-muted-blue">
               {totalMinted !== undefined && maxSupply !== undefined
-                ? `${totalMinted.toString()} minted of ${maxSupply.toString()}.`
+                ? `${formatCompactNumber(totalMinted)} minted of ${formatCompactNumber(maxSupply)}.`
                 : "Reading supply…"}
             </p>
           </div>
@@ -763,7 +764,9 @@ export function LaunchpadSettings() {
               </span>
               <span className="font-mono text-sm font-bold text-text-primary">
                 {contractBalance
-                  ? `${formatEther(contractBalance.value)} ${contractBalance.symbol}`
+                  ? `${formatCompactNumber(formatEther(contractBalance.value), {
+                      maximumFractionDigits: 4,
+                    })} ${contractBalance.symbol}`
                   : "…"}
               </span>
             </div>
@@ -868,7 +871,7 @@ export function LaunchpadSettings() {
               </dt>
               <dd className="font-bold text-text-primary">
                 {maxSupply !== undefined
-                  ? `${maxSupply.toString()} · immutable`
+                  ? `${formatCompactNumber(maxSupply)} · immutable`
                   : "…"}
               </dd>
             </div>
@@ -877,7 +880,7 @@ export function LaunchpadSettings() {
                 Max / wallet
               </dt>
               <dd className="font-bold text-text-primary">
-                {maxPerWallet !== undefined ? maxPerWallet.toString() : "…"}
+                {maxPerWallet !== undefined ? formatCompactNumber(maxPerWallet) : "…"}
               </dd>
             </div>
             <div className="flex items-center justify-between rounded-lg border border-ink/10 bg-ink/[0.02] px-4 py-2.5">
@@ -885,7 +888,7 @@ export function LaunchpadSettings() {
                 Minted
               </dt>
               <dd className="font-bold text-text-primary">
-                {totalMinted !== undefined ? totalMinted.toString() : "…"}
+                {totalMinted !== undefined ? formatCompactNumber(totalMinted) : "…"}
               </dd>
             </div>
             <div className="flex items-center justify-between gap-3 rounded-lg border border-ink/10 bg-ink/[0.02] px-4 py-2.5">

@@ -7,6 +7,7 @@ import { useTokenAllowance, useTokenBalance, formatTokenBalance } from "@/lib/ho
 import { contracts, RobinhoodRafflesABI, AriwaTokenABI } from "@/lib/contracts";
 import type { Raffle } from "@/lib/supabase";
 import { getTokenMetadataCached } from "@/lib/utils/erc20";
+import { formatCompactNumber } from "@/lib/utils/format";
 
 interface RaffleEntryFormProps {
   raffle: Raffle;
@@ -293,19 +294,19 @@ export function RaffleEntryForm({
           className="field h-12 text-lg font-header font-extrabold"
         />
         <p className="mt-2 text-[11px] text-ink-mute">
-          Max {maxEntries} entries remaining
+          Max {formatCompactNumber(maxEntries)} entries remaining
         </p>
       </div>
 
       <div className="space-y-2 rounded-2xl border border-ink/[0.08] bg-paper/60 p-4">
         <div className="flex justify-between font-mono text-[9px] uppercase tracking-[0.12em] text-ink-mute">
           <span>Entry cost</span>
-          <span className="text-ink">{raffle.tokens_required} {tokenSymbol}</span>
+          <span className="text-ink">{formatCompactNumber(raffle.tokens_required, { maximumFractionDigits: 4 })} {tokenSymbol}</span>
         </div>
         <div className="h-px bg-ink/[0.08]" />
         <div className="flex justify-between font-mono text-[9px] uppercase tracking-[0.12em] text-ink-mute">
           <span>Total</span>
-          <span className="text-iris-deep">{entryCount * raffle.tokens_required} {tokenSymbol}</span>
+          <span className="text-iris-deep">{formatCompactNumber(entryCount * raffle.tokens_required, { maximumFractionDigits: 4 })} {tokenSymbol}</span>
         </div>
         {balance !== undefined && (
           <>
@@ -323,7 +324,7 @@ export function RaffleEntryForm({
       {hasInsufficientBalance && (
         <div className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-center text-[11.5px] text-amber-700 dark:text-amber-300">
           <span className="material-symbols-outlined text-lg">warning</span>
-          <span>Insufficient balance. You need {entryCount * raffle.tokens_required} {tokenSymbol} to enter.</span>
+          <span>Insufficient balance. You need {formatCompactNumber(entryCount * raffle.tokens_required, { maximumFractionDigits: 4 })} {tokenSymbol} to enter.</span>
         </div>
       )}
 

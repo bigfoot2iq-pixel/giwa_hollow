@@ -16,6 +16,7 @@ import {
   giwaSepolia,
   SWAP_POOL_ADDRESS,
 } from "@/lib/contracts";
+import { formatCompactNumber } from "@/lib/utils/format";
 
 const POOL_ADDRESS =
   SWAP_POOL_ADDRESS && isAddress(SWAP_POOL_ADDRESS) ? SWAP_POOL_ADDRESS : undefined;
@@ -43,6 +44,14 @@ function parseAmount(value: string): bigint | null {
   } catch {
     return null;
   }
+}
+
+/** Compact a wei amount for display without touching the editable inputs. */
+function formatTokenAmount(value: bigint | undefined, maxFractionDigits = 4): string {
+  if (value === undefined) return "…";
+  return formatCompactNumber(formatEther(value), {
+    maximumFractionDigits: maxFractionDigits,
+  });
 }
 
 /**
@@ -536,9 +545,7 @@ export function SwapPoolSettings() {
               </dt>
               <dd className="mt-2 text-sm font-bold text-text-primary">
                 {tokensPerEth !== undefined
-                  ? `${Number(formatEther(tokensPerEth)).toLocaleString("en-US", {
-                      maximumFractionDigits: 2,
-                    })} ARIWA / ETH`
+                  ? `${formatTokenAmount(tokensPerEth, 2)} ARIWA / ETH`
                   : "…"}
               </dd>
             </div>
@@ -558,7 +565,7 @@ export function SwapPoolSettings() {
               </dt>
               <dd className="mt-2 text-sm font-bold text-text-primary">
                 {ethBalance
-                  ? `${formatEther(ethBalance.value)} ${ethBalance.symbol}`
+                  ? `${formatTokenAmount(ethBalance.value)} ${ethBalance.symbol}`
                   : "…"}
               </dd>
             </div>
@@ -568,7 +575,7 @@ export function SwapPoolSettings() {
               </dt>
               <dd className="mt-2 text-sm font-bold text-text-primary">
                 {tokenBalance
-                  ? `${formatEther(tokenBalance.value)} ${tokenBalance.symbol}`
+                  ? `${formatTokenAmount(tokenBalance.value)} ${tokenBalance.symbol}`
                   : "…"}
               </dd>
             </div>
@@ -649,7 +656,7 @@ export function SwapPoolSettings() {
           </div>
           <span className="rounded border border-ink/10 bg-ink/[0.02] px-3 py-1 font-mono text-[10px] text-muted-blue">
             {tokensPerEth !== undefined
-              ? `${formatEther(tokensPerEth)} ARIWA / ETH`
+              ? `${formatTokenAmount(tokensPerEth)} ARIWA / ETH`
               : "…"}
           </span>
         </div>
@@ -660,7 +667,7 @@ export function SwapPoolSettings() {
               <span className="mb-1 flex items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-blue">
                 ETH to add
                 <span className="font-mono font-normal normal-case tracking-normal">
-                  Wallet {walletEth ? `${formatEther(walletEth.value)} ETH` : "…"}
+                  Wallet {walletEth ? `${formatTokenAmount(walletEth.value)} ETH` : "…"}
                 </span>
               </span>
               <div className="flex gap-2">
@@ -687,7 +694,7 @@ export function SwapPoolSettings() {
                 ARIWA to add
                 <span className="font-mono font-normal normal-case tracking-normal">
                   Wallet{" "}
-                  {walletToken ? `${formatEther(walletToken.value)} ARIWA` : "…"}
+                  {walletToken ? `${formatTokenAmount(walletToken.value)} ARIWA` : "…"}
                 </span>
               </span>
               <div className="flex gap-2">
@@ -717,8 +724,8 @@ export function SwapPoolSettings() {
               Pool holds
             </span>
             <span className="font-mono text-[11px] font-bold text-text-primary">
-              {ethBalance ? `${formatEther(ethBalance.value)} ETH` : "…"} /{" "}
-              {tokenBalance ? `${formatEther(tokenBalance.value)} ARIWA` : "…"}
+              {ethBalance ? `${formatTokenAmount(ethBalance.value)} ETH` : "…"} /{" "}
+              {tokenBalance ? `${formatTokenAmount(tokenBalance.value)} ARIWA` : "…"}
             </span>
           </div>
 
@@ -763,7 +770,7 @@ export function SwapPoolSettings() {
               </span>
               <span className="font-mono text-sm font-bold text-text-primary">
                 {ethBalance
-                  ? `${formatEther(ethBalance.value)} ${ethBalance.symbol}`
+                  ? `${formatTokenAmount(ethBalance.value)} ${ethBalance.symbol}`
                   : "…"}
               </span>
             </div>
@@ -827,7 +834,7 @@ export function SwapPoolSettings() {
               </span>
               <span className="font-mono text-sm font-bold text-text-primary">
                 {tokenBalance
-                  ? `${formatEther(tokenBalance.value)} ${tokenBalance.symbol}`
+                  ? `${formatTokenAmount(tokenBalance.value)} ${tokenBalance.symbol}`
                   : "…"}
               </span>
             </div>

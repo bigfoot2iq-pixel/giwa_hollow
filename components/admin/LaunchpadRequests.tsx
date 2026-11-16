@@ -11,6 +11,7 @@ import type {
   LaunchpadRequest,
   LaunchpadRequestStatus,
 } from "@/lib/supabase";
+import { formatCompactNumber } from "@/lib/utils/format";
 
 const STATUSES: LaunchpadRequestStatus[] = [
   "pending",
@@ -199,7 +200,7 @@ export function LaunchpadRequests() {
               }`}
             >
               {status === "all" ? "All" : status}
-              <span className="ml-1 opacity-60">({counts[status] ?? 0})</span>
+              <span className="ml-1 opacity-60">({formatCompactNumber(counts[status] ?? 0)})</span>
             </button>
           ))}
         </div>
@@ -338,7 +339,7 @@ function FragmentRow({
             {request.collection_name}
           </p>
           <p className="text-[10px] uppercase tracking-widest text-muted-blue">
-            {request.symbol} · {request.supply.toLocaleString()} supply
+            {request.symbol} · {formatCompactNumber(request.supply)} supply
           </p>
           <p
             className="mt-1 font-mono text-[9px] text-muted-blue"
@@ -445,7 +446,11 @@ function FragmentRow({
                   <p>
                     Mint price:{" "}
                     <span className="font-bold text-text-primary">
-                      {request.mint_price} ETH
+                      {formatCompactNumber(request.mint_price, {
+                        maximumFractionDigits: 6,
+                        fallback: request.mint_price,
+                      })}{" "}
+                      ETH
                     </span>
                   </p>
                   <p>

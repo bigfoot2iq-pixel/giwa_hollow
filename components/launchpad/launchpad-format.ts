@@ -1,4 +1,5 @@
 import { formatEther } from "viem";
+import { formatCompactNumber } from "@/lib/utils/format";
 
 /**
  * The live mint parameters read from the AriwaNFT collection.
@@ -115,7 +116,7 @@ export function formatEth(value: bigint, maxDecimals = 4): string {
   if (!Number.isFinite(numeric)) return "—";
   if (numeric < 0.00001) return "<0.00001 ETH";
 
-  const formatted = numeric.toLocaleString(undefined, {
+  const formatted = formatCompactNumber(numeric, {
     maximumFractionDigits: maxDecimals,
   });
 
@@ -129,9 +130,7 @@ export function formatEth(value: bigint, maxDecimals = 4): string {
 }
 
 export function formatCount(value: bigint | number): string {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return "—";
-  return numeric.toLocaleString("en-US");
+  return formatCompactNumber(value);
 }
 
 /** Formats a holder-gate balance string without inventing precision. */
@@ -140,8 +139,9 @@ export function formatAmount(value: string, maxDecimals = 4): string {
   if (!Number.isFinite(numeric)) return value;
   if (numeric === 0) return "0";
   if (numeric < 0.00001) return "<0.00001";
-  return numeric.toLocaleString(undefined, {
+  return formatCompactNumber(numeric, {
     maximumFractionDigits: maxDecimals,
+    fallback: value,
   });
 }
 

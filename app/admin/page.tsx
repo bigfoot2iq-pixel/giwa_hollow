@@ -17,6 +17,7 @@ import { RafflesMaintenanceToggle } from "@/components/admin/RafflesMaintenanceT
 import { LaunchpadSettings } from "@/components/admin/LaunchpadSettings";
 import { LaunchpadRequests } from "@/components/admin/LaunchpadRequests";
 import { SwapPoolSettings } from "@/components/admin/SwapPoolSettings";
+import { formatCompactNumber } from "@/lib/utils/format";
 
 interface AdminData {
   raffles: Array<
@@ -343,26 +344,26 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div className="ui-container rounded-[22px] border-l-2 border-l-iris p-5">
               <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-mute">Total raffles</p>
-              <p className="mt-2 font-header text-3xl font-extrabold tracking-[-0.04em] text-ink">{data?.stats?.total_raffles || 0}</p>
+              <p className="mt-2 font-header text-3xl font-extrabold tracking-[-0.04em] text-ink">{formatCompactNumber(data?.stats?.total_raffles ?? 0)}</p>
             </div>
             <div className="ui-container rounded-[22px] p-5">
               <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-mute">Active raffles</p>
-              <p className="mt-2 font-header text-3xl font-extrabold tracking-[-0.04em] text-ink">{data?.stats?.active_raffles || 0}</p>
+              <p className="mt-2 font-header text-3xl font-extrabold tracking-[-0.04em] text-ink">{formatCompactNumber(data?.stats?.active_raffles ?? 0)}</p>
             </div>
             <div className="ui-container rounded-[22px] p-5">
               <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-mute">Total entries</p>
-              <p className="mt-2 font-header text-3xl font-extrabold tracking-[-0.04em] text-ink">{data?.stats?.total_entries || 0}</p>
+              <p className="mt-2 font-header text-3xl font-extrabold tracking-[-0.04em] text-ink">{formatCompactNumber(data?.stats?.total_entries ?? 0)}</p>
             </div>
             <div className="ui-container rounded-[22px] p-5">
               <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-mute">Total users</p>
-              <p className="mt-2 font-header text-3xl font-extrabold tracking-[-0.04em] text-ink">{data?.stats?.total_users || 0}</p>
+              <p className="mt-2 font-header text-3xl font-extrabold tracking-[-0.04em] text-ink">{formatCompactNumber(data?.stats?.total_users ?? 0)}</p>
             </div>
           </div>
 
           <div className="ui-container overflow-hidden rounded-[26px]">
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ink/[0.08] px-6 py-4">
               <h3 className="font-header text-lg font-extrabold tracking-[-0.03em] text-ink">
-                All raffles {total > 0 && <span className="font-mono text-[10px] font-normal text-ink-mute">({total})</span>}
+                All raffles {total > 0 && <span className="font-mono text-[10px] font-normal text-ink-mute">({formatCompactNumber(total)})</span>}
               </h3>
               <div className="flex flex-wrap items-center gap-3">
                 <RafflesMaintenanceToggle />
@@ -454,7 +455,7 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-5">
                       <span className="text-sm font-display font-bold text-text-primary">
-                        {(raffle.participants_count || 0)}/{raffle.max_participants}
+                        {formatCompactNumber(raffle.participants_count ?? 0)}/{formatCompactNumber(raffle.max_participants)}
                       </span>
                     </td>
                     <td className="px-6 py-5">
@@ -516,7 +517,7 @@ export default function AdminDashboard() {
           {total > 0 && (
             <div className="px-6 py-4 border-t border-ink/10 flex items-center justify-between gap-4 flex-wrap">
               <p className="text-xs text-muted-blue uppercase tracking-widest">
-                Showing {pageStart}–{pageEnd} of {total}
+                Showing {formatCompactNumber(pageStart)}–{formatCompactNumber(pageEnd)} of {formatCompactNumber(total)}
               </p>
               <div className="flex items-center gap-2">
                 <button
@@ -797,7 +798,7 @@ function GameConfig() {
           <div>
             <p className="text-muted-blue text-[10px] font-bold uppercase tracking-widest mb-1">Play Fee (ARIWA)</p>
             <p className="text-sm text-text-primary/60">
-              Current: <span className="text-iris font-bold">{currentFee !== undefined ? formatEther(currentFee as bigint) : "..."} ARIWA</span>
+              Current: <span className="text-iris font-bold">{currentFee !== undefined ? formatCompactNumber(formatEther(currentFee as bigint), { maximumFractionDigits: 4 }) : "..."} ARIWA</span>
             </p>
             <p className="text-[10px] text-muted-blue mt-1">Amount of ARIWA each player pays to play. Must be greater than 0.</p>
           </div>
