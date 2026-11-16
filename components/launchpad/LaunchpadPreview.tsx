@@ -88,7 +88,7 @@ export function LaunchpadPreview() {
 
       <div
         id="launchpad-preview-stage"
-        className="relative aspect-[3/2] w-full overflow-hidden bg-cream-2"
+        className="relative aspect-square w-full overflow-hidden bg-cream-2"
       >
         {PREVIEW_ITEMS.map((item, index) => {
           const isActive = index === activeIndex;
@@ -100,12 +100,18 @@ export function LaunchpadPreview() {
               alt={isActive ? item.alt : ""}
               aria-hidden={!isActive}
               fill
-              loading="eager"
+              // Only the visible slide should compete with the LCP image.
+              // The rest are stacked in the same box, so they still load, but
+              // at low priority instead of ten eager requests at once.
+              loading={isActive ? "eager" : "lazy"}
+              fetchPriority={isActive ? "high" : "low"}
               preload={index === 0}
               draggable={false}
               sizes="(max-width: 1024px) 92vw, 720px"
               className={cn(
-                "object-cover object-[50%_30%] transition-[opacity,transform] duration-700 ease-out",
+                // The collection art is square, so a square stage shows the whole
+                // resident edge to edge instead of cropping the bottom away.
+                "object-cover object-center transition-[opacity,transform] duration-700 ease-out",
                 isActive ? "scale-100 opacity-100" : "scale-[1.015] opacity-0",
               )}
             />
