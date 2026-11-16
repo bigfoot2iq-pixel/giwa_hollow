@@ -21,7 +21,7 @@ const ROOMS: Room[] = [
     href: "/trade",
     eyebrow: "The market",
     title: "Trade ARIWA",
-    body: "Swap ETH for ARIWA and back at a fixed rate. The pool wallet settles every order on-chain, instantly.",
+    body: "Swap ETH for ARIWA and back against a live x × y = k curve. Every order settles on-chain, instantly, with a red/green chart of the price.",
     cta: "Open the desk",
     icon: ArrowDownUp,
     panel: "tone-panel-lilac",

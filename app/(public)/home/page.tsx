@@ -23,9 +23,9 @@ export default function HomePage() {
   return (
     <div className="relative">
       <Hero />
+      <CollectionSection />
       <About />
       <TokenSection />
-      <CollectionSection />
       <LaunchpadSection />
       <RaffleSection />
       <FinalCta />

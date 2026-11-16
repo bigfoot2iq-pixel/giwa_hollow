@@ -1,6 +1,6 @@
 # GIWA ARIWA — Setup
 
-A GIWA Sepolia dApp: **faucet**, an **ARIWA ERC-20**, **a fixed-rate ARIWA/ETH swap pool**, platform **raffles**, and a **pay-to-play game** with a leaderboard. Ported from the Robinhood Raffles app and rebranded for GIWA.
+A GIWA Sepolia dApp: **faucet**, an **ARIWA ERC-20**, **an AMM ARIWA/ETH swap pool**, platform **raffles**, and a **pay-to-play game** with a leaderboard. Ported from the Robinhood Raffles app and rebranded for GIWA.
 
 ## Network — GIWA Sepolia
 | | |
@@ -69,15 +69,15 @@ npm run dev
 | Route | What |
 |---|---|
 | `/faucet` | Links to official GIWA + Nodit faucets, "add network" button, chain params |
-| `/trade` | Buy/sell ARIWA against the fixed-rate on-chain pool |
+| `/trade` | Buy/sell ARIWA against the live AMM pool |
 | `/launchpad` | Mint the launchpad NFT collection (holder-gated) |
-| `/launchpad/request` | Community form to request a collection launch |
+| `/create` | Community form to request a collection launch |
 | `/raffles` | **Platform** raffles created by the admin (maintenance until toggled) |
 | `/admin` | Admin-only: launchpad, raffles, NFT collection controls and launch requests |
 | `/leaderboard` | Community and token-holder rankings |
 
 ## Notes
-- **Swap pool** — `/trade` reads from `AriwaSwapPool`. The deploy script sets the rate (default 10,000 ARIWA per ETH) and seeds 0.05 ETH + 500 ARIWA; override with the `SWAP_POOL_*` vars. The owner can change the rate, pause trading, or withdraw reserves. Top up later with `addLiquidity` or a plain ETH transfer.
+- **Swap pool** — `/trade` reads live reserves and price samples from `AriwaSwapPool`, a constant-product (x × y = k) AMM. The deploy script seeds liquidity at an opening price (default 10,000 ARIWA per ETH) and sets a 0.30% swap fee; override with the `SWAP_POOL_*` vars. The owner can change the fee (capped at 5%), pause trading, or withdraw reserves. Top up later with `addLiquidity` or a plain ETH transfer.
 - **Faucet is link-only** (no server drip wallet) — it points at the official GIWA/Nodit faucets.
 - Twitter/X login, waitlist, and checker pages from the source app were **omitted**; re-add from
   `../robinhood_hollow` if needed.

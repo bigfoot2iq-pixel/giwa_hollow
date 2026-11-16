@@ -14,10 +14,10 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
+  ChevronDown,
   Coins,
   Copy,
   Droplets,
-  Info,
   Loader2,
   ShieldCheck,
   Sparkles,
@@ -31,25 +31,31 @@ import {
 import {
   useApproveTokens,
   useBuyAriwa,
-  usePoolReserves,
+  usePriceHistory,
   useSellAriwa,
   useSwapPoolPaused,
-  useSwapRate,
+  useSwapPoolState,
   useTokenAllowance,
   useTokenBalance,
 } from "@/lib/hooks";
 import { ART_TONES, NFT_PIECES } from "@/lib/art";
 import { cn } from "@/lib/utils/cn";
+import {
+  BPS_DENOMINATOR,
+  DEFAULT_FEE_BPS,
+  getAmountOut,
+  priceImpactBps,
+} from "@/lib/utils/amm";
+import { TradeChart } from "@/components/trade/TradeChart";
+import { TokenChip } from "@/components/trade/token-marks";
 
 const EXPLORER_URL =
   giwaSepolia.blockExplorers?.default.url ?? "https://sepolia-explorer.giwa.io";
 
-const ONE_ETHER = 10n ** 18n;
-const BPS_DENOMINATOR = 10_000n;
 const SLIPPAGE_BPS = 100n; // 1%
 
 /** Percent shortcuts shown under the amount, like a DEX swap form. */
-const PRESET_PERCENTS = [5, 10, 25, 50, 75] as const;
+const PRESET_PERCENTS = [5, 50] as const;
 type Preset = (typeof PRESET_PERCENTS)[number] | "max";
 
 /** Presets are rounded down to this many decimals so they never exceed the balance. */
@@ -159,7 +165,13 @@ function readableError(error: Error): string {
   const msg =
     (error as Error & { shortMessage?: string }).shortMessage ?? error.message ?? "";
   if (/slippage exceeded/i.test(msg)) {
-    return "The pool rate moved before the trade landed. Try again.";
+    return "The pool price moved before the trade landed. Try again.";
+  }
+  if (/pool not seeded/i.test(msg)) {
+    return "The pool has no liquidity yet.";
+  }
+  if (/amount too small/i.test(msg)) {
+    return "That amount is too small to swap.";
   }
   if (/insufficient token liquidity/i.test(msg)) {
     return "The pool is low on ARIWA right now. Try a smaller amount.";
@@ -170,55 +182,6 @@ function readableError(error: Error): string {
   if (/paused/i.test(msg)) return "Trading is paused by the pool owner.";
   if (/insufficient funds/i.test(msg)) return "Not enough ETH to cover the amount and gas.";
   return msg || "Something went wrong.";
-}
-
-/** Official Ethereum mark, drawn in the brand blue used across the site. */
-function EthMark({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="#627EEA"
-      aria-hidden="true"
-      focusable="false"
-      className={className}
-    >
-      <path d="M11.944 17.97 4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0 4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z" />
-    </svg>
-  );
-}
-
-function TokenMark({ symbol }: { symbol: "ETH" | "ARIWA" }) {
-  if (symbol === "ETH") {
-    return (
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-[#627EEA]/20 bg-[#627EEA]/10">
-        <EthMark className="size-4" />
-      </span>
-    );
-  }
-
-  return (
-    <span className="relative size-7 shrink-0 overflow-hidden rounded-full border border-ink/10 bg-butter">
-      <Image
-        src="/brand/ariwa-icon.webp"
-        alt=""
-        width={56}
-        height={56}
-        sizes="28px"
-        className="size-full object-cover"
-      />
-    </span>
-  );
-}
-
-function TokenChip({ symbol }: { symbol: "ETH" | "ARIWA" }) {
-  return (
-    <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-ink/10 bg-paper/85 py-1.5 pl-1.5 pr-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-      <TokenMark symbol={symbol} />
-      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-ink">
-        {symbol}
-      </span>
-    </span>
-  );
 }
 
 function ReserveRow({
@@ -299,8 +262,8 @@ function PoolNotConfigured() {
         Trading opens soon
       </h1>
       <p className="mt-3 max-w-xl text-[13px] leading-6 text-ink-soft">
-        The fixed-rate ARIWA/ETH pool has not been deployed to this build yet.
-        Once its address is in the environment, buy and sell orders light up
+        The ARIWA/ETH market-maker has not been deployed to this build yet. Once
+        its address is in the environment, live pricing and trading light up
         here.
       </p>
 
@@ -342,9 +305,17 @@ function TradeDesk() {
   const [preset, setPreset] = useState<Preset | null>(null);
   const [amountFocused, setAmountFocused] = useState(false);
 
-  const { data: rate, isError: isRateError } = useSwapRate();
+  const {
+    ethBalance: poolEth,
+    tokenBalance: poolTokens,
+    tokensPerEth,
+    feeBps,
+    isLoading: isPoolLoading,
+    isError: isPoolError,
+  } = useSwapPoolState();
   const { data: paused } = useSwapPoolPaused();
-  const { ethBalance: poolEth, tokenBalance: poolTokens } = usePoolReserves();
+  const { data: priceHistory, isLoading: isPriceHistoryLoading } =
+    usePriceHistory();
   const { data: walletTokens } = useTokenBalance(address);
   const { data: walletEth } = useBalance({
     address,
@@ -380,24 +351,47 @@ function TradeDesk() {
     reset: resetApprove,
   } = useApproveTokens();
 
-  const rateValue = rate as bigint | undefined;
   const tokenAllowance = allowance as bigint | undefined;
   const tokenBalance = walletTokens as bigint | undefined;
 
   const parsed = parseAmountInput(amount);
   const amountValue = parsed !== null && parsed > 0n ? parsed : null;
 
+  const poolFeeBps = feeBps ?? DEFAULT_FEE_BPS;
+
+  /**
+   * Constant-product quote against the live reserves — identical to
+   * AriwaSwapPool.quoteBuy / quoteSell, computed locally so the form reacts
+   * on every keystroke.
+   */
   const quoteOut =
-    amountValue !== null && rateValue !== undefined && rateValue > 0n
+    amountValue !== null &&
+    poolEth !== undefined &&
+    poolTokens !== undefined &&
+    poolEth > 0n &&
+    poolTokens > 0n
       ? mode === "buy"
-        ? (amountValue * rateValue) / ONE_ETHER
-        : (amountValue * ONE_ETHER) / rateValue
+        ? getAmountOut(amountValue, poolEth, poolTokens, poolFeeBps)
+        : getAmountOut(amountValue, poolTokens, poolEth, poolFeeBps)
       : undefined;
 
   const minOut =
     quoteOut !== undefined
       ? (quoteOut * (BPS_DENOMINATOR - SLIPPAGE_BPS)) / BPS_DENOMINATOR
       : undefined;
+
+  /** How far this order moves the mid price, including the swap fee. */
+  const impactBps =
+    quoteOut !== undefined &&
+    amountValue !== null &&
+    poolEth !== undefined &&
+    poolTokens !== undefined
+      ? mode === "buy"
+        ? priceImpactBps(amountValue, quoteOut, poolEth, poolTokens)
+        : priceImpactBps(amountValue, quoteOut, poolTokens, poolEth)
+      : undefined;
+  const impactPercent =
+    impactBps !== undefined ? Number(impactBps) / 100 : undefined;
 
   const outputSymbol: "ETH" | "ARIWA" = mode === "buy" ? "ARIWA" : "ETH";
   const quoteDisplay =
@@ -425,7 +419,7 @@ function TradeDesk() {
     walletBalance > 0n &&
     (mode === "sell" || spendableEth > 0n);
 
-  /** The wei value a 5/10/25/50/75/MAX chip would fill in. */
+  /** The wei value a 5/50/Max chip would fill in. */
   const presetAmount = useCallback(
     (next: Preset): bigint => {
       if (walletBalance === undefined || walletBalance === 0n) return 0n;
@@ -463,13 +457,8 @@ function TradeDesk() {
     if (previousFor !== null || amount === "") applyPreset(5);
   }, [address, canUsePresets, amount, applyPreset]);
 
-  const exceedsPool =
-    quoteOut !== undefined &&
-    (mode === "buy"
-      ? poolTokens !== undefined && quoteOut > poolTokens
-      : poolEth !== undefined && quoteOut > poolEth);
-
-  const poolReady = rateValue !== undefined && rateValue > 0n;
+  const poolReady =
+    poolEth !== undefined && poolTokens !== undefined && poolEth > 0n && poolTokens > 0n;
   const pausedBlocked = paused === true;
   const allowanceLoading =
     mode === "sell" && !!address && amountValue !== null && tokenAllowance === undefined;
@@ -489,8 +478,9 @@ function TradeDesk() {
     !pausedBlocked &&
     !isProcessing &&
     amountValue !== null &&
+    quoteOut !== undefined &&
+    quoteOut > 0n &&
     !insufficientBalance &&
-    !exceedsPool &&
     !allowanceLoading;
 
   useEffect(() => {
@@ -584,25 +574,6 @@ function TradeDesk() {
     sell(amountValue, minOut);
   };
 
-  let validationMessage: string | null = null;
-  if (pausedBlocked) {
-    validationMessage = "Trading is paused by the pool owner.";
-  } else if (
-    insufficientBalance &&
-    amountValue !== null &&
-    walletBalance !== undefined
-  ) {
-    validationMessage =
-      mode === "buy"
-        ? `Not enough ETH. You need ${formatAmount(amountValue, 6)} ETH plus gas, and this wallet holds ${formatAmount(walletBalance, 6)}.`
-        : `Not enough ARIWA. You need ${formatAmount(amountValue, 6)} ARIWA, and this wallet holds ${formatAmount(walletBalance, 6)}.`;
-  } else if (exceedsPool) {
-    validationMessage =
-      mode === "buy"
-        ? `The pool only has ${formatAmount(poolTokens, 2)} ARIWA to pay out right now. Try a smaller ETH amount.`
-        : `The pool only holds ${formatAmount(poolEth, 4)} ETH right now. Try a smaller ARIWA amount.`;
-  }
-
   const art = NFT_PIECES.find((piece) => piece.id === 777) ?? NFT_PIECES[0];
   const tone = ART_TONES[art.tone];
 
@@ -615,34 +586,34 @@ function TradeDesk() {
             Trade ARIWA
           </h1>
           <p className="mt-3 max-w-xl text-[13px] leading-6 text-ink-soft">
-            Buy ARIWA with ETH or sell it back at a fixed rate. Every trade
-            settles against an on-chain pool wallet on GIWA Sepolia — no order
-            book, no waiting.
+            Buy ARIWA with ETH or sell it back. Every order prices against a
+            constant-product pool on GIWA Sepolia, so the rate moves with supply
+            and demand — no order book, no waiting.
           </p>
         </div>
         <span className="hidden items-center gap-2 rounded-full border border-ink/10 bg-paper/60 px-3 py-2 font-mono text-[9px] uppercase tracking-[0.16em] text-ink-soft sm:inline-flex">
           <span className="live-dot" />
-          fixed-rate pool
+          automatic pricing · live
         </span>
       </div>
 
-      <div className="mt-8 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="ui-container relative overflow-hidden rounded-[28px] p-5 sm:p-7 lg:self-start lg:p-8">
+      <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1.58fr)_minmax(340px,1fr)] lg:items-stretch">
+        <section className="order-1 ui-container relative overflow-hidden rounded-[28px] p-5 sm:p-7 lg:order-2 lg:col-start-2 lg:row-start-1 lg:h-full lg:p-6 xl:p-8">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute -right-20 -top-24 size-64 rounded-full bg-iris/10 blur-3xl"
           />
-          <div className="relative">
-            <div className="grid grid-cols-2 gap-1 rounded-full border border-ink/[0.08] bg-paper/60 p-1">
+          <div className="relative flex h-full flex-col">
+            <div className="grid grid-cols-2 gap-1 rounded-2xl bg-ink/[0.045] p-1">
               <button
                 type="button"
                 onClick={() => switchMode("buy")}
                 disabled={isProcessing}
                 className={cn(
-                  "inline-flex h-10 items-center justify-center gap-1.5 rounded-full text-[11.5px] font-bold transition",
+                  "inline-flex h-10 items-center justify-center gap-1.5 rounded-xl text-[12px] font-semibold transition",
                   mode === "buy"
-                    ? "bg-ink text-cream shadow-[0_6px_14px_-8px_rgba(39,33,50,0.7)]"
-                    : "text-ink-soft hover:bg-ink/[0.05] hover:text-ink",
+                    ? "bg-paper text-ink shadow-[0_2px_10px_-5px_rgba(39,33,50,0.45)]"
+                    : "text-ink-mute hover:text-ink",
                 )}
               >
                 <Coins className="size-3.5" />
@@ -653,10 +624,10 @@ function TradeDesk() {
                 onClick={() => switchMode("sell")}
                 disabled={isProcessing}
                 className={cn(
-                  "inline-flex h-10 items-center justify-center gap-1.5 rounded-full text-[11.5px] font-bold transition",
+                  "inline-flex h-10 items-center justify-center gap-1.5 rounded-xl text-[12px] font-semibold transition",
                   mode === "sell"
-                    ? "bg-ink text-cream shadow-[0_6px_14px_-8px_rgba(39,33,50,0.7)]"
-                    : "text-ink-soft hover:bg-ink/[0.05] hover:text-ink",
+                    ? "bg-paper text-ink shadow-[0_2px_10px_-5px_rgba(39,33,50,0.45)]"
+                    : "text-ink-mute hover:text-ink",
                 )}
               >
                 <ArrowDownUp className="size-3.5" />
@@ -666,16 +637,16 @@ function TradeDesk() {
 
             <div
               className={cn(
-                "mt-5 rounded-2xl border bg-paper/60 p-4 transition-colors",
-                "focus-within:border-iris/40 focus-within:ring-2 focus-within:ring-iris/[0.08]",
-                insufficientBalance ? "border-danger/35" : "border-ink/[0.08]",
+                "mt-4 rounded-2xl bg-ink/[0.035] p-4 transition-colors",
+                "focus-within:bg-iris/[0.06]",
+                insufficientBalance && "ring-1 ring-danger/35",
               )}
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink-mute">
+                <span className="text-[11px] font-medium text-ink-mute">
                   {mode === "buy" ? "You pay" : "You sell"}
                 </span>
-                <span className="font-mono text-[10px] text-ink-mute">
+                <span className="text-[11px] text-ink-mute">
                   Balance{" "}
                   <span
                     className={cn(
@@ -687,7 +658,7 @@ function TradeDesk() {
                   </span>
                 </span>
               </div>
-              <div className="mt-1.5 flex items-center gap-3">
+              <div className="mt-1 flex items-center gap-3">
                 <input
                   value={amountDisplay}
                   onChange={(event) => handleAmountChange(event.target.value)}
@@ -712,7 +683,7 @@ function TradeDesk() {
                   placeholder="0.0"
                   aria-label={mode === "buy" ? "ETH amount to spend" : "ARIWA amount to sell"}
                   className={cn(
-                    "min-w-0 flex-1 bg-transparent font-header font-extrabold tabular-nums tracking-[-0.04em] text-ink outline-none placeholder:text-ink-faint disabled:opacity-60",
+                    "min-w-0 flex-1 bg-transparent font-header font-semibold tabular-nums tracking-[-0.04em] text-ink outline-none placeholder:text-ink-faint disabled:opacity-60",
                     amountFontClass(amountDisplay.length),
                   )}
                 />
@@ -721,7 +692,7 @@ function TradeDesk() {
 
               {canUsePresets && (
                 <div
-                  className="mt-3 flex items-center gap-1.5"
+                  className="mt-3 grid grid-cols-3 gap-1.5"
                   role="group"
                   aria-label="Fill a percentage of your balance"
                 >
@@ -743,11 +714,11 @@ function TradeDesk() {
                             : `Fill ${option}% of your ${balanceSymbol} balance`
                         }
                         className={cn(
-                          "h-8 flex-1 rounded-full border font-mono text-[9px] font-semibold uppercase tracking-[0.12em] transition",
+                          "h-8 rounded-xl text-[11px] font-medium transition",
                           active
-                            ? "border-iris-strong/60 bg-iris-strong text-white shadow-[0_6px_16px_-10px_rgba(108,85,224,0.9)]"
-                            : "border-ink/[0.08] bg-paper/80 text-ink-soft hover:border-iris/30 hover:bg-iris/[0.06] hover:text-iris",
-                          "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-ink/[0.08] disabled:hover:bg-paper/80 disabled:hover:text-ink-soft",
+                            ? "bg-iris/[0.14] text-iris ring-1 ring-iris/30"
+                            : "bg-paper/60 text-ink-mute hover:bg-paper hover:text-ink",
+                          "disabled:cursor-not-allowed disabled:opacity-40",
                         )}
                       >
                         {label}
@@ -758,14 +729,13 @@ function TradeDesk() {
               )}
 
               {canUsePresets && mode === "buy" && preset === "max" && (
-                <p className="mt-2 text-right text-[9.5px] text-ink-faint">
+                <p className="mt-2 text-right text-[10px] text-ink-faint">
                   Keeping {formatEther(ETH_GAS_BUFFER)} ETH back for gas
                 </p>
               )}
             </div>
 
-            <div className="relative my-3 flex items-center justify-center">
-              <div className="absolute inset-x-0 top-1/2 h-px bg-ink/[0.08]" />
+            <div className="relative z-10 -my-2.5 flex justify-center">
               <button
                 type="button"
                 onClick={() => switchMode(mode === "buy" ? "sell" : "buy")}
@@ -774,7 +744,7 @@ function TradeDesk() {
                   mode === "buy" ? "Switch to selling ARIWA" : "Switch to buying ARIWA"
                 }
                 title="Switch direction"
-                className="relative flex size-10 items-center justify-center rounded-full border border-ink/10 bg-paper text-ink shadow-[0_6px_14px_-10px_rgba(39,33,50,0.45)] transition hover:border-iris/30 hover:text-iris disabled:opacity-40"
+                className="flex size-9 items-center justify-center rounded-xl border border-ink/[0.08] bg-paper text-ink-soft shadow-[0_4px_12px_-6px_rgba(39,33,50,0.45)] transition hover:border-iris/30 hover:text-iris disabled:opacity-40"
               >
                 <ArrowDown className="size-4" />
               </button>
@@ -782,59 +752,85 @@ function TradeDesk() {
 
             <div
               className={cn(
-                "rounded-2xl border p-4 transition-colors",
-                quoteOut !== undefined
-                  ? "border-iris/15 bg-iris/[0.045]"
-                  : "border-ink/[0.08] bg-paper/40",
+                "rounded-2xl p-4 transition-colors",
+                quoteOut !== undefined ? "bg-iris/[0.055]" : "bg-ink/[0.03]",
               )}
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink-mute">
+                <span className="text-[11px] font-medium text-ink-mute">
                   You receive
                 </span>
-                <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-ink-mute">
-                  {quoteOut !== undefined ? "estimated" : "—"}
+                <span className="text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+                  {quoteOut !== undefined ? "Estimated" : "—"}
                 </span>
               </div>
-              <div className="mt-1.5 flex items-center gap-3">
+              <div className="mt-1 flex items-center gap-3">
                 <span
                   aria-live="polite"
                   className={cn(
-                    "min-w-0 flex-1 truncate font-header font-extrabold tabular-nums tracking-[-0.04em]",
+                    "min-w-0 flex-1 truncate font-header font-semibold tabular-nums tracking-[-0.04em]",
                     amountFontClass(quoteDisplay.length),
-                    quoteOut !== undefined ? "text-iris-deep" : "text-ink-faint",
+                    quoteOut !== undefined ? "text-ink" : "text-ink-faint",
                   )}
                 >
                   {quoteDisplay}
                 </span>
                 <TokenChip symbol={outputSymbol} />
               </div>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-ink/[0.06] pt-2.5 font-mono text-[9.5px] text-ink-mute">
-                <span>1 ETH = {formatAmount(rateValue, 2)} ARIWA</span>
-                {minOutDisplay ? (
-                  <span title="Minimum after 1% slippage protection">
-                    Min{" "}
-                    <span className="font-medium tabular-nums text-ink-soft">
-                      {minOutDisplay} {outputSymbol}
-                    </span>
-                  </span>
-                ) : (
-                  <span>1% slippage</span>
-                )}
-              </div>
             </div>
 
-            {validationMessage ? (
-              <p className="mt-4 flex items-start gap-2 rounded-xl border border-danger/20 bg-danger/[0.06] px-3 py-2.5 text-[11px] leading-5 text-danger-ink">
-                <Info className="mt-0.5 size-3.5 shrink-0" />
-                {validationMessage}
-              </p>
-            ) : needsApproval ? (
-              <p className="mt-4 flex items-start gap-2 rounded-xl border border-iris/20 bg-iris/[0.05] px-3 py-2.5 text-[11px] leading-5 text-ink-soft">
-                <Info className="mt-0.5 size-3.5 shrink-0 text-iris" />
-                Approve the pool once, then confirm the sale. Two wallet prompts.
-              </p>
-            ) : null}
+            <details className="group mt-3 rounded-2xl border border-ink/[0.07] bg-paper/45">
+              <summary className="flex cursor-pointer items-center justify-between gap-3 px-3.5 py-2.5 text-[11px] text-ink-mute transition hover:text-ink">
+                <span className="tabular-nums">
+                  {tokensPerEth !== undefined
+                    ? `1 ETH = ${formatAmount(tokensPerEth, 2)} ARIWA`
+                    : "Pool rate"}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  Details
+                  <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />
+                </span>
+              </summary>
+              <dl className="space-y-2 border-t border-ink/[0.06] px-3.5 py-3 text-[11px]">
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-ink-mute">Price impact</dt>
+                  <dd
+                    className={cn(
+                      "font-medium tabular-nums",
+                      impactPercent !== undefined && impactPercent >= 5
+                        ? "text-warning-ink"
+                        : "text-ink-soft",
+                    )}
+                  >
+                    {impactPercent !== undefined
+                      ? `${impactPercent.toFixed(2)}%`
+                      : "—"}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-ink-mute">Min received</dt>
+                  <dd className="font-medium tabular-nums text-ink-soft">
+                    {minOutDisplay
+                      ? `${minOutDisplay} ${outputSymbol}`
+                      : "—"}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-ink-mute">Slippage</dt>
+                  <dd className="font-medium tabular-nums text-ink-soft">
+                    {Number(SLIPPAGE_BPS) / 100}%
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-ink-mute">Pool fee</dt>
+                  <dd className="font-medium tabular-nums text-ink-soft">
+                    {feeBps !== undefined
+                      ? `${(Number(feeBps) / 100).toFixed(2)}%`
+                      : "—"}
+                  </dd>
+                </div>
+              </dl>
+            </details>
 
             <div className="mt-4">
               <ConnectButton.Custom>
@@ -881,14 +877,15 @@ function TradeDesk() {
                   else if (isBuyConfirming) label = "Buying ARIWA…";
                   else if (isSellPending) label = "Confirm sale in wallet…";
                   else if (isSellConfirming) label = "Selling ARIWA…";
-                  else if (isRateError) label = "Pool unavailable";
-                  else if (!poolReady) label = "Loading pool…";
+                  else if (isPoolError) label = "Pool unavailable";
+                  else if (!poolReady)
+                    label = isPoolLoading ? "Loading pool…" : "Pool has no liquidity";
                   else if (pausedBlocked) label = "Trading paused";
                   else if (amountValue === null) label = "Enter an amount";
+                  else if (quoteOut === 0n) label = "Amount too small";
                   else if (allowanceLoading) label = "Checking allowance…";
                   else if (insufficientBalance)
                     label = `Insufficient ${balanceSymbol} balance`;
-                  else if (exceedsPool) label = "Amount exceeds pool liquidity";
                   else if (mode === "sell" && needsApproval) label = "Approve ARIWA";
 
                   return (
@@ -912,105 +909,118 @@ function TradeDesk() {
               </ConnectButton.Custom>
             </div>
 
-            <p className="mt-3 flex items-center justify-center gap-1.5 text-[10.5px] text-ink-mute">
+            <p className="mt-auto flex items-center justify-center gap-1.5 pt-3 text-[10.5px] text-ink-mute">
               <ShieldCheck className="size-3.5 text-iris" />
-              Fixed rate, enforced on-chain. Testnet funds only.
+              AMM pricing, enforced on-chain. Testnet funds only.
             </p>
           </div>
         </section>
 
-        <aside className="flex flex-col gap-4">
-          <div className="ui-container rounded-[26px] p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink-mute">
-                  The pool wallet
-                </p>
-                <h2 className="mt-1 font-header text-lg font-extrabold tracking-[-0.03em] text-ink">
-                  Open liquidity
-                </h2>
-              </div>
-              <span className="pill">
-                <span className="live-dot" />
-                live
-              </span>
-            </div>
+        <TradeChart
+          className="order-2 lg:order-1 lg:col-start-1 lg:row-start-1"
+          points={priceHistory}
+          liveTokensPerEth={tokensPerEth}
+          feeBps={feeBps}
+          isLoading={isPriceHistoryLoading}
+        />
+      </div>
 
-            <div className="mt-5 space-y-2.5">
-              <ReserveRow label="ETH reserve" value={formatAmount(poolEth, 4)} symbol="ETH" />
-              <ReserveRow
-                label="ARIWA reserve"
-                value={formatAmount(poolTokens, 2)}
-                symbol="ARIWA"
-              />
-            </div>
-
-            <div className="mt-5 border-t border-ink/[0.08] pt-4">
-              <p className="font-mono text-[8px] uppercase tracking-[0.16em] text-ink-mute">
-                Contract
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="ui-container rounded-[26px] p-6">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink-mute">
+                The pool wallet
               </p>
-              <div className="mt-1.5">
-                <CopyAddress address={SWAP_POOL_ADDRESS as string} />
-              </div>
-            </div>
-          </div>
-
-          <div className="ui-container rounded-[26px] p-6">
-            <div className="flex items-center gap-2">
-              <span className="flex size-9 items-center justify-center rounded-xl bg-mint/40 text-mint-ink">
-                <ShieldCheck className="size-4" />
-              </span>
-              <h2 className="font-header text-lg font-extrabold tracking-[-0.03em] text-ink">
-                How the desk works
+              <h2 className="mt-1 font-header text-lg font-extrabold tracking-[-0.03em] text-ink">
+                Open liquidity
               </h2>
             </div>
-            <ul className="mt-4 space-y-3">
-              <li className="flex items-start gap-2.5 text-[11.5px] leading-5 text-ink-soft">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-iris" />
-                The pool holds both ETH and ARIWA, so buys and sells settle
-                instantly.
-              </li>
-              <li className="flex items-start gap-2.5 text-[11.5px] leading-5 text-ink-soft">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-iris" />
-                The rate is fixed by the owner; a 1% slippage guard protects each
-                order.
-              </li>
-              <li className="flex items-start gap-2.5 text-[11.5px] leading-5 text-ink-soft">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-iris" />
-                Selling needs a one-time ARIWA approval before the swap.
-              </li>
-            </ul>
-            <Link
-              href="/faucet"
-              className="mt-4 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft transition hover:text-iris"
-            >
-              <Droplets className="size-3.5" />
-              Need testnet ETH?
-              <ArrowRight className="size-3" />
-            </Link>
+            <span className="pill">
+              <span className="live-dot" />
+              live
+            </span>
           </div>
 
-          <div
-            className={`relative overflow-hidden rounded-[26px] border p-5 ${tone.border} ${tone.panel}`}
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="font-mono text-[8px] uppercase tracking-[0.18em] text-ink-soft">
-                  Resident note
-                </p>
-                <p className="mt-2 max-w-[190px] font-header text-lg font-extrabold leading-tight tracking-[-0.03em] text-ink">
-                  The pool never sleeps.
-                </p>
-                <p className="mt-2 max-w-[185px] text-[10.5px] leading-5 text-ink-soft">
-                  Buy low, sell high, or just top up before the next raffle.
-                </p>
-              </div>
-              <span className="relative size-20 shrink-0 overflow-hidden rounded-full border-4 border-white/60 shadow-lg dark:border-white/15">
-                <Image src={art.src} alt="" fill sizes="80px" className="object-cover" />
-              </span>
+          <div className="mt-5 space-y-2.5">
+            <ReserveRow
+              label="ETH reserve"
+              value={formatAmount(poolEth, 4)}
+              symbol="ETH"
+            />
+            <ReserveRow
+              label="ARIWA reserve"
+              value={formatAmount(poolTokens, 2)}
+              symbol="ARIWA"
+            />
+          </div>
+
+          <div className="mt-5 border-t border-ink/[0.08] pt-4">
+            <p className="font-mono text-[8px] uppercase tracking-[0.16em] text-ink-mute">
+              Contract
+            </p>
+            <div className="mt-1.5">
+              <CopyAddress address={SWAP_POOL_ADDRESS as string} />
             </div>
           </div>
-        </aside>
+        </div>
+
+        <div className="ui-container rounded-[26px] p-6">
+          <div className="flex items-center gap-2">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-mint/40 text-mint-ink">
+              <ShieldCheck className="size-4" />
+            </span>
+            <h2 className="font-header text-lg font-extrabold tracking-[-0.03em] text-ink">
+              How the desk works
+            </h2>
+          </div>
+          <ul className="mt-4 space-y-3">
+            <li className="flex items-start gap-2.5 text-[11.5px] leading-5 text-ink-soft">
+              <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-iris" />
+              The pool holds both ETH and ARIWA, so every swap settles instantly
+              against real reserves.
+            </li>
+            <li className="flex items-start gap-2.5 text-[11.5px] leading-5 text-ink-soft">
+              <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-iris" />
+              There is no owner-set rate: x × y = k prices each trade, so buys
+              push the price up and sells pull it down.
+            </li>
+            <li className="flex items-start gap-2.5 text-[11.5px] leading-5 text-ink-soft">
+              <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-iris" />
+              A {feeBps !== undefined ? (Number(feeBps) / 100).toFixed(2) : "0.30"}%
+              fee stays in the pool, and a 1% slippage guard protects each order.
+            </li>
+          </ul>
+          <Link
+            href="/faucet"
+            className="mt-4 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft transition hover:text-iris"
+          >
+            <Droplets className="size-3.5" />
+            Need testnet ETH?
+            <ArrowRight className="size-3" />
+          </Link>
+        </div>
+
+        <div
+          className={`relative overflow-hidden rounded-[26px] border p-5 ${tone.border} ${tone.panel}`}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="font-mono text-[8px] uppercase tracking-[0.18em] text-ink-soft">
+                Resident note
+              </p>
+              <p className="mt-2 max-w-[190px] font-header text-lg font-extrabold leading-tight tracking-[-0.03em] text-ink">
+                The pool never sleeps.
+              </p>
+              <p className="mt-2 max-w-[185px] text-[10.5px] leading-5 text-ink-soft">
+                Buy low, sell high, or just top up before the next raffle.
+              </p>
+            </div>
+            <span className="relative size-20 shrink-0 overflow-hidden rounded-full border-4 border-white/60 shadow-lg dark:border-white/15">
+              <Image src={art.src} alt="" fill sizes="80px" className="object-cover" />
+            </span>
+          </div>
+        </div>
       </div>
 
       <p className="mt-5 flex items-start gap-2 text-[11px] leading-5 text-ink-mute">

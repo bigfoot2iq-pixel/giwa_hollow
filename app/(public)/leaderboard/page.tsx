@@ -24,8 +24,8 @@ export default function LeaderboardPage() {
             Leaderboard
           </h1>
           <p className="mt-3 max-w-xl text-[13px] leading-6 text-ink-soft">
-            Ranked by ARIWA holdings and historical game scores. The quiet ones
-            at the top are usually the ones who kept showing up.
+            Ranked by ARIWA holdings. The quiet ones at the top are usually the
+            ones who kept showing up.
           </p>
         </div>
         <span className="pill">

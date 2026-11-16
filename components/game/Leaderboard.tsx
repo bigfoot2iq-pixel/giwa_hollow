@@ -1,12 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { useAccount } from 'wagmi';
-import { useLeaderboard } from '@/lib/hooks/useLeaderboard';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTokenHolders } from '@/lib/hooks/useTokenHolders';
 import { contracts } from '@/lib/contracts/config';
-import type { LeaderboardEntry } from '@/lib/supabase/types';
 
 const getRankBadge = (rank: number) => {
   if (rank === 1) return '🥇';
@@ -34,26 +31,7 @@ const copyToClipboard = (text: string) => {
 
 export default function Leaderboard() {
   const [copiedWallet, setCopiedWallet] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'game' | 'ariwa'>('ariwa');
-  const { address } = useAccount();
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab === 'game') {
-      setActiveTab('game');
-    } else {
-      setActiveTab('ariwa');
-    }
-  }, [searchParams]);
-
-  const handleTabChange = (tab: 'game' | 'ariwa') => {
-    setActiveTab(tab);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', tab);
-    router.push(`?${params.toString()}`);
-  };
 
   const handleCopy = (wallet: string) => {
     copyToClipboard(wallet);
@@ -62,76 +40,24 @@ export default function Leaderboard() {
   };
 
   const {
-    data: leaderboardData,
-    total,
-    hasMore: gameHasMore,
-    isLoading: gameIsLoading,
-    isRefreshing: gameIsRefreshing,
-    error: gameError,
-    refresh: gameRefresh,
-    loadMore: gameLoadMore,
-    isEmpty: gameIsEmpty
-  } = useLeaderboard({
-    limit: 10,
-    autoRefresh: activeTab === 'game',
-    refreshInterval: 30000,
-    currentUserWallet: address || null
-  });
-
-  const {
     holders,
-    totalHolders,
-    hasMore: holdersHasMore,
-    isLoading: holdersIsLoading,
-    isRefreshing: holdersIsRefreshing,
-    error: holdersError,
-    refresh: holdersRefresh,
-    loadMore: holdersLoadMore,
-    isEmpty: holdersIsEmpty
+    hasMore,
+    isLoading,
+    isRefreshing,
+    error,
+    refresh,
+    loadMore,
+    isEmpty
   } = useTokenHolders({
     tokenAddress: contracts.ariwaToken.address,
-    autoRefresh: activeTab === 'ariwa',
+    autoRefresh: true,
     refreshInterval: 30000
   });
 
-  const isLoading = activeTab === 'game' ? gameIsLoading : holdersIsLoading;
-  const isRefreshing = activeTab === 'game' ? gameIsRefreshing : holdersIsRefreshing;
-  const error = activeTab === 'game' ? gameError : holdersError;
-  const isEmpty = activeTab === 'game' ? gameIsEmpty : holdersIsEmpty;
-  const hasMore = activeTab === 'game' ? gameHasMore : holdersHasMore;
-  const refresh = activeTab === 'game' ? gameRefresh : holdersRefresh;
-  const loadMore = activeTab === 'game' ? gameLoadMore : holdersLoadMore;
-
-  const isLoadingMore = activeTab === 'game' 
-    ? (gameIsLoading && leaderboardData.length > 0)
-    : (holdersIsLoading && holders.length > 0);
+  const isLoadingMore = isLoading && holders.length > 0;
 
   return (
     <div className="space-y-4 lg:space-y-6">
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => handleTabChange('ariwa')}
-          className={`px-4 py-2 font-bold text-xs uppercase tracking-widest rounded transition-all ${
-            activeTab === 'ariwa'
-              ? 'bg-accent-warm border border-transparent text-background'
-              : 'bg-ink/[0.04] text-foreground hover:bg-ink/[0.07] border border-ink/15'
-          }`}
-        >
-          Ariwa Token
-        </button>
-        <button
-          onClick={() => handleTabChange('game')}
-          className={`px-4 py-2 font-bold text-xs uppercase tracking-widest rounded transition-all ${
-            activeTab === 'game'
-              ? 'bg-accent-warm border border-transparent text-background'
-              : 'bg-ink/[0.04] text-foreground hover:bg-ink/[0.07] border border-ink/15'
-          }`}
-        >
-          Game Score
-        </button>
-      </div>
-
       {/* Refresh Button */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <p className="text-xs sm:text-sm text-muted-blue">
@@ -151,20 +77,12 @@ export default function Leaderboard() {
       <div className="ui-container rounded overflow-hidden">
         {/* Header - Desktop */}
         <div className="hidden md:block bg-ink/[0.04] border-b border-ink/10 px-4 lg:px-6 py-4">
-          {activeTab === 'game' ? (
-            <div className="grid grid-cols-12 gap-4 text-[10px] font-bold uppercase tracking-widest text-muted-blue">
-              <div className="col-span-1">Rank</div>
-              <div className="col-span-8">Wallet</div>
-              <div className="col-span-3 text-right">Score</div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-12 gap-4 text-[10px] font-bold uppercase tracking-widest text-muted-blue">
-              <div className="col-span-1">Rank</div>
-              <div className="col-span-7">Wallet</div>
-              <div className="col-span-2 text-right">Quantity</div>
-              <div className="col-span-2 text-right">Percentage</div>
-            </div>
-          )}
+          <div className="grid grid-cols-12 gap-4 text-[10px] font-bold uppercase tracking-widest text-muted-blue">
+            <div className="col-span-1">Rank</div>
+            <div className="col-span-7">Wallet</div>
+            <div className="col-span-2 text-right">Quantity</div>
+            <div className="col-span-2 text-right">Percentage</div>
+          </div>
         </div>
 
         {/* Header - Mobile */}
@@ -172,17 +90,15 @@ export default function Leaderboard() {
           <div className="grid grid-cols-12 gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-blue">
             <div className="col-span-2">Rank</div>
             <div className="col-span-6">Wallet</div>
-            <div className="col-span-4 text-right">{activeTab === 'game' ? 'Score' : 'Qty'}</div>
+            <div className="col-span-4 text-right">Qty</div>
           </div>
         </div>
 
         {/* Loading State - Only show when no existing data */}
-        {isLoading && (
+        {isLoading && holders.length === 0 && (
           <div className="p-12 text-center">
             <div className="inline-block w-8 h-8 border-4 border-ink/15 border-t-[#6c55e0] rounded-full animate-spin mb-4"></div>
-            <p className="text-muted-blue">
-              {activeTab === 'game' ? 'Loading warriors...' : 'Loading holders...'}
-            </p>
+            <p className="text-muted-blue">Loading holders...</p>
           </div>
         )}
 
@@ -198,160 +114,88 @@ export default function Leaderboard() {
         {isEmpty && !isLoading && (
           <div className="p-12 text-center">
             <span className="material-symbols-outlined text-muted-blue text-6xl mb-4 block">emoji_events</span>
-            <p className="text-lg text-text-primary mb-2">
-              {activeTab === 'game' ? 'No warriors yet' : 'No holders yet'}
-            </p>
-            <p className="text-sm text-muted-blue">
-              {activeTab === 'game' ? 'Be the first to achieve a high score!' : 'Be the first to hold Ariwa Tokens!'}
-            </p>
+            <p className="text-lg text-text-primary mb-2">No holders yet</p>
+            <p className="text-sm text-muted-blue">Be the first to hold Ariwa Tokens!</p>
           </div>
         )}
 
         {/* Leaderboard Entries */}
-        {(!isLoading || leaderboardData.length > 0 || holders.length > 0) && !isEmpty && (
+        {(!isLoading || holders.length > 0) && !isEmpty && (
           <div className="divide-y divide-ink/10">
-            {activeTab === 'game' ? (
-              // Game Score Table
-              leaderboardData.map((player) => {
-                const isCurrentUser = Boolean(
-                  address && player.wallet_address.toLowerCase() === address.toLowerCase()
-                );
-
-                return (
-                  <div
-                    key={player.wallet_address}
-                    className={`hover:bg-ink/[0.04] transition-colors ${
-                      isCurrentUser ? 'bg-iris-strong/10 border-l-4 border-iris' : ''
-                    }`}
-                  >
-                    {/* Desktop Layout */}
-                    <div className="hidden md:grid grid-cols-12 gap-4 px-4 lg:px-6 py-4">
-                      {/* Rank */}
-                      <div className="col-span-1 flex items-center">
-                        <span className="text-xl lg:text-2xl">{getRankBadge(player.rank)}</span>
-                      </div>
-
-                      {/* Wallet */}
-                      <div className="col-span-8 flex items-center gap-2">
-                        <code className="font-mono text-xs lg:text-sm text-muted-blue">{formatWallet(player.wallet_address)}</code>
-                        <button
-                          onClick={() => handleCopy(player.wallet_address)}
-                          className="opacity-0 hover:opacity-100 transition-opacity p-1 hover:bg-ink/[0.07] rounded"
-                          title="Copy address"
-                        >
-                          <span className="material-symbols-outlined text-xs text-muted-blue">
-                            {copiedWallet === player.wallet_address ? 'check' : 'content_copy'}
-                          </span>
-                        </button>
-                      </div>
-
-                      {/* Score */}
-                      <div className="col-span-3 flex items-center justify-end">
-                        <p className={`text-lg lg:text-xl font-display font-bold ${isCurrentUser ? 'text-iris' : 'text-text-primary'}`}>
-                          {player.game_score.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Mobile Layout */}
-                    <div className="md:hidden grid grid-cols-12 gap-2 px-4 py-3">
-                      {/* Rank */}
-                      <div className="col-span-2 flex items-center">
-                        <span className="text-lg">{getRankBadge(player.rank)}</span>
-                      </div>
-
-                      {/* Wallet */}
-                      <div className="col-span-6 flex items-center gap-2 min-w-0">
-                        <code className="font-mono text-xs text-muted-blue truncate">{formatWallet(player.wallet_address)}</code>
-                      </div>
-
-                      {/* Score */}
-                      <div className="col-span-4 flex items-center justify-end">
-                        <p className={`text-base font-display font-bold ${isCurrentUser ? 'text-iris' : 'text-text-primary'}`}>
-                          {player.game_score.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              // Ariwa Token Table
-              holders.map((holder) => (
-                <div
-                  key={holder.address}
-                  className="hover:bg-ink/[0.04] transition-colors"
-                >
-                  {/* Desktop Layout */}
-                  <div className="hidden md:grid grid-cols-12 gap-4 px-4 lg:px-6 py-4">
-                    {/* Rank */}
-                    <div className="col-span-1 flex items-center">
-                      <span className="text-xl lg:text-2xl">{getRankBadge(holder.rank)}</span>
-                    </div>
-
-                    {/* Wallet */}
-                    <div className="col-span-7 flex items-center gap-2">
-                      <code className="font-mono text-xs lg:text-sm text-muted-blue">{formatWallet(holder.address)}</code>
-                      {holder.nameTag && (
-                        <span className="text-xs text-muted-blue hidden lg:inline">({holder.nameTag})</span>
-                      )}
-                      <button
-                        onClick={() => handleCopy(holder.address)}
-                        className="opacity-0 hover:opacity-100 transition-opacity p-1 hover:bg-ink/[0.07] rounded"
-                        title="Copy address"
-                      >
-                        <span className="material-symbols-outlined text-xs text-muted-blue">
-                          {copiedWallet === holder.address ? 'check' : 'content_copy'}
-                        </span>
-                      </button>
-                    </div>
-
-                    {/* Quantity */}
-                    <div className="col-span-2 flex items-center justify-end">
-                      <p className="text-lg lg:text-xl font-display font-bold text-text-primary">
-                        {formatQuantity(holder.quantity)}
-                      </p>
-                    </div>
-
-                    {/* Percentage */}
-                    <div className="col-span-2 flex flex-col items-end justify-center pl-6">
-                      <p className="text-sm font-bold text-text-primary mb-1">{holder.percentage}</p>
-                      <div className="w-full h-1.5 bg-ink/[0.07] rounded overflow-hidden">
-                        <div 
-                          className="h-full bg-iris-strong rounded"
-                          style={{ width: holder.percentage }}
-                        ></div>
-                      </div>
-                    </div>
+            {holders.map((holder) => (
+              <div
+                key={holder.address}
+                className="hover:bg-ink/[0.04] transition-colors"
+              >
+                {/* Desktop Layout */}
+                <div className="hidden md:grid grid-cols-12 gap-4 px-4 lg:px-6 py-4">
+                  {/* Rank */}
+                  <div className="col-span-1 flex items-center">
+                    <span className="text-xl lg:text-2xl">{getRankBadge(holder.rank)}</span>
                   </div>
 
-                  {/* Mobile Layout */}
-                  <div className="md:hidden grid grid-cols-12 gap-2 px-4 py-3">
-                    {/* Rank */}
-                    <div className="col-span-2 flex items-center">
-                      <span className="text-lg">{getRankBadge(holder.rank)}</span>
-                    </div>
+                  {/* Wallet */}
+                  <div className="col-span-7 flex items-center gap-2">
+                    <code className="font-mono text-xs lg:text-sm text-muted-blue">{formatWallet(holder.address)}</code>
+                    {holder.nameTag && (
+                      <span className="text-xs text-muted-blue hidden lg:inline">({holder.nameTag})</span>
+                    )}
+                    <button
+                      onClick={() => handleCopy(holder.address)}
+                      className="opacity-0 hover:opacity-100 transition-opacity p-1 hover:bg-ink/[0.07] rounded"
+                      title="Copy address"
+                    >
+                      <span className="material-symbols-outlined text-xs text-muted-blue">
+                        {copiedWallet === holder.address ? 'check' : 'content_copy'}
+                      </span>
+                    </button>
+                  </div>
 
-                    {/* Wallet */}
-                    <div className="col-span-6 flex items-center gap-2 min-w-0">
-                      <code className="font-mono text-xs text-muted-blue truncate">{formatWallet(holder.address)}</code>
-                    </div>
+                  {/* Quantity */}
+                  <div className="col-span-2 flex items-center justify-end">
+                    <p className="text-lg lg:text-xl font-display font-bold text-text-primary">
+                      {formatQuantity(holder.quantity)}
+                    </p>
+                  </div>
 
-                    {/* Quantity */}
-                    <div className="col-span-4 flex items-center justify-end">
-                        <p className="text-base font-display font-bold text-text-primary">
-                        {formatQuantity(holder.quantity)}
-                      </p>
+                  {/* Percentage */}
+                  <div className="col-span-2 flex flex-col items-end justify-center pl-6">
+                    <p className="text-sm font-bold text-text-primary mb-1">{holder.percentage}</p>
+                    <div className="w-full h-1.5 bg-ink/[0.07] rounded overflow-hidden">
+                      <div
+                        className="h-full bg-iris-strong rounded"
+                        style={{ width: holder.percentage }}
+                      ></div>
                     </div>
                   </div>
                 </div>
-              ))
-            )}
+
+                {/* Mobile Layout */}
+                <div className="md:hidden grid grid-cols-12 gap-2 px-4 py-3">
+                  {/* Rank */}
+                  <div className="col-span-2 flex items-center">
+                    <span className="text-lg">{getRankBadge(holder.rank)}</span>
+                  </div>
+
+                  {/* Wallet */}
+                  <div className="col-span-6 flex items-center gap-2 min-w-0">
+                    <code className="font-mono text-xs text-muted-blue truncate">{formatWallet(holder.address)}</code>
+                  </div>
+
+                  {/* Quantity */}
+                  <div className="col-span-4 flex items-center justify-end">
+                      <p className="text-base font-display font-bold text-text-primary">
+                      {formatQuantity(holder.quantity)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
         {/* Load More */}
-        {hasMore && !isLoading && (
+        {hasMore && !isEmpty && (
           <div className="p-4 lg:p-6 border-t border-ink/10 flex justify-center">
             <button
               onClick={loadMore}
@@ -364,7 +208,7 @@ export default function Leaderboard() {
                   Loading...
                 </>
               ) : (
-                activeTab === 'game' ? 'Load More Warriors' : 'Load More Holders'
+                'Load More Holders'
               )}
             </button>
           </div>

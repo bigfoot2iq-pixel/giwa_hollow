@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useAccount } from "wagmi";
-import { useTokenBalance, formatTokenBalance } from "@/lib/hooks";
+import { useTokenBalance, formatCompactBalance } from "@/lib/hooks";
 
 export function Header() {
   const pathname = usePathname();
@@ -14,6 +14,7 @@ export function Header() {
     if (pathname === "/") return "Profile Overview";
     if (pathname.startsWith("/trade")) return "Trade ARIWA";
     if (pathname.startsWith("/faucet")) return "Faucet";
+    if (pathname === "/create") return "Launch your collection";
     if (pathname === "/launchpad/request") return "Launch your collection";
     if (pathname.startsWith("/launchpad")) return "Launchpad";
     if (pathname.startsWith("/raffles")) return "Raffles";
@@ -61,8 +62,8 @@ export function Header() {
           <div className="px-2 lg:px-4 py-2 bg-iris/30 border border-iris/20 rounded-full flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-iris-strong animate-pulse"></div>
             <span className="text-[10px] lg:text-xs font-bold uppercase tracking-widest text-text-primary">
-              <span className="hidden sm:inline">{formatTokenBalance(balance)} </span>
-              <span className="sm:hidden">{formatTokenBalance(balance)} </span>
+              <span className="hidden sm:inline">{formatCompactBalance(balance)} </span>
+              <span className="sm:hidden">{formatCompactBalance(balance)} </span>
               ARIWA
             </span>
           </div>

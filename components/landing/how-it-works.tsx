@@ -23,7 +23,7 @@ const STEPS: Step[] = [
   {
     n: "02",
     title: "Get your ARIWA",
-    body: "Swap testnet ETH for ARIWA at the fixed-rate desk. It is the ticket to everything else.",
+    body: "Swap testnet ETH for ARIWA on the live AMM. It is the ticket to everything else.",
     href: "/trade",
     link: "Open the desk",
     icon: Coins,

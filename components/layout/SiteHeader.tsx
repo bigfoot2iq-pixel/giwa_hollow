@@ -7,7 +7,7 @@ import { useState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AlertTriangle, ChevronDown, Menu, Wallet, X } from "lucide-react";
 import { useAccount } from "wagmi";
-import { useAdminStatus, useTokenBalance, formatTokenBalance } from "@/lib/hooks";
+import { useAdminStatus, useTokenBalance, formatCompactBalance } from "@/lib/hooks";
 import { cn } from "@/lib/utils/cn";
 import { XAccountLink } from "./XAccountLink";
 import { ThemeToggle } from "./ThemeToggle";
@@ -17,6 +17,7 @@ const NAV = [
   { label: "Trade", href: "/trade" },
   { label: "Raffles", href: "/raffles" },
   { label: "Launchpad", href: "/launchpad" },
+  { label: "Create", href: "/create" },
   { label: "Faucet", href: "/faucet" },
   { label: "Leaderboard", href: "/leaderboard" },
 ] as const;
@@ -93,7 +94,7 @@ export function SiteHeader() {
           {address && balance !== undefined && (
             <span className="hidden items-center gap-1.5 rounded-full border border-iris/15 bg-iris/[0.06] px-3 py-1.5 font-mono text-[10px] tracking-[0.04em] text-iris-deep xl:inline-flex">
               <span className="iris-dot size-1.5" />
-              {formatTokenBalance(balance)} ARIWA
+              {formatCompactBalance(balance)} ARIWA
             </span>
           )}
 
@@ -150,7 +151,7 @@ export function SiteHeader() {
                 Your nook
               </p>
               <p className="mt-1 text-xs text-ink-soft">
-                {address ? formatTokenBalance(balance) + " ARIWA" : "Connect to step inside"}
+                {address ? formatCompactBalance(balance) + " ARIWA" : "Connect to step inside"}
               </p>
             </div>
             <WalletButton compact />
@@ -211,7 +212,7 @@ function WalletButton({ compact = false }: { compact?: boolean }) {
                     className="hidden h-10 items-center gap-1.5 rounded-full border border-ink/10 bg-paper/60 px-3 text-[11px] font-medium text-ink-soft transition hover:border-ink/20 hover:text-ink xl:inline-flex"
                   >
                     <span className="size-1.5 rounded-full bg-success" />
-                    GIWA
+                    {chain.name}
                   </button>
                   <button
                     type="button"

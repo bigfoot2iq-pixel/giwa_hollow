@@ -111,7 +111,7 @@ export function LaunchpadSummary({
                 </a>
               ) : null}
               <Link
-                href="/launchpad/request"
+                href="/create"
                 className="inline-flex h-9 items-center gap-2 rounded-full border border-ink/10 bg-paper/60 px-3.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-soft transition hover:border-iris/30 hover:bg-paper hover:text-iris"
               >
                 <Sparkles className="size-3.5" />

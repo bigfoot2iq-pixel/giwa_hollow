@@ -127,7 +127,7 @@ export function Roadmap() {
                     {phase.status}
                   </span>
                   <Link
-                    href={phase.status === "Live" ? "/raffles" : "/launchpad/request"}
+                    href={phase.status === "Live" ? "/raffles" : "/create"}
                     className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-ink-mute transition hover:text-iris"
                   >
                     {phase.status === "Live" ? "Step in" : "Peek ahead"}

@@ -1,12 +1,16 @@
 import pkg from "hardhat";
 const { ethers, run } = pkg;
 
-// The pool is a contract, not an EOA: it holds the ETH + ARIWA reserves and
-// trades against users at a fixed rate. Deployer becomes owner (rate + withdraw).
+// The pool is a constant-product AMM, not an EOA: it holds the ETH + ARIWA
+// reserves and prices every trade against them. Deployer becomes owner (fee +
+// withdraw). Seed liquidity sets the opening price.
 const ARIWA_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS;
 
-// ARIWA per 1 ETH. Small by default so a testnet faucet drip buys something.
+// Opening price used to derive the ARIWA seed when SWAP_POOL_TOKEN_FUNDING is
+// not set. Small by default so a testnet faucet drip buys something.
 const DEFAULT_TOKENS_PER_ETH = "10000";
+// Swap fee in basis points (30 = 0.30%), capped on-chain at 500 (5%).
+const DEFAULT_FEE_BPS = "30";
 // Seed liquidity so the page isn't empty on first load. Empty string skips.
 const DEFAULT_ETH_FUNDING = "0.05";
 const DEFAULT_TOKEN_FUNDING = "500";
@@ -37,16 +41,28 @@ async function main() {
     throw new Error("SWAP_POOL_TOKENS_PER_ETH must be greater than zero");
   }
 
+  const feeBpsRaw = process.env.SWAP_POOL_FEE_BPS ?? DEFAULT_FEE_BPS;
+  const feeBps = Number(feeBpsRaw);
+  if (!Number.isInteger(feeBps) || feeBps < 0 || feeBps > 500) {
+    throw new Error(
+      `SWAP_POOL_FEE_BPS must be a whole number from 0 to 500, got "${feeBpsRaw}"`,
+    );
+  }
+
   const ethFunding = parseAmount(
     process.env.SWAP_POOL_ETH_FUNDING,
     DEFAULT_ETH_FUNDING,
     "SWAP_POOL_ETH_FUNDING",
   );
-  const tokenFunding = parseAmount(
-    process.env.SWAP_POOL_TOKEN_FUNDING,
-    DEFAULT_TOKEN_FUNDING,
-    "SWAP_POOL_TOKEN_FUNDING",
-  );
+  // Without an explicit token amount, seed at the requested opening price.
+  const tokenFunding =
+    process.env.SWAP_POOL_TOKEN_FUNDING === undefined
+      ? (ethFunding * tokensPerEth) / ethers.WeiPerEther
+      : parseAmount(
+          process.env.SWAP_POOL_TOKEN_FUNDING,
+          DEFAULT_TOKEN_FUNDING,
+          "SWAP_POOL_TOKEN_FUNDING",
+        );
 
   const [deployer] = await ethers.getSigners();
   console.log("===================================================");
@@ -59,14 +75,23 @@ async function main() {
     "ETH",
   );
   console.log("AriwaToken:", ARIWA_TOKEN_ADDRESS);
-  console.log("Rate:", ethers.formatEther(tokensPerEth), "ARIWA per 1 ETH");
+  console.log("Swap fee:", (feeBps / 100).toFixed(2) + "%");
+  console.log(
+    "Opening price:",
+    ethers.formatEther(
+      tokenFunding > 0n && ethFunding > 0n
+        ? (tokenFunding * ethers.WeiPerEther) / ethFunding
+        : tokensPerEth,
+    ),
+    "ARIWA per 1 ETH",
+  );
   console.log("Seed ETH:", ethers.formatEther(ethFunding));
   console.log("Seed ARIWA:", ethers.formatEther(tokenFunding));
   console.log("");
 
   console.log("Deploying AriwaSwapPool...");
   const AriwaSwapPool = await ethers.getContractFactory("AriwaSwapPool");
-  const pool = await AriwaSwapPool.deploy(ARIWA_TOKEN_ADDRESS, tokensPerEth);
+  const pool = await AriwaSwapPool.deploy(ARIWA_TOKEN_ADDRESS, feeBps);
   await pool.waitForDeployment();
   const poolAddress = await pool.getAddress();
   console.log(`AriwaSwapPool deployed to: ${poolAddress}`);
@@ -149,7 +174,7 @@ async function main() {
   try {
     await run("verify:verify", {
       address: poolAddress,
-      constructorArguments: [ARIWA_TOKEN_ADDRESS, tokensPerEth],
+      constructorArguments: [ARIWA_TOKEN_ADDRESS, feeBps],
     });
     console.log("AriwaSwapPool verified!");
   } catch (error: unknown) {

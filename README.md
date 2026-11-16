@@ -1,6 +1,6 @@
 # GIWA ARIWA
 
-A dApp on **GIWA Sepolia** (OP Stack L2): a gas faucet hub, an ARIWA ERC-20, a fixed-rate ARIWA/ETH **swap pool**, platform **raffles**, and a pay-to-play **game** with a leaderboard.
+A dApp on **GIWA Sepolia** (OP Stack L2): a gas faucet hub, an ARIWA ERC-20, an AMM ARIWA/ETH **swap pool**, platform **raffles**, and a pay-to-play **game** with a leaderboard.
 
 Built with Next.js (App Router), wagmi + viem + RainbowKit, Supabase, and Hardhat/Solidity contracts.
 
@@ -51,8 +51,8 @@ Copy `.env.example` → `.env.local` and fill in:
 | `NEXT_PUBLIC_RAFFLES_CONTRACT_ADDRESS` | Raffles contract (set after deploy) |
 | `NEXT_PUBLIC_GAME_CONTRACT_ADDRESS` | Game contract (set after deploy) |
 | `NEXT_PUBLIC_LAUNCHPAD_NFT_ADDRESS` | Launchpad AriwaNFT (ERC721A, set after deploy) |
-| `NEXT_PUBLIC_SWAP_POOL_ADDRESS` | Fixed-rate ARIWA/ETH pool (set after deploy) |
-| `SWAP_POOL_TOKENS_PER_ETH` / `SWAP_POOL_ETH_FUNDING` / `SWAP_POOL_TOKEN_FUNDING` | Swap pool deploy inputs: rate and seed liquidity |
+| `NEXT_PUBLIC_SWAP_POOL_ADDRESS` | Constant-product ARIWA/ETH AMM pool (set after deploy) |
+| `SWAP_POOL_TOKENS_PER_ETH` / `SWAP_POOL_ETH_FUNDING` / `SWAP_POOL_TOKEN_FUNDING` / `SWAP_POOL_FEE_BPS` | Swap pool deploy inputs: opening price, seed liquidity, swap fee |
 | `ETHEREUM_RPC_URL` / `BNB_RPC_URL` / `BASE_RPC_URL` / `INK_RPC_URL` | Optional RPC overrides for the launchpad holder check |
 | `CRON_SECRET` | Auth for `/api/cron` |
 
@@ -61,16 +61,16 @@ Copy `.env.example` → `.env.local` and fill in:
 | Route | What |
 |---|---|
 | `/faucet` | Links to GIWA + Nodit faucets, add-network button, chain params |
-| `/trade` | Buy/sell ARIWA against the fixed-rate on-chain pool |
+| `/trade` | Buy/sell ARIWA against the live AMM pool |
 | `/launchpad` | Mint the launchpad NFT collection (holder-gated) |
-| `/launchpad/request` | Community form to request a collection launch |
+| `/create` | Community form to request a collection launch |
 | `/raffles` | Platform raffles created by the admin (maintenance until toggled) |
 | `/leaderboard` | Community and token-holder rankings |
 | `/admin` | Admin-only: launchpad (default tab), raffles, NFT collection controls, launch requests |
 
 ## Contracts
 
-`contracts/` - `AriwaToken.sol` (claim ERC-20, 12h cooldown), `AriwaSwapPool.sol` (fixed-rate ARIWA/ETH pool), `AriwaRaffles.sol`, `AriwaNFT.sol` (ERC721A launchpad collection), `TheAriwaGame.sol`, `StakingRewards.sol`.
+`contracts/` - `AriwaToken.sol` (claim ERC-20, 12h cooldown), `AriwaSwapPool.sol` (constant-product ARIWA/ETH AMM), `AriwaRaffles.sol`, `AriwaNFT.sol` (ERC721A launchpad collection), `TheAriwaGame.sol`, `StakingRewards.sol`.
 
 ```bash
 npx hardhat compile
@@ -95,7 +95,7 @@ npx hardhat run scripts/deploy-launchpad-nft.ts --network giwaSepolia
 ## Notes
 
 - **Faucet is link-only** — no server drip wallet; points at official GIWA/Nodit faucets.
-- **Swap pool** — `/trade` reads its rate and reserves from `AriwaSwapPool`. The owner sets `tokensPerEth` (default 10,000 ARIWA per ETH), can pause trading, and withdraws reserves. Top up with `addLiquidity(tokenAmount)` (approve ARIWA first) or a plain ETH transfer.
+- **Swap pool** — `/trade` reads live reserves and price samples from `AriwaSwapPool`, a constant-product (x × y = k) AMM. The deploy script seeds liquidity at an opening price (default 10,000 ARIWA per ETH) and sets a 0.30% swap fee; override with the `SWAP_POOL_*` vars. The owner can change the fee (capped at 5%), pause trading, or withdraw reserves. Top up with `addLiquidity(tokenAmount)` (approve ARIWA first) or a plain ETH transfer.
 - **Launchpad holder gate** - the Launchpad tab of `/admin` configures a minimum native balance on Ethereum, Base, Ink and/or BNB Chain. Each chain keeps its fixed native currency (ETH on Ethereum/Base/Ink, BNB on BNB Chain); only the minimum is editable. Defaults are `0.001 ETH` on Ethereum/Base/Ink and `0.003 BNB` on BNB Chain. The check runs server-side against public RPCs (override with `ETHEREUM_RPC_URL`, `BNB_RPC_URL`, `BASE_RPC_URL`, `INK_RPC_URL`). The holder rule is a UI/API gate; the NFT contract enforces the public phase, price, immutable 2,222 supply and per-wallet cap on-chain.
 - **AriwaNFT** — the launchpad collection mirrors the Elyziuma contract: ERC721A, `MAX_SUPPLY = 2222`, `maxPerWallet` starts at 1, `publicMintOpen` is an owner switch, and mint proceeds sit in the contract until the owner withdraws. The owner opens/closes the phase, changes the price and cap, mints to any wallet and sweeps the balance from the Launchpad tab of `/admin`.
 - **Raffles maintenance** — `/raffles` defaults to a maintenance screen. Toggle it live from Admin → Raffles.

@@ -62,3 +62,43 @@ export function formatTokenBalance(balance: bigint | undefined): string {
   if (balance === undefined) return "0.00";
   return parseFloat(formatEther(balance)).toFixed(2);
 }
+
+const COMPACT_UNITS = [
+  { size: 1e15, suffix: "Q" },
+  { size: 1e12, suffix: "T" },
+  { size: 1e9, suffix: "B" },
+  { size: 1e6, suffix: "M" },
+  { size: 1e3, suffix: "K" },
+] as const;
+
+function trimTrailingZeros(fixed: string): string {
+  if (!fixed.includes(".")) return fixed;
+  return fixed.replace(/0+$/, "").replace(/\.$/, "");
+}
+
+/**
+ * Shorten a token balance for tight spots like the header pill, where
+ * "99851034.97 ARIWA" would look padded. Becomes "99.9M ARIWA".
+ * Below 1,000 it keeps the same two decimals as formatTokenBalance.
+ */
+export function formatCompactBalance(balance: bigint | undefined): string {
+  if (balance === undefined) return "0";
+  const value = parseFloat(formatEther(balance));
+  if (!Number.isFinite(value) || value === 0) return "0";
+
+  let index = COMPACT_UNITS.findIndex((unit) => Math.abs(value) >= unit.size);
+  if (index === -1) return value.toFixed(2);
+
+  // Rounding can push 999,500 up to "1000K", so step up a unit when that happens.
+  for (; index >= 0; index -= 1) {
+    const scaled = value / COMPACT_UNITS[index].size;
+    const magnitude = Math.abs(scaled);
+    const digits = magnitude >= 100 ? 0 : magnitude >= 10 ? 1 : 2;
+    const rounded = trimTrailingZeros(scaled.toFixed(digits));
+    if (Math.abs(Number(rounded)) < 1000) {
+      return `${rounded}${COMPACT_UNITS[index].suffix}`;
+    }
+  }
+
+  return Math.round(value).toLocaleString("en-US");
+}

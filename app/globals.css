@@ -1382,11 +1382,15 @@ input[type="time"] {
 }
 
 /* RainbowKit pulls a light font stack and paper backgrounds from its own
-   stylesheet; nudge its modal onto the same night palette. */
+   stylesheet; nudge its modal onto the same night palette.
+   `profileForeground` is the account modal's *surface* colour (the panel
+   behind the address, balance and Disconnect actions), not a text colour.
+   Pointing it at `--ariwa-ink` painted that panel near-white while RainbowKit
+   kept its dark theme's white modal text, so the modal read as white-on-white. */
 .dark [data-rk] {
   --rk-colors-modalBackground: var(--ariwa-paper);
   --rk-colors-modalBorder: var(--line-strong);
-  --rk-colors-profileForeground: var(--ariwa-ink);
+  --rk-colors-profileForeground: var(--ariwa-cream-3);
   --rk-colors-menuItemBackground: var(--ariwa-cream-2);
 }
 

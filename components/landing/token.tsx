@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 
@@ -68,10 +69,7 @@ export function TokenSection() {
 
           <div className="flex justify-center lg:justify-end">
             <div className="w-full max-w-[360px] rounded-[30px] border border-white/10 bg-white/[0.06] p-5 backdrop-blur sm:p-6">
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-white/40">
-                  Token pass
-                </span>
+              <div className="flex items-center justify-end gap-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 font-mono text-[8px] uppercase tracking-[0.14em] text-white/60">
                   <span className="live-dot" />
                   Live
@@ -79,8 +77,15 @@ export function TokenSection() {
               </div>
 
               <div className="mt-7 flex items-center gap-4">
-                <span className="flex size-20 shrink-0 items-center justify-center rounded-[24px] bg-[linear-gradient(140deg,#b9acf5,#6c55e0)] font-header text-4xl font-extrabold text-white shadow-[0_18px_40px_-20px_rgba(108,85,224,0.9)]">
-                  A
+                <span className="relative size-20 shrink-0 overflow-hidden rounded-[24px] bg-[linear-gradient(140deg,#b9acf5,#6c55e0)] shadow-[0_18px_40px_-20px_rgba(108,85,224,0.9)] ring-1 ring-white/15">
+                  <Image
+                    src="/brand/ariwa-icon.webp"
+                    alt="ARIWA token icon"
+                    width={160}
+                    height={160}
+                    sizes="80px"
+                    className="size-full object-cover"
+                  />
                 </span>
                 <div className="min-w-0">
                   <p className="font-header text-[2rem] font-extrabold leading-none tracking-[-0.04em] text-white">

@@ -50,7 +50,7 @@ export function LaunchpadCta() {
 
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Link
-              href="/launchpad/request"
+              href="/create"
               className="btn-iris px-5 text-[11px]"
             >
               <Send className="size-3.5" />

@@ -310,8 +310,9 @@ export default function AdminDashboard() {
                 Swap pool
               </h2>
               <p className="mt-2 max-w-2xl text-[13px] leading-6 text-ink-soft">
-                Set the fixed ARIWA/ETH rate, pause or resume trading, and
-                withdraw the pool&apos;s ETH or ARIWA reserves.
+                Change the swap fee, top up liquidity, pause or resume trading,
+                and withdraw the pool&apos;s ETH or ARIWA reserves. Prices follow
+                the x × y = k curve automatically.
               </p>
             </div>
             <Link

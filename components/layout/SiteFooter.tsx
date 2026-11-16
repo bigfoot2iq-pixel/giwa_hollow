@@ -6,6 +6,7 @@ const PRODUCT = [
   { label: "Trade ARIWA", href: "/trade" },
   { label: "Raffles", href: "/raffles" },
   { label: "Launchpad", href: "/launchpad" },
+  { label: "Create", href: "/create" },
   { label: "Faucet", href: "/faucet" },
   { label: "Leaderboard", href: "/leaderboard" },
 ];

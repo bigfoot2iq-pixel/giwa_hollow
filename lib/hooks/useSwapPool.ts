@@ -1,15 +1,12 @@
 "use client";
 
 import {
-  useBalance,
   useReadContract,
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
 import {
   AriwaSwapPoolABI,
-  AriwaTokenABI,
-  contracts,
   IS_SWAP_POOL_CONFIGURED,
   SWAP_POOL_ADDRESS,
 } from "@/lib/contracts";
@@ -18,12 +15,80 @@ import {
 // address for the type checker.
 const POOL_ADDRESS = SWAP_POOL_ADDRESS as `0x${string}`;
 
+const ONE_ETHER = 10n ** 18n;
+
+/** How often the live reserves and chart refresh while the page is open. */
+const LIVE_REFRESH_MS = 8_000;
+
+/** Chart samples move only on trades, so a slower poll is enough. */
+const HISTORY_REFRESH_MS = 12_000;
+
+/**
+ * Live AMM state: both reserves, the current mid price, and the swap fee.
+ * Everything is derived on-chain from x * y = k, so the price moves with every
+ * buy and sell.
+ */
+export function useSwapPoolState() {
+  const query = useReadContract({
+    address: POOL_ADDRESS,
+    abi: AriwaSwapPoolABI,
+    functionName: "getPoolState",
+    query: {
+      enabled: IS_SWAP_POOL_CONFIGURED,
+      refetchInterval: LIVE_REFRESH_MS,
+    },
+  });
+
+  const state = query.data as
+    | readonly [bigint, bigint, bigint, bigint]
+    | undefined;
+
+  const ethReserve = state?.[0];
+  const tokenReserve = state?.[1];
+
+  return {
+    ethBalance: ethReserve,
+    tokenBalance: tokenReserve,
+    /** ARIWA per 1 ETH, 18 decimals. */
+    tokensPerEth: state?.[2],
+    /** ETH per 1 ARIWA, 18 decimals — the price a token chart plots. */
+    ethPerToken:
+      ethReserve !== undefined && tokenReserve !== undefined && tokenReserve > 0n
+        ? (ethReserve * ONE_ETHER) / tokenReserve
+        : undefined,
+    feeBps: state?.[3],
+    isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
+  };
+}
+
+/** Current mid rate as ARIWA per 1 ETH. */
 export function useSwapRate() {
   return useReadContract({
     address: POOL_ADDRESS,
     abi: AriwaSwapPoolABI,
     functionName: "tokensPerEth",
-    query: { enabled: IS_SWAP_POOL_CONFIGURED },
+    query: {
+      enabled: IS_SWAP_POOL_CONFIGURED,
+      refetchInterval: LIVE_REFRESH_MS,
+    },
+  });
+}
+
+/**
+ * On-chain price samples used by the trade chart. The contract records a point
+ * whenever a trade or liquidity move changes the price.
+ */
+export function usePriceHistory() {
+  return useReadContract({
+    address: POOL_ADDRESS,
+    abi: AriwaSwapPoolABI,
+    functionName: "getPriceHistory",
+    query: {
+      enabled: IS_SWAP_POOL_CONFIGURED,
+      refetchInterval: HISTORY_REFRESH_MS,
+    },
   });
 }
 
@@ -32,31 +97,21 @@ export function useSwapPoolPaused() {
     address: POOL_ADDRESS,
     abi: AriwaSwapPoolABI,
     functionName: "paused",
-    query: { enabled: IS_SWAP_POOL_CONFIGURED },
+    query: {
+      enabled: IS_SWAP_POOL_CONFIGURED,
+      refetchInterval: LIVE_REFRESH_MS,
+    },
   });
 }
 
-/** Live pool reserves: ETH held by the contract and its ARIWA balance. */
+/** Live pool reserves, kept as a thin alias for older call sites. */
 export function usePoolReserves() {
-  const eth = useBalance({
-    address: POOL_ADDRESS,
-    query: { enabled: IS_SWAP_POOL_CONFIGURED },
-  });
-
-  const tokens = useReadContract({
-    address: contracts.ariwaToken.address,
-    abi: AriwaTokenABI,
-    functionName: "balanceOf",
-    args: [POOL_ADDRESS],
-    query: {
-      enabled: IS_SWAP_POOL_CONFIGURED && Boolean(contracts.ariwaToken.address),
-    },
-  });
-
+  const state = useSwapPoolState();
   return {
-    ethBalance: eth.data?.value,
-    tokenBalance: tokens.data as bigint | undefined,
-    isLoading: eth.isLoading || tokens.isLoading,
+    ethBalance: state.ethBalance,
+    tokenBalance: state.tokenBalance,
+    tokensPerEth: state.tokensPerEth,
+    isLoading: state.isLoading,
   };
 }
 

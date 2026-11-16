@@ -119,7 +119,7 @@ export function LaunchpadSection() {
               <ArrowRight className="size-3.5" />
             </Link>
             <Link
-              href="/launchpad/request"
+              href="/create"
               className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft transition hover:text-iris"
             >
               Request a collection

@@ -8,7 +8,7 @@ const FAQS = [
   },
   {
     q: "How do I get ARIWA tokens?",
-    a: "Connect your wallet on GIWA Sepolia and open the trade page. The fixed-rate pool swaps testnet ETH for ARIWA, and the balance lands straight in your wallet.",
+    a: "Connect your wallet on GIWA Sepolia and open the trade page. The AMM pool swaps testnet ETH for ARIWA at the live curve price, and the balance lands straight in your wallet.",
   },
   {
     q: "What can I do with ARIWA?",
