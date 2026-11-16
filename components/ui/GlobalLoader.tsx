@@ -7,54 +7,26 @@ export function GlobalLoader() {
   const [isFading, setIsFading] = useState(false);
 
   useEffect(() => {
+    let hideTimer: ReturnType<typeof setTimeout> | undefined;
+
     const hide = () => {
       setIsFading(true);
-      setTimeout(() => setIsLoading(false), 500);
+      hideTimer = setTimeout(() => setIsLoading(false), 400);
     };
 
-    let isCancelled = false;
-
-    const requiredFonts = [
-      '400 1em "DM Sans"',
-      '500 1em "DM Sans"',
-      '600 1em "DM Sans"',
-      '700 1em "Bricolage Grotesque"',
-      '400 1em "Material Symbols Outlined"',
-    ];
-
-    const areAllFontsReady = () =>
-      requiredFonts.every((font) => document.fonts.check(font, "BESbswy"));
-
-    const waitUntilFontsAreApplied = async () => {
-      // All fonts are now served locally via next/font — document.fonts.ready
-      // reliably waits for all @font-face rules to register before we load.
-      await document.fonts.ready;
-      await Promise.all(requiredFonts.map((font) => document.fonts.load(font, "BESbswy")));
-
-      if (areAllFontsReady() || isCancelled) return;
-
-      const deadline = Date.now() + 4500;
-      while (!isCancelled && Date.now() < deadline) {
-        if (areAllFontsReady()) return;
-        await new Promise((resolve) => setTimeout(resolve, 50));
-      }
-    };
-
-    waitUntilFontsAreApplied().then(() => {
-      if (isCancelled) return;
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (!isCancelled) hide();
-        });
-      });
+    // This overlay used to wait up to 5s for every font weight (including the
+    // 1.1 MB icon font) and held pointer events while it did. It is branding,
+    // not a dependency: paint the first frame, then fade out. The font-face
+    // swap still prevents a flash of fallback text once content is visible.
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(hide);
     });
-
-    // Safety timeout — never block longer than 5s
-    const timeout = setTimeout(hide, 5000);
+    const safety = setTimeout(hide, 1_200);
 
     return () => {
-      isCancelled = true;
-      clearTimeout(timeout);
+      cancelAnimationFrame(frame);
+      clearTimeout(safety);
+      if (hideTimer) clearTimeout(hideTimer);
     };
   }, []);
 
@@ -73,7 +45,8 @@ export function GlobalLoader() {
         background: "var(--loader-bg)",
         opacity: isFading ? 0 : 1,
         transition: "opacity 0.4s ease-out",
-        pointerEvents: isFading ? "none" : "auto",
+        // Never intercept clicks, even at full opacity.
+        pointerEvents: "none",
       }}
     >
       {/* Spinner */}

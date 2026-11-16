@@ -1,17 +1,13 @@
-import { baseSepolia, bscTestnet, inkSepolia, sepolia } from "viem/chains";
+import { base, bsc, ink, mainnet } from "viem/chains";
 import { giwaSepolia } from "@/lib/contracts/config";
 
 /**
  * Chains the launchpad can use for the "must hold native tokens" gate.
  *
- * This deployment runs on **GIWA Sepolia**, so every gate chain is a testnet as
- * well: the balances a visitor can realistically hold are faucet balances. A
- * wallet funded from a Sepolia faucet must therefore satisfy the row labelled
- * "Ethereum Sepolia" — pointing the gate at mainnet silently reads 0 for
- * everyone and locks the mint.
- *
- * When this app ships on GIWA mainnet, swap these four back to `mainnet`,
- * `base`, `ink` and `bsc` (and re-seed the minimums in the admin UI).
+ * The four external checks always read **mainnet** balances: real ETH on
+ * Ethereum, Base and Ink, and real BNB on BNB Chain. The deployment itself is
+ * still on GIWA Sepolia (GIWA has no live mainnet), so that row keeps reading
+ * the deployment chain, where a wallet needs testnet ETH for mint gas anyway.
  *
  * Chain IDs, names and native currencies come from viem's canonical chain
  * definitions, except GIWA which reuses the app's own chain definition so the
@@ -35,42 +31,42 @@ export const HOLDER_CHAINS = {
     defaultMinAmount: "0.001",
   },
   ethereum: {
-    id: sepolia.id,
-    label: "Ethereum Sepolia",
-    symbol: sepolia.nativeCurrency.symbol,
-    decimals: sepolia.nativeCurrency.decimals,
+    id: mainnet.id,
+    label: mainnet.name,
+    symbol: mainnet.nativeCurrency.symbol,
+    decimals: mainnet.nativeCurrency.decimals,
     rpcEnv: "ETHEREUM_RPC_URL",
-    defaultRpc: "https://ethereum-sepolia-rpc.publicnode.com",
+    defaultRpc: "https://ethereum-rpc.publicnode.com",
     /** Default minimum native balance as a human-readable decimal string. */
     defaultMinAmount: "0.001",
   },
   base: {
-    id: baseSepolia.id,
-    label: "Base Sepolia",
-    symbol: baseSepolia.nativeCurrency.symbol,
-    decimals: baseSepolia.nativeCurrency.decimals,
+    id: base.id,
+    label: base.name,
+    symbol: base.nativeCurrency.symbol,
+    decimals: base.nativeCurrency.decimals,
     rpcEnv: "BASE_RPC_URL",
-    defaultRpc: "https://base-sepolia-rpc.publicnode.com",
+    defaultRpc: "https://base-rpc.publicnode.com",
     /** Default minimum native balance as a human-readable decimal string. */
     defaultMinAmount: "0.001",
   },
   ink: {
-    id: inkSepolia.id,
-    label: "Ink Sepolia",
-    symbol: inkSepolia.nativeCurrency.symbol,
-    decimals: inkSepolia.nativeCurrency.decimals,
+    id: ink.id,
+    label: ink.name,
+    symbol: ink.nativeCurrency.symbol,
+    decimals: ink.nativeCurrency.decimals,
     rpcEnv: "INK_RPC_URL",
-    defaultRpc: "https://rpc-gel-sepolia.inkonchain.com",
+    defaultRpc: "https://rpc-gel.inkonchain.com",
     /** Default minimum native balance as a human-readable decimal string. */
     defaultMinAmount: "0.001",
   },
   bnb: {
-    id: bscTestnet.id,
-    label: "BNB Testnet",
-    symbol: bscTestnet.nativeCurrency.symbol,
-    decimals: bscTestnet.nativeCurrency.decimals,
+    id: bsc.id,
+    label: "BNB Chain",
+    symbol: bsc.nativeCurrency.symbol,
+    decimals: bsc.nativeCurrency.decimals,
     rpcEnv: "BNB_RPC_URL",
-    defaultRpc: "https://bsc-testnet-rpc.publicnode.com",
+    defaultRpc: "https://bsc-rpc.publicnode.com",
     /** Default minimum native balance as a human-readable decimal string. */
     defaultMinAmount: "0.003",
   },

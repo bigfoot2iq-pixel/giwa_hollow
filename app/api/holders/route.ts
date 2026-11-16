@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { formatUnits } from 'viem';
+import { formatUnits, isAddress } from 'viem';
 import { giwaSepolia } from '@/lib/contracts/config';
 import { CACHE } from '@/lib/utils/cache';
 
@@ -24,6 +24,10 @@ const HOLDERS_PER_PAGE = 50;
 const MAX_CURSOR_PAGES = 20;
 
 const CACHE_TTL_MS = 60_000; // 60 seconds
+// Per-instance fast path. Bound it so arbitrary `address`/`page` inputs cannot
+// grow the map without limit on a long-lived worker.
+const MAX_CACHE_ENTRIES = 50;
+const EXPLORER_TIMEOUT_MS = 4_000;
 
 // The walk is bounded above, but a slow explorer still must not hold the
 // function open to the platform ceiling.
@@ -105,7 +109,9 @@ async function fetchHoldersUpTo(
       : '';
     const url = `${EXPLORER_BASE}/api/v2/tokens/${contractAddress}/holders${qs}`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(EXPLORER_TIMEOUT_MS),
+    });
     if (!response.ok) break;
 
     const data: BlockscoutHoldersResponse = await response.json();
@@ -133,7 +139,9 @@ async function fetchTokenInfo(
   contractAddress: string
 ): Promise<{ totalSupply: bigint; decimals: number; holdersCount: number | null }> {
   try {
-    const response = await fetch(`${EXPLORER_BASE}/api/v2/tokens/${contractAddress}`);
+    const response = await fetch(`${EXPLORER_BASE}/api/v2/tokens/${contractAddress}`, {
+      signal: AbortSignal.timeout(EXPLORER_TIMEOUT_MS),
+    });
     if (!response.ok) return { totalSupply: 0n, decimals: 18, holdersCount: null };
     const data: BlockscoutTokenInfo = await response.json();
     const holdersCount = data.holders_count ? parseInt(data.holders_count, 10) : NaN;
@@ -152,23 +160,31 @@ export async function GET(
 ): Promise<NextResponse<TokenHoldersResponse | { error: string }>> {
   try {
     const { searchParams } = new URL(request.url);
-    const contractAddress = searchParams.get('address') || ARIWA_TOKEN_ADDRESS;
+    const requestedAddress = searchParams.get('address');
+    const contractAddress = requestedAddress || ARIWA_TOKEN_ADDRESS;
     const pageParam = searchParams.get('page');
 
-    if (!contractAddress) {
+    if (!contractAddress || !isAddress(contractAddress, { strict: false })) {
       return NextResponse.json(
-        { error: 'Missing token address (and NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS env var is not set)' },
+        {
+          error:
+            'Missing or invalid token address (set NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS or pass ?address=)',
+        },
         { status: 400 }
       );
     }
 
-    const page = pageParam ? parseInt(pageParam, 10) : 1;
-    if (isNaN(page) || page < 1) {
+    const parsedPage = pageParam ? parseInt(pageParam, 10) : 1;
+    if (isNaN(parsedPage) || parsedPage < 1) {
       return NextResponse.json(
         { error: 'Invalid page number. Must be a positive integer.' },
         { status: 400 }
       );
     }
+
+    // The cursor walk is capped, so anything past MAX_CURSOR_PAGES can never be
+    // served. Clamping also keeps the cache key space bounded.
+    const page = Math.min(parsedPage, MAX_CURSOR_PAGES);
 
     // Cache key includes the walk depth: a page-1 walk cannot serve page 3.
     const needed = page * HOLDERS_PER_PAGE;
@@ -218,6 +234,10 @@ export async function GET(
         exhausted: walk.exhausted,
       };
       cache.set(cacheKey, { data, timestamp: Date.now() });
+      if (cache.size > MAX_CACHE_ENTRIES) {
+        const oldest = cache.keys().next().value;
+        if (oldest !== undefined) cache.delete(oldest);
+      }
     }
 
     const { sorted, totalSupply, decimals, totalHolders, exhausted } = data;

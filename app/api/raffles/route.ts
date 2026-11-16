@@ -10,6 +10,10 @@ import { CACHE } from "@/lib/utils/cache";
 // invocation rather than letting a slow upstream burn function duration.
 export const maxDuration = 15;
 
+// Upper bound on the rows scanned per request. The client pages at <= 50, and
+// every row costs an on-chain read, so scanning the whole table is never useful.
+const MAX_RAFFLE_SCAN = 300;
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServiceClient();
@@ -19,17 +23,24 @@ export async function GET(request: NextRequest) {
     // scope splits platform (owner) raffles from community (user-created) raffles.
     // Creator is on-chain truth: address(0) = platform, otherwise community.
     const scope = searchParams.get("scope") as "platform" | "community" | null;
-    const limit = parseInt(searchParams.get("limit") || "20");
-    const offset = parseInt(searchParams.get("offset") || "0");
+    const parsedLimit = parseInt(searchParams.get("limit") || "20", 10);
+    const parsedOffset = parseInt(searchParams.get("offset") || "0", 10);
+    const limit = Number.isFinite(parsedLimit)
+      ? Math.min(Math.max(parsedLimit, 1), 50)
+      : 20;
+    const offset = Number.isFinite(parsedOffset) ? Math.max(parsedOffset, 0) : 0;
     const now = new Date();
     const nowIso = now.toISOString();
 
     // Fetch every row matching the status filter (no DB range): scope filtering needs the
     // on-chain creator, which isn't a DB column, so pagination is applied after partitioning.
+    // Bound the scan anyway: an unbounded select() is a full-table read and the
+    // on-chain fan-out below is proportional to its size.
     let query = supabase
       .from("litvm_raffle_raffles")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(MAX_RAFFLE_SCAN);
 
     if (status) {
       if (status === "pending") {

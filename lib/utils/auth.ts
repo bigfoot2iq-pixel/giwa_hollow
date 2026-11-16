@@ -1,6 +1,13 @@
 import { NextRequest } from "next/server";
-import { verifyMessage } from "viem";
+import { isAddress, verifyMessage } from "viem";
 import { createServiceClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/utils/rateLimit";
+
+// The client caches one signature for five minutes, so the server window must
+// accept signatures that age. Anything further in the past — or in the future
+// (a clock-skew / replay trick the old one-sided check missed) — is rejected.
+const ADMIN_SIGNATURE_MAX_AGE_MS = 5 * 60 * 1000;
+const ADMIN_CLOCK_SKEW_MS = 30 * 1000;
 
 async function isAdminWallet(wallet: string) {
   const supabase = await createServiceClient();
@@ -22,11 +29,28 @@ async function isAdminWallet(wallet: string) {
 
 export async function verifyAdminSignature(request: NextRequest): Promise<boolean> {
   try {
+    // Every admin route funnels through here, so this is the one place a
+    // request flood can be stopped before it becomes a DB lookup + signature
+    // verification. 60/min leaves room for a dashboard's parallel reads.
+    const rate = checkRateLimit(request, "admin-auth", {
+      limit: 60,
+      windowMs: 60_000,
+    });
+    if (!rate.ok) {
+      return false;
+    }
+
     const wallet = request.headers.get("x-admin-wallet");
     const signature = request.headers.get("x-admin-signature");
     const timestamp = request.headers.get("x-admin-timestamp");
 
     if (!wallet || !signature || !timestamp) {
+      return false;
+    }
+
+    // Reject malformed addresses before they reach viem or the admin lookup.
+    // Without this, a header like "%" becomes an `ilike` wildcard in Postgres.
+    if (!isAddress(wallet, { strict: false })) {
       return false;
     }
 
@@ -36,10 +60,15 @@ export async function verifyAdminSignature(request: NextRequest): Promise<boolea
       return false;
     }
 
-    // Check timestamp (valid for 5 minutes)
-    const timestampNum = parseInt(timestamp);
-    const now = Date.now();
-    if (isNaN(timestampNum) || now - timestampNum > 5 * 60 * 1000) {
+    // Timestamp must be numeric and inside a symmetric freshness window:
+    // rejecting only old timestamps lets a far-future one replay forever.
+    const timestampNum = Number(timestamp);
+    const age = Date.now() - timestampNum;
+    if (
+      !Number.isFinite(timestampNum) ||
+      age > ADMIN_SIGNATURE_MAX_AGE_MS ||
+      age < -ADMIN_CLOCK_SKEW_MS
+    ) {
       return false;
     }
 

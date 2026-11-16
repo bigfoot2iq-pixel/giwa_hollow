@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAccount, useSignMessage } from "wagmi";
 import { format } from "date-fns";
 import Link from "next/link";
-import type { Raffle } from "@/lib/supabase";
+import type { Raffle, RaffleStatus } from "@/lib/supabase";
 import { getRaffleStatus } from "@/lib/utils/raffles";
 import { fromTokenUnits } from "@/lib/utils/erc20";
 import { formatCompactNumber } from "@/lib/utils/format";
@@ -48,6 +48,9 @@ export default function RaffleDetailPage() {
   const [manualParticipants, setManualParticipants] = useState<Array<{ address: string; tickets: number }>>([
     { address: "", tickets: 1 },
   ]);
+  // Captured once at mount: reading the clock during render is impure, and this
+  // panel re-renders on every poll.
+  const [renderedAt] = useState(() => Date.now());
   const authRef = useRef<{ wallet: string; signature: string; timestamp: string } | null>(null);
   const authPromiseRef = useRef<Promise<{ wallet: string; signature: string; timestamp: string }> | null>(null);
   const walletLower = address?.toLowerCase();
@@ -317,13 +320,18 @@ export default function RaffleDetailPage() {
   }
 
   const { raffle, entries, winners, prizes, chainStatus, chainEndTime } = data;
-  const status = getRaffleStatus(raffle.start_date, raffle.end_date, undefined, chainStatus as any);
+  const status = getRaffleStatus(
+    raffle.start_date,
+    raffle.end_date,
+    undefined,
+    chainStatus as RaffleStatus | undefined
+  );
 
   // Scheduled raffles (on-chain endTime > 0) revert endRaffle until their time
   // passes. Lock the End / Manual End buttons until then so a click can't fail
   // with "Raffle not yet ended". endTime 0 = owner-managed, endable anytime.
   const endTimeMs = chainEndTime ? chainEndTime * 1000 : 0;
-  const endLocked = endTimeMs > 0 && Date.now() < endTimeMs;
+  const endLocked = endTimeMs > 0 && renderedAt < endTimeMs;
   const endUnlockLabel = endLocked ? format(new Date(endTimeMs), "MMM d, yyyy HH:mm") : null;
 
   return (

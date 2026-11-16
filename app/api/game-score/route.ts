@@ -3,6 +3,7 @@ import { isAddress } from 'viem';
 import { createServiceClient } from '@/lib/supabase/server';
 import { findGameUser } from '@/lib/utils/gameUsersServer';
 import type { ScoreUpdateResponse } from '@/lib/supabase/types';
+import { CACHE } from '@/lib/utils/cache';
 
 export async function POST(request: NextRequest) {
   try {
@@ -110,7 +111,10 @@ export async function GET(request: NextRequest) {
     const user = await findGameUser(supabase, walletAddress);
     const gameScore = user?.game_score || 0;
 
-    return NextResponse.json({ score: gameScore });
+    return NextResponse.json(
+      { score: gameScore },
+      { headers: { 'Cache-Control': CACHE.walletProfile } }
+    );
   } catch (error) {
     console.error('Error in game-score GET API:', error);
     return NextResponse.json(

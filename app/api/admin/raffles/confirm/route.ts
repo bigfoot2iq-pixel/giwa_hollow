@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { verifyAdminSignature } from "@/lib/utils/auth";
 import { RobinhoodRafflesABI, giwaSepolia } from "@/lib/contracts";
-import { createPublicClient, getAddress, http, isAddress, parseEventLogs } from "viem";
+import { createPublicClient, getAddress, http, parseEventLogs } from "viem";
 import { z } from "zod";
 
 // Unique per raffle: the on-chain id is appended, and chain_raffle_id is a UNIQUE

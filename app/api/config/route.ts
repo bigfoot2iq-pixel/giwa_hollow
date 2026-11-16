@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { verifyAdminSignature } from "@/lib/utils/auth";
 import { CACHE } from "@/lib/utils/cache";
+import {
+  HOLDER_REQUIREMENTS_CONFIG_KEY,
+  RAFFLES_MAINTENANCE_CONFIG_KEY,
+} from "@/lib/launchpad/config";
+
+// The config table is a generic key/value store. Only these keys are safe to
+// expose without an admin signature; an allowlist means a future secret can
+// never leak just because it was stored under the same table.
+const PUBLIC_CONFIG_KEYS = new Set<string>([
+  HOLDER_REQUIREMENTS_CONFIG_KEY,
+  RAFFLES_MAINTENANCE_CONFIG_KEY,
+]);
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,6 +22,10 @@ export async function GET(request: NextRequest) {
 
     if (!key) {
       return NextResponse.json({ error: "Key is required" }, { status: 400 });
+    }
+
+    if (!PUBLIC_CONFIG_KEYS.has(key)) {
+      return NextResponse.json({ error: "Config not found" }, { status: 404 });
     }
 
     const supabase = await createServiceClient();
@@ -47,15 +63,28 @@ export async function POST(request: NextRequest) {
 
     const { key, value } = await request.json();
 
-    if (!key || value === undefined) {
+    if (typeof key !== "string" || key.length === 0 || key.length > 64) {
+      return NextResponse.json({ error: "Key is required" }, { status: 400 });
+    }
+
+    if (!/^[a-z0-9_]+$/.test(key)) {
+      return NextResponse.json({ error: "Invalid key format" }, { status: 400 });
+    }
+
+    if (value === undefined || value === null) {
       return NextResponse.json({ error: "Key and value are required" }, { status: 400 });
+    }
+
+    const serialized = typeof value === "string" ? value : JSON.stringify(value);
+    if (serialized.length > 20_000) {
+      return NextResponse.json({ error: "Value is too large" }, { status: 400 });
     }
 
     const supabase = await createServiceClient();
     const { data, error } = await supabase
       .from("litvm_raffle_config")
       .upsert(
-        { key, value: String(value), updated_at: new Date().toISOString() },
+        { key, value: serialized, updated_at: new Date().toISOString() },
         { onConflict: "key" }
       )
       .select()

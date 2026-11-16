@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { verifyAdminSignature } from "@/lib/utils/auth";
-import { RobinhoodRafflesABI, contracts, giwaSepolia } from "@/lib/contracts";
+import { contracts, giwaSepolia } from "@/lib/contracts";
 import { getOnChainRaffleMeta, ZERO_ADDRESS } from "@/lib/utils/chain";
 import {
   createPublicClient,
-  createWalletClient,
   getAddress,
   http,
   isAddress,
   parseAbi,
-  parseEventLogs,
 } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
 import { z } from "zod";
 
 const isUintString = (value: string) => /^\d+$/.test(value);
@@ -111,21 +108,28 @@ export async function GET(request: NextRequest) {
     // Creator is on-chain truth: address(0) = platform, otherwise community. Because the
     // creator isn't a DB column, every row is fetched and partitioned/paginated in-app.
     const scope = searchParams.get("scope") as "platform" | "community" | null;
-    const limit = parseInt(searchParams.get("limit") || "20");
-    const offset = parseInt(searchParams.get("offset") || "0");
+    const parsedLimit = parseInt(searchParams.get("limit") || "20", 10);
+    const parsedOffset = parseInt(searchParams.get("offset") || "0", 10);
+    const limit = Number.isFinite(parsedLimit)
+      ? Math.min(Math.max(parsedLimit, 1), 100)
+      : 20;
+    const offset = Number.isFinite(parsedOffset) ? Math.max(parsedOffset, 0) : 0;
 
-    const { data, error } = await supabase
-      .from("litvm_raffle_raffles")
-      .select("*")
-      .order("created_at", { ascending: false });
+    // Stats and the raffle page are independent reads; overlapping them removes
+    // one Supabase round-trip from every admin dashboard load.
+    const [{ data, error }, { data: stats }] = await Promise.all([
+      supabase
+        .from("litvm_raffle_raffles")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(500),
+      supabase.rpc("litvm_raffle_get_admin_stats"),
+    ]);
 
     if (error) {
       console.error("Error fetching raffles:", error);
       return NextResponse.json({ error: "Failed to fetch raffles" }, { status: 500 });
     }
-
-    // Get stats
-    const { data: stats } = await supabase.rpc("litvm_raffle_get_admin_stats");
 
     // Read on-chain meta (state + creator) for every deployed raffle, then partition by scope.
     const chainMeta = await getOnChainRaffleMeta(
@@ -155,29 +159,31 @@ export async function GET(request: NextRequest) {
     if (raffleIds.length > 0) {
       // Counted in the database: tallying rows in JS stopped at PostgREST's
       // 1000-row cap, so a full 10,000-entrant raffle showed as 1,000 here.
-      const { data: counts, error: entriesError } = await supabase.rpc("litvm_raffle_entry_counts", {
-        p_raffle_ids: raffleIds,
-      });
+      // Both reads only depend on raffleIds, so run them together.
+      const [countsResult, prizesResult] = await Promise.all([
+        supabase.rpc("litvm_raffle_entry_counts", {
+          p_raffle_ids: raffleIds,
+        }),
+        supabase
+          .from("litvm_raffle_prizes")
+          .select("raffle_id, prize_type")
+          .in("raffle_id", raffleIds),
+      ]);
 
-      if (entriesError) {
-        console.error("Error fetching raffle participants:", entriesError);
+      if (countsResult.error) {
+        console.error("Error fetching raffle participants:", countsResult.error);
       } else {
-        counts?.forEach((row: { raffle_id: string; participants: number }) => {
-          participantsByRaffle.set(row.raffle_id, Number(row.participants));
-        });
+        countsResult.data?.forEach(
+          (row: { raffle_id: string; participants: number }) => {
+            participantsByRaffle.set(row.raffle_id, Number(row.participants));
+          }
+        );
       }
-    }
 
-    if (raffleIds.length > 0) {
-      const { data: prizes, error: prizesError } = await supabase
-        .from("litvm_raffle_prizes")
-        .select("raffle_id, prize_type")
-        .in("raffle_id", raffleIds);
-
-      if (prizesError) {
-        console.error("Error fetching raffle prizes:", prizesError);
+      if (prizesResult.error) {
+        console.error("Error fetching raffle prizes:", prizesResult.error);
       } else {
-        prizes?.forEach((prize) => {
+        prizesResult.data?.forEach((prize) => {
           const existing = prizeTypesByRaffle.get(prize.raffle_id) || [];
           existing.push(prize.prize_type);
           prizeTypesByRaffle.set(prize.raffle_id, existing);

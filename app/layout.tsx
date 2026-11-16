@@ -34,6 +34,10 @@ const materialSymbols = localFont({
   variable: "--font-material-symbols",
   display: "swap",
   weight: "100 700",
+  // This is a ~1.1 MB icon font. Preloading it competes with the real
+  // above-the-fold assets (and used to gate the loader overlay). Icons swap in
+  // a moment later, which is invisible next to the LCP win.
+  preload: false,
 });
 
 export const metadata: Metadata = {

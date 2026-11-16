@@ -27,7 +27,13 @@ export async function GET(
 
   try {
     const metadata = await fetchTokenMetadata(tokenId);
-    const origin = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+    // Prefer an explicitly configured origin. Falling back to the request host
+    // makes the publicly cached JSON depend on the Host header, which is a
+    // cache-poisoning foot-gun on any deployment with wildcard hostnames.
+    const origin =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      request.nextUrl.origin;
 
     return NextResponse.json(
       {

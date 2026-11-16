@@ -3,9 +3,17 @@ import { getAddress, isAddress } from 'viem';
 import { createServiceClient } from '@/lib/supabase/server';
 import type { ScoreUpdateResponse } from '@/lib/supabase/types';
 import { verifyScoreSignature, isScorePlausible } from '@/lib/utils/scoreAuth';
+import { checkRateLimit, rateLimitResponse } from '@/lib/utils/rateLimit';
 
 // POST - Complete game session and update high score (merged endpoint)
 export async function POST(request: NextRequest) {
+  // Signature verification is CPU work an anonymous caller can trigger; bound it.
+  const rate = checkRateLimit(request, 'game-session-complete:post', {
+    limit: 20,
+    windowMs: 60_000,
+  });
+  if (!rate.ok) return rateLimitResponse(rate.retryAfterSeconds);
+
   try {
     const body = await request.json();
     const { sessionId, walletAddress, score, signature } = body;

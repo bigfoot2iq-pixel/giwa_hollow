@@ -131,7 +131,8 @@ export function useGameSession(options: UseGameSessionOptions = {}) {
       const data: CompleteSessionResponse = await response.json()
 
       if (!response.ok || !data.success) {
-        throw new Error((data as any).error || 'Failed to complete session')
+        const errorMessage = (data as { error?: string }).error
+        throw new Error(errorMessage || 'Failed to complete session')
       }
 
       // Clear the session after completion

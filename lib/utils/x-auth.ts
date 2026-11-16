@@ -9,15 +9,13 @@ const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 export function generateOAuthState(): string {
   const array = new Uint8Array(32);
 
-  // Use Web Crypto API (available in both browser and Node.js 15+)
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    crypto.getRandomValues(array);
-  } else if (typeof window === 'undefined') {
-    // Fallback for older Node.js versions
-    const nodeCrypto = require('crypto');
-    nodeCrypto.randomFillSync(array);
+  // Web Crypto is available in every browser we support and in Node 18+.
+  // (The old CommonJS fallback pulled node:crypto into the client bundle.)
+  if (typeof crypto === "undefined" || !crypto.getRandomValues) {
+    return "";
   }
 
+  crypto.getRandomValues(array);
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 

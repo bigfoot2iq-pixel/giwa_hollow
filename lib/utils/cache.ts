@@ -63,6 +63,18 @@ export const CACHE = {
    */
   adminAccess: cacheControl({ browser: 300, cdn: 0, private: true }),
   /**
+   * A wallet's own game/profile reads. Private and short-lived: the wallet is
+   * in the URL, but these rows change as soon as the player registers, opens a
+   * session, or submits a score. The browser cache absorbs the repeat mounts
+   * that dominated Supabase egress.
+   */
+  walletProfile: cacheControl({ browser: 15, cdn: 0, private: true }),
+  /**
+   * A wallet's raffle activity (entries, wins, transactions). Same shape as
+   * walletProfile, but these lists are heavier to assemble.
+   */
+  walletActivity: cacheControl({ browser: 30, cdn: 0, private: true }),
+  /**
    * A wallet's entry count for one raffle. This was the only read route serving
    * no Cache-Control at all, so every mount of RaffleEntryForm reached Postgres
    * — at ~200k requests/day it was the single largest consumer of the Supabase

@@ -15,6 +15,16 @@ export async function GET(
     const page = parseInt(searchParams.get("page") || "0");
     const limit = parseInt(searchParams.get("limit") || "10");
     const walletSearch = searchParams.get("wallet")?.toLowerCase().trim() || "";
+
+    // The wallet filter is an ILIKE prefix/substring scan. Restrict it to a
+    // partial hex address: arbitrary text would force a full table scan (and
+    // `%` would turn the filter into a wildcard match on every row).
+    if (walletSearch && !/^0x[a-f0-9]{0,40}$/.test(walletSearch)) {
+      return NextResponse.json(
+        { error: "Wallet filter must be a partial 0x address" },
+        { status: 400 }
+      );
+    }
     
     // Validate pagination parameters
     if (isNaN(page) || page < 0) {

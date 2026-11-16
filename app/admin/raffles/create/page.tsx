@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAccount, useSignMessage, useReadContract, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useSignMessage, usePublicClient, useWriteContract } from "wagmi";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { privateKeyToAccount } from "viem/accounts";
 import { ERC20_DECIMALS_ABI, toTokenUnits } from "@/lib/utils/erc20";
 import { formatCompactNumber } from "@/lib/utils/format";
 import { RobinhoodRafflesABI, contracts } from "@/lib/contracts";
@@ -15,6 +14,14 @@ import { savePendingCreate, loadPendingCreate, clearPendingCreate } from "@/lib/
 
 const normalizePrizeValues = (values: Array<{ value: string }>) =>
   values.map((item) => item.value.trim()).filter((value) => value.length > 0);
+
+type VerificationDetails = {
+  name?: string;
+  symbol?: string;
+  balance?: string;
+  ownerAddress?: string;
+  decimals?: number;
+};
 
 const isUintString = (value: string) => /^\d+$/.test(value);
 
@@ -118,11 +125,11 @@ export default function CreateRafflePage() {
   const [error, setError] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>("idle");
   const [verificationError, setVerificationError] = useState<string | null>(null);
-  const [verificationDetails, setVerificationDetails] = useState<any>(null);
+  const [verificationDetails, setVerificationDetails] =
+    useState<VerificationDetails | null>(null);
   const [tokenDecimals, setTokenDecimals] = useState<number | null>(null);
   const [tokenSymbol, setTokenSymbol] = useState<string | null>(null);
   const [fetchingTokenInfo, setFetchingTokenInfo] = useState(false);
-  const [pendingRaffleData, setPendingRaffleData] = useState<any>(null);
   const [pendingTxHash, setPendingTxHash] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [pendingConfirmData, setPendingConfirmData] = useState<any>(null);
@@ -539,6 +546,9 @@ export default function CreateRafflePage() {
           address: contracts.raffles.address as `0x${string}`,
           abi: RobinhoodRafflesABI,
           functionName: transaction.functionName,
+          // The argument tuple is built dynamically from the form; wagmi's
+          // generic can't narrow it from the runtime functionName.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           args: convertedArgs as any,
         });
 
@@ -1034,7 +1044,7 @@ export default function CreateRafflePage() {
               <div className="flex-1">
                 <p className="text-yellow-400 font-medium mb-1">Prize Verification Recommended</p>
                 <p className="text-xs text-yellow-300">
-                  It's highly recommended to verify your prize tokens/NFTs before creating the raffle to ensure they exist and are owned by your connected wallet.
+                  It&apos;s highly recommended to verify your prize tokens/NFTs before creating the raffle to ensure they exist and are owned by your connected wallet.
                 </p>
               </div>
             </div>

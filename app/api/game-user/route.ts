@@ -3,10 +3,20 @@ import { getAddress, isAddress } from "viem";
 import { createServiceClient } from "@/lib/supabase/server";
 import { findGameUser } from "@/lib/utils/gameUsersServer";
 import { verifyProfileSignature } from "@/lib/utils/profileAuth";
+import { CACHE } from "@/lib/utils/cache";
+import { checkRateLimit, rateLimitResponse } from "@/lib/utils/rateLimit";
 
 const AVATAR_BUCKET = "litvm-raffle-avatars";
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const MAX_USERNAME_LENGTH = 32;
+// SVG is deliberately excluded: avatars live in a public bucket, and an SVG
+// served as image/svg+xml can execute script when opened directly.
+const ALLOWED_AVATAR_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+]);
 
 function avatarFileNameFromUrl(url: string): string | null {
   try {
@@ -33,7 +43,10 @@ export async function GET(request: NextRequest) {
     const supabase = await createServiceClient();
     const user = await findGameUser(supabase, wallet);
 
-    return NextResponse.json({ user });
+    return NextResponse.json(
+      { user },
+      { headers: { "Cache-Control": CACHE.walletProfile } }
+    );
   } catch (error) {
     console.error("Error in GET /api/game-user:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -43,11 +56,26 @@ export async function GET(request: NextRequest) {
 // PATCH - create/update the profile. Requires a fresh wallet signature over
 // (wallet, username, timestamp) so only the wallet owner can write its row.
 export async function PATCH(request: NextRequest) {
+  const rate = checkRateLimit(request, "game-user:patch", {
+    limit: 12,
+    windowMs: 60_000,
+  });
+  if (!rate.ok) return rateLimitResponse(rate.retryAfterSeconds);
+
   try {
     const formData = await request.formData();
 
     const wallet = String(formData.get("wallet") ?? "");
-    const username = String(formData.get("username") ?? "").trim();
+    // Signature verification must use exactly what the wallet signed, so keep
+    // the submitted value for auth and sanitize a separate copy for storage.
+    const rawUsername = String(formData.get("username") ?? "").trim();
+    // Strip C0/C1 control characters and collapse whitespace: usernames are
+    // rendered in the leaderboard and profile cards, so line breaks and bidi
+    // control characters would otherwise leak into the UI.
+    const username = rawUsername
+      .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2066-\u2069]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
     const timestamp = Number(formData.get("timestamp"));
     const signature = String(formData.get("signature") ?? "");
     const removeImage = formData.get("removeImage") === "true";
@@ -66,7 +94,7 @@ export async function PATCH(request: NextRequest) {
 
     const signatureValid = await verifyProfileSignature({
       walletAddress: wallet,
-      username,
+      username: rawUsername,
       timestamp,
       signature,
     });
@@ -112,8 +140,11 @@ export async function PATCH(request: NextRequest) {
       if (image.size > MAX_AVATAR_BYTES) {
         return NextResponse.json({ error: "Image must be less than 2MB" }, { status: 400 });
       }
-      if (!image.type.startsWith("image/")) {
-        return NextResponse.json({ error: "File must be an image" }, { status: 400 });
+      if (!ALLOWED_AVATAR_TYPES.has(image.type)) {
+        return NextResponse.json(
+          { error: "Image must be a PNG, JPEG, WebP, or GIF" },
+          { status: 400 }
+        );
       }
 
       const extension =

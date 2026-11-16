@@ -3,9 +3,18 @@ import { isAddress } from 'viem';
 import { createServiceClient } from '@/lib/supabase/server';
 import { ensureGameUser, findGameUser } from '@/lib/utils/gameUsersServer';
 import { verifyPayment } from '@/lib/utils/verifyPayment';
+import { CACHE } from '@/lib/utils/cache';
+import { checkRateLimit, rateLimitResponse } from '@/lib/utils/rateLimit';
 
 // POST - Create a new game session after payment verification
 export async function POST(request: NextRequest) {
+  // Payment verification is an RPC round-trip; reject floods before it.
+  const rate = checkRateLimit(request, 'game-session:post', {
+    limit: 12,
+    windowMs: 60_000,
+  });
+  if (!rate.ok) return rateLimitResponse(rate.retryAfterSeconds);
+
   try {
     const body = await request.json();
     const { walletAddress, txHash } = body;
@@ -113,10 +122,13 @@ export async function GET(request: NextRequest) {
     // No profile row yet means no session can exist for this wallet.
     const user = await findGameUser(supabase, walletAddress);
     if (!user) {
-      return NextResponse.json({
-        success: true,
-        hasActiveSession: false
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          hasActiveSession: false
+        },
+        { headers: { "Cache-Control": CACHE.walletProfile } }
+      );
     }
 
     const { data, error } = await supabase.rpc('litvm_raffle_get_active_session', {
@@ -140,13 +152,16 @@ export async function GET(request: NextRequest) {
       reason?: string;
     };
 
-    return NextResponse.json({
-      success: true,
-      hasActiveSession: result.has_active_session,
-      sessionId: result.session_id,
-      expiresAt: result.expires_at,
-      createdAt: result.created_at
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        hasActiveSession: result.has_active_session,
+        sessionId: result.session_id,
+        expiresAt: result.expires_at,
+        createdAt: result.created_at
+      },
+      { headers: { "Cache-Control": CACHE.walletProfile } }
+    );
   } catch (error) {
     console.error('Error in game-session GET:', error);
     return NextResponse.json(

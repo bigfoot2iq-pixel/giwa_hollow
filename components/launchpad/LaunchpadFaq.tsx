@@ -36,7 +36,7 @@ export function LaunchpadFaq({
     {
       question: "Why does the panel check holder balances?",
       answer:
-        "Some drops ask for a minimum native-token balance on Ethereum Sepolia, Base Sepolia, Ink Sepolia, BNB Testnet, or GIWA Sepolia itself. The check is read-only: it never moves funds and never asks you to sign. If no requirements are configured, every wallet can mint.",
+        "Some drops ask for a minimum native-token balance on Ethereum, Base, Ink or BNB Chain (real mainnet balances — ETH on the first three, BNB on BNB Chain), or on GIWA Sepolia itself. The check is read-only: it never moves funds and never asks you to sign. If no requirements are configured, every wallet can mint.",
     },
     {
       question: "What is the maximum per wallet?",
