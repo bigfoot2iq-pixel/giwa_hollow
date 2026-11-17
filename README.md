@@ -56,12 +56,17 @@ Copy `.env.example` → `.env.local` and fill in:
 | `ETHEREUM_RPC_URL` / `BNB_RPC_URL` / `BASE_RPC_URL` / `INK_RPC_URL` | Optional RPC overrides for the launchpad holder check |
 | `LAUNCHPAD_COLLECTION` / `LAUNCHPAD_ART_SUPPLY` | Launchpad R2 collection slug + expected token count |
 | `UPLOAD_TOKEN_SECRET` | HMAC secret for admin launchpad upload sessions (server-only) |
-| `LAUNCHPAD_METADATA_CID` / `LAUNCHPAD_IMAGE_CID` / `PINATA_GATEWAY_URL` | Legacy Pinata fallback, used only until an R2 version is activated |
+| `LAUNCHPAD_BASE_URI` | Metadata base the contract appends `${tokenId}.json` to; the live ARIWA value is the direct Pinata gateway |
+| `LAUNCHPAD_METADATA_CID` / `LAUNCHPAD_IMAGE_CID` / `PINATA_GATEWAY_URL` | Live Pinata CIDs and gateway, also used by the optional app proxy |
 | `CRON_SECRET` | Auth for `/api/cron` |
 
-Launchpad artwork lives in the private `ariwa-nft` R2 bucket through the
-`NFT_BUCKET` binding in `wrangler.jsonc`; upload and activate it from
-`/admin` → Launchpad → Artwork & metadata. See **[SETUP_GIWA.md](./SETUP_GIWA.md#5-launchpad-artwork-storage-cloudflare-r2)**.
+The live ARIWA ERC-721 points directly at Pinata
+(`https://gateway.pinata.cloud/ipfs/bafybeiaur…/`), so the NFT does not depend
+on the app proxy or the Cloudflare WAF. The public `/api/launchpad/metadata`
+and `/api/launchpad/image` proxy routes and the admin uploader have been
+removed from the app. The private `ariwa-nft` R2 bucket and backend code remain
+in the repo for a future deliberate re-enable. See
+**[SETUP_GIWA.md](./SETUP_GIWA.md#5-launchpad-artwork-storage)**.
 
 ## Pages
 

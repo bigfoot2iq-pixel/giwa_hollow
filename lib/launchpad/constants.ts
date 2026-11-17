@@ -16,12 +16,11 @@ export const LAUNCHPAD_ART_SUPPLY = Number(
 );
 
 /**
- * Legacy Pinata source. Kept as a read-only fallback until an R2 version has
- * been activated; the old gateway URLs are the rollback for the migration.
+ * Live Pinata source. The ARIWA contract points directly at the metadata
+ * gateway; the same CIDs also back the optional app proxy / legacy fallback.
  *
  * The metadata directory holds `<id>.json` files. Their `image` fields point
- * at the artwork directory below, which holds `<id>.png` files. Both CIDs stay
- * server-side: the contract only ever sees this app's `/api/launchpad/*` URLs.
+ * at the artwork directory below, which holds `<id>.png` files.
  */
 export const LEGACY_METADATA_CID =
   process.env.LAUNCHPAD_METADATA_CID ||
