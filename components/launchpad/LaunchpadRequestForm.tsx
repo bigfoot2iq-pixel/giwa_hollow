@@ -264,11 +264,11 @@ export function LaunchpadRequestForm({
                 maxLength={120}
                 value={form.collection_name}
                 onChange={(event) => update("collection_name", event.target.value)}
-                placeholder="Hollow Genesis"
+                placeholder="ARIWA Genesis"
                 className={inputClass}
               />
             </Field>
-            <Field name="symbol" label="Symbol" required hint="Letters and numbers only, e.g. HOLLOW" error={errors.symbol}>
+            <Field name="symbol" label="Symbol" required hint="Letters and numbers only, e.g. ARIWA" error={errors.symbol}>
               <input
                 required
                 minLength={2}
@@ -276,7 +276,7 @@ export function LaunchpadRequestForm({
                 pattern="[A-Za-z0-9]+"
                 value={form.symbol}
                 onChange={(event) => update("symbol", event.target.value)}
-                placeholder="HOLLOW"
+                placeholder="ARIWA"
                 className={inputClass}
               />
             </Field>

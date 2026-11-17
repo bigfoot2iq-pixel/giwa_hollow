@@ -82,7 +82,7 @@ export function GlobalLoader() {
           color: "var(--ariwa-iris)",
         }}
       >
-        the hollow
+        genesis
       </p>
 
       <style

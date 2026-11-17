@@ -4,7 +4,6 @@ import { CollectionSection } from "@/components/landing/collection";
 import { FinalCta } from "@/components/landing/final-cta";
 import { Hero } from "@/components/landing/hero";
 import { LaunchpadSection } from "@/components/landing/launchpad";
-import { RaffleSection } from "@/components/landing/raffle";
 import { TokenSection } from "@/components/landing/token";
 
 export const metadata: Metadata = {
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "ARIWA — The First PFP Collection on GIWA",
     description:
-      "2,222 unique NFTs on GIWA. Trade the token, enter raffles, and launch a collection in one ecosystem.",
+      "2,222 unique NFTs on GIWA. Trade the token and launch a collection in one ecosystem.",
     type: "website",
   },
 };
@@ -27,7 +26,6 @@ export default function HomePage() {
       <About />
       <TokenSection />
       <LaunchpadSection />
-      <RaffleSection />
       <FinalCta />
     </div>
   );

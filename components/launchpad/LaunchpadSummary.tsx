@@ -90,7 +90,7 @@ export function LaunchpadSummary({
                   <DropStatusPill status={status} />
                 </div>
                 <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-5 text-ink-mute">
-                  <span>The Hollow&apos;s genesis drop. Soft residents, on-chain supply.</span>
+                  <span>ARIWA&apos;s genesis drop. Soft residents, on-chain supply.</span>
                   <span aria-hidden="true" className="size-1 rounded-full bg-iris/35" />
                   <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-ink-faint">
                     {symbol} · {giwaSepolia.name}

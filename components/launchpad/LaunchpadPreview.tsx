@@ -76,7 +76,7 @@ export function LaunchpadPreview() {
 
         <div className="mt-3 flex flex-col gap-2.5 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
           <h2 className="font-header text-[30px] font-extrabold leading-none tracking-[-0.04em] text-ink sm:text-[34px]">
-            Ten faces from the Hollow
+            Ten faces from ARIWA
           </h2>
 
           <p className="text-[11.5px] leading-5 text-ink-soft sm:max-w-[340px] sm:border-l sm:border-ink/[0.08] sm:pl-5">

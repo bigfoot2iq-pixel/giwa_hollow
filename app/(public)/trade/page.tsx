@@ -1044,7 +1044,7 @@ function TradeDesk() {
                 The pool never sleeps.
               </p>
               <p className="mt-2 max-w-[185px] text-[10.5px] leading-5 text-ink-soft">
-                Buy low, sell high, or just top up before the next raffle.
+                Buy low, sell high, or just top up and keep exploring.
               </p>
             </div>
             <span className="relative size-20 shrink-0 overflow-hidden rounded-full border-4 border-white/60 shadow-lg dark:border-white/15">

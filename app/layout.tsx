@@ -53,14 +53,12 @@ export const metadata: Metadata = {
   applicationName: "ARIWA",
   keywords: [
     "ARIWA",
-    "The Hollow",
     "GIWA",
     "GIWA Sepolia",
     "NFT collection",
     "PFP collection",
     "NFT launchpad",
     "token trading",
-    "raffles",
   ],
   authors: [{ name: "ARIWA" }],
   creator: "ARIWA",
@@ -69,7 +67,7 @@ export const metadata: Metadata = {
     siteName: "ARIWA",
     title: "ARIWA — The First PFP Collection on GIWA",
     description:
-      "2,222 unique NFTs on GIWA. Trade the token, enter raffles, and launch a collection in one ecosystem.",
+      "2,222 unique NFTs on GIWA. Trade the token and launch a collection in one ecosystem.",
     images: ["/art/nft/1.webp"],
   },
   twitter: {
@@ -78,7 +76,7 @@ export const metadata: Metadata = {
     creator: "@ARIWA_on_Giwa",
     title: "ARIWA — The First PFP Collection on GIWA",
     description:
-      "2,222 unique NFTs on GIWA. Trade the token, enter raffles, and launch a collection in one ecosystem.",
+      "2,222 unique NFTs on GIWA. Trade the token and launch a collection in one ecosystem.",
     images: ["/art/nft/1.webp"],
   },
   robots: {

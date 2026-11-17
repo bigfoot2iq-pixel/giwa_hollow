@@ -474,7 +474,7 @@ export function LaunchpadMintCard({
     status.tone === "live" && values
       ? `${formatCount(remainingBySupply)} of ${formatCount(supply)} pieces remain. First come, first served.`
       : values && !values.publicMintOpen
-        ? "The owner has not opened the public mint yet. Follow the Hollow for the announcement."
+        ? "The owner has not opened the public mint yet. Follow ARIWA for the announcement."
         : status.detail;
 
   return (

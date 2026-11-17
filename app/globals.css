@@ -6,7 +6,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ---------------------------------------------------------------------------
-   ARIWA — "The Hollow"
+   ARIWA
    The collection is a family of soft 3D residents: pastel skins, knitted hats,
    one enormous glossy eye, one wink. The interface is built from that same
    material: warm paper, plush pastel panels, ink outlines, and iris-violet
@@ -14,7 +14,7 @@
 
    Every colour below resolves through a CSS variable so the same utility
    classes work in both themes. `:root` holds the daylight palette, `.dark`
-   holds "the Hollow after dark": aubergine paper, lamp-lit plum panels, and
+   holds "ARIWA after dark": aubergine paper, lamp-lit plum panels, and
    pastels that sink into deep jewel tones instead of glowing.
    --------------------------------------------------------------------------- */
 
@@ -221,7 +221,7 @@
   color-scheme: dark;
   --ring: rgba(165, 144, 255, 0.55);
 
-  /* The Hollow after dark: aubergine paper, never flat black */
+  /* ARIWA after dark: aubergine paper, never flat black */
   --ariwa-cream: #0c0a11;
   --ariwa-cream-2: #131019;
   --ariwa-cream-3: #1b1624;

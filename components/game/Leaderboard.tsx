@@ -221,10 +221,10 @@ export default function Leaderboard() {
       <div className="ui-container rounded p-6 lg:p-8 text-center">
         <p className="text-muted-blue text-sm lg:text-base mb-4">Ready to put your ARIWA to work?</p>
         <button
-          onClick={() => router.push('/raffles')}
+          onClick={() => router.push('/trade')}
           className="px-6 lg:px-8 py-2.5 lg:py-3 bg-accent-warm hover:brightness-110 text-background font-bold rounded uppercase tracking-widest text-xs lg:text-sm transition-all"
         >
-          Explore Raffles
+          Trade ARIWA
         </button>
       </div>
     </div>

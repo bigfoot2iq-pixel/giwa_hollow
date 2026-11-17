@@ -19,7 +19,6 @@ const NAV = [
   { label: "Create", href: "/create" },
   { label: "Faucet", href: "/faucet" },
   { label: "Leaderboard", href: "/leaderboard" },
-  { label: "Raffles", href: "/raffles" },
 ] as const;
 
 export function SiteHeader() {
@@ -61,7 +60,7 @@ export function SiteHeader() {
               ARIWA
             </span>
             <span className="mt-1 font-mono text-[8px] uppercase tracking-[0.26em] text-iris">
-              the hollow
+              genesis
             </span>
           </span>
         </Link>

@@ -72,7 +72,7 @@ export default function AdminLayout({
       >
         <Link href="/home" className="btn-soft h-11 px-5 text-[11px]">
           <ArrowLeft className="size-3.5" />
-          Back to the Hollow
+          Back to ARIWA
         </Link>
       </AdminGate>
     );

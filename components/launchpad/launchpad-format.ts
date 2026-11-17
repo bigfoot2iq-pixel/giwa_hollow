@@ -100,7 +100,7 @@ export function getDropStatus(
     return {
       label: "Sold out",
       tone: "soldout",
-      detail: "Every piece has found a home in the Hollow.",
+      detail: "Every piece has found a home in ARIWA.",
     };
   }
 

@@ -289,7 +289,7 @@ function drawChibiSamurai(ctx: CanvasRenderingContext2D, pose: ChibiPose) {
   for (const ly of [-50, -44, -38]) {
     ctx.beginPath(); ctx.moveTo(-14, ly); ctx.lineTo(14, ly); ctx.stroke()
   }
-  // brand "hollow" ring emblem (gold)
+  // brand "ariwa" ring emblem (gold)
   ctx.strokeStyle = GOLD; ctx.lineWidth = 2
   ctx.beginPath(); ctx.arc(0, -47, 3.6, 0, Math.PI * 2); ctx.stroke()
 

@@ -22,7 +22,7 @@ const PILLARS: {
   {
     icon: Users,
     title: "Community",
-    note: "Rewards, raffles, and launches built around holders.",
+    note: "Rewards and launches built around holders.",
     tile: "bg-mint/45 text-mint-ink",
   },
 ];

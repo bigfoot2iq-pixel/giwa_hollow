@@ -115,7 +115,7 @@ export default function FaucetPage() {
           </h1>
           <p className="mt-3 max-w-xl text-[13px] leading-6 text-ink-soft">
             Grab free {giwaSepolia.nativeCurrency.symbol} on {giwaSepolia.name} to
-            move around the Hollow. Claim from an official faucet, then add the
+            move around ARIWA. Claim from an official faucet, then add the
             network to your wallet.
           </p>
         </div>

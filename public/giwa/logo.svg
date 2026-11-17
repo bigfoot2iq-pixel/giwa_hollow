@@ -8,10 +8,10 @@
   <!-- icon tile -->
   <rect x="8" y="8" width="48" height="48" rx="12" fill="url(#giwaTile)"/>
   <rect x="8.75" y="8.75" width="46.5" height="46.5" rx="11.25" fill="none" stroke="#ffffff" stroke-opacity="0.18"/>
-  <!-- katana threaded through the hollow -->
+  <!-- katana threaded through the ring -->
   <path d="M20 44 L44 20" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
   <path d="M20 38 L26 44" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
-  <!-- hollow ring -->
+  <!-- open ring -->
   <circle cx="32" cy="32" r="10" stroke="#ffffff" stroke-width="5" fill="none"/>
   <!-- wordmark -->
   <text x="70" y="41" font-family="'Space Grotesk','Segoe UI',sans-serif" font-size="25" font-weight="700" letter-spacing="0.5" fill="#1a2434">GIWA</text>

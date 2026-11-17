@@ -27,7 +27,7 @@ export function ClosingCta() {
               className="display mt-5 max-w-2xl text-[clamp(2.1rem,5vw,3.8rem)] text-ink"
             >
               There is a spot for you
-              <span className="block text-iris-deep">in the Hollow.</span>
+              <span className="block text-iris-deep">in ARIWA.</span>
             </h2>
             <p className="mt-5 max-w-lg text-[13px] leading-7 text-ink-soft">
               Get your first ARIWA, take a chance on a raffle, and pick the

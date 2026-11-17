@@ -58,7 +58,7 @@ export function HowItWorks() {
         </div>
         <p className="max-w-sm text-[12px] leading-6 text-ink-mute">
           No account, no email, no custody. Your wallet is the only membership
-          card in the Hollow.
+          card in ARIWA.
         </p>
       </div>
 

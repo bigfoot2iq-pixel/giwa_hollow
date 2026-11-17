@@ -28,7 +28,7 @@ export function Origin() {
             id="origin-title"
             className="display mt-4 max-w-xl text-[clamp(2rem,4.4vw,3.3rem)] text-ink"
           >
-            The Hollow is
+            ARIWA is
             <span className="block text-ink-mute">small on purpose.</span>
           </h2>
           <p className="mt-5 max-w-lg text-[13px] leading-7 text-ink-soft">

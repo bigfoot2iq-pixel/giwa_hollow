@@ -11,7 +11,6 @@ const navItems = [
   { href: "/faucet", label: "Faucet", icon: "water_drop" },
   { href: "/trade", label: "Trade ARIWA", icon: "swap_horiz" },
   { href: "/launchpad", label: "Launchpad", icon: "rocket_launch" },
-  { href: "/raffles", label: "Raffles", icon: "confirmation_number" },
   { href: "/leaderboard", label: "Leaderboard", icon: "emoji_events" },
 ];
 
@@ -61,7 +60,7 @@ export function Sidebar() {
               ARIWA
             </span>
             <span className="block text-[9px] font-bold uppercase tracking-[0.22em] text-iris">
-              The Hollow
+              Genesis
             </span>
           </span>
         </Link>

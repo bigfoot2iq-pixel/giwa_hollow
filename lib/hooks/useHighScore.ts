@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import type { GameMode } from "@/types/game-types"
 import type { ScoreUpdateResponse } from "@/lib/supabase/types"
 
-const HIGH_SCORE_PREFIX = "the-hollow-high-score"
+const HIGH_SCORE_PREFIX = "the-ariwa-high-score"
 
 interface UseHighScoreOptions {
   walletAddress?: string | null;

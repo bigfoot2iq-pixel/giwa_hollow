@@ -8,7 +8,7 @@ const WALL = {
   tiles: [NFT_PIECES[1], NFT_PIECES[2], NFT_PIECES[3], NFT_PIECES[4]],
 };
 
-const ECOSYSTEM = ["NFTs", "Token", "Launchpad", "Raffles", "Community"];
+const ECOSYSTEM = ["NFTs", "Token", "Launchpad", "Community"];
 
 export function Hero() {
   return (

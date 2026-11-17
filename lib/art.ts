@@ -2,7 +2,7 @@
  * ARIWA collection art.
  *
  * Every character in the collection is a soft, hand-crafted resident of the
- * Hollow: one huge glossy eye, one wink, and a knitted hat. The site borrows
+ * ARIWA: one huge glossy eye, one wink, and a knitted hat. The site borrows
  * its whole identity from these files — the pastel backgrounds become panels,
  * the eyes become accents, and the plush surfaces become the card language.
  *
@@ -34,17 +34,17 @@ export type NftPiece = {
 export const ART = {
   bunny: {
     src: "/art/nft/1.webp",
-    alt: "Sunny, a pale-blue Hollow resident wearing a sunflower crown",
+    alt: "Sunny, a pale-blue ARIWA resident wearing a sunflower crown",
     name: "Sunny",
   },
   bee: {
     src: "/art/nft/2112.webp",
-    alt: "Buzz, a pink Hollow resident wearing a striped bee beanie with tiny wings",
+    alt: "Buzz, a pink ARIWA resident wearing a striped bee beanie with tiny wings",
     name: "Buzz",
   },
   pumpkin: {
     src: "/art/nft/314.webp",
-    alt: "Sprout, a peach Hollow resident wearing a leafy green beanie",
+    alt: "Sprout, a peach ARIWA resident wearing a leafy green beanie",
     name: "Sprout",
   },
 } as const;
@@ -55,7 +55,7 @@ export const NFT_PIECES: NftPiece[] = [
   {
     id: 1,
     src: "/art/nft/1.webp",
-    alt: "Sunny, a pale-blue Hollow resident wearing a sunflower crown",
+    alt: "Sunny, a pale-blue ARIWA resident wearing a sunflower crown",
     name: "Sunny",
     role: "The Gardener",
     trait: "Sunflower Crown",
@@ -65,7 +65,7 @@ export const NFT_PIECES: NftPiece[] = [
   {
     id: 777,
     src: "/art/nft/777.webp",
-    alt: "Beary, a golden Hollow resident wearing a fuzzy bear beanie",
+    alt: "Beary, a golden ARIWA resident wearing a fuzzy bear beanie",
     name: "Beary",
     role: "The Hugger",
     trait: "Bear Beanie",
@@ -75,7 +75,7 @@ export const NFT_PIECES: NftPiece[] = [
   {
     id: 2222,
     src: "/art/nft/2222.webp",
-    alt: "Cloud, a lavender Hollow resident wearing a cloud beanie with a rainbow eye",
+    alt: "Cloud, a lavender ARIWA resident wearing a cloud beanie with a rainbow eye",
     name: "Cloud",
     role: "The Dreamer",
     trait: "Cloud Beanie",
@@ -85,7 +85,7 @@ export const NFT_PIECES: NftPiece[] = [
   {
     id: 2112,
     src: "/art/nft/2112.webp",
-    alt: "Buzz, a pink Hollow resident wearing a striped bee beanie with tiny wings",
+    alt: "Buzz, a pink ARIWA resident wearing a striped bee beanie with tiny wings",
     name: "Buzz",
     role: "The Worker",
     trait: "Bee Beanie",
@@ -95,7 +95,7 @@ export const NFT_PIECES: NftPiece[] = [
   {
     id: 1000,
     src: "/art/nft/1000.webp",
-    alt: "Luna, a pale Hollow resident wearing a lavender cat-ear beanie",
+    alt: "Luna, a pale ARIWA resident wearing a lavender cat-ear beanie",
     name: "Luna",
     role: "The Stargazer",
     trait: "Cat-Ear Beanie",
@@ -105,7 +105,7 @@ export const NFT_PIECES: NftPiece[] = [
   {
     id: 512,
     src: "/art/nft/512.webp",
-    alt: "Cherry, a lavender Hollow resident wearing a cream beanie topped with cherries",
+    alt: "Cherry, a lavender ARIWA resident wearing a cream beanie topped with cherries",
     name: "Cherry",
     role: "The Sweetheart",
     trait: "Cherry Beanie",
@@ -115,7 +115,7 @@ export const NFT_PIECES: NftPiece[] = [
   {
     id: 2020,
     src: "/art/nft/2020.webp",
-    alt: "Iris, a pale Hollow resident wearing a purple cat-ear beanie",
+    alt: "Iris, a pale ARIWA resident wearing a purple cat-ear beanie",
     name: "Iris",
     role: "The Seer",
     trait: "Cat-Ear Beanie",
@@ -125,7 +125,7 @@ export const NFT_PIECES: NftPiece[] = [
   {
     id: 314,
     src: "/art/nft/314.webp",
-    alt: "Sprout, a peach Hollow resident wearing a leafy green beanie",
+    alt: "Sprout, a peach ARIWA resident wearing a leafy green beanie",
     name: "Sprout",
     role: "The Grower",
     trait: "Leaf Beanie",
@@ -140,7 +140,7 @@ export const GALLERY_PIECES: NftPiece[] = [
   {
     id: 42,
     src: "/art/nft/42.webp",
-    alt: "Wisp, a blue Hollow resident wearing a cloud beanie",
+    alt: "Wisp, a blue ARIWA resident wearing a cloud beanie",
     name: "Wisp",
     role: "The Wanderer",
     trait: "Cloud Beanie",
@@ -150,7 +150,7 @@ export const GALLERY_PIECES: NftPiece[] = [
   {
     id: 100,
     src: "/art/nft/100.webp",
-    alt: "Muse, a peach Hollow resident wearing a red beret",
+    alt: "Muse, a peach ARIWA resident wearing a red beret",
     name: "Muse",
     role: "The Muse",
     trait: "Red Beret",
@@ -160,7 +160,7 @@ export const GALLERY_PIECES: NftPiece[] = [
   {
     id: 1234,
     src: "/art/nft/1234.webp",
-    alt: "Rouge, a lilac Hollow resident wearing a red beret",
+    alt: "Rouge, a lilac ARIWA resident wearing a red beret",
     name: "Rouge",
     role: "The Painter",
     trait: "Red Beret",
@@ -170,7 +170,7 @@ export const GALLERY_PIECES: NftPiece[] = [
   {
     id: 1337,
     src: "/art/nft/1337.webp",
-    alt: "Pip, a blue Hollow resident wearing a cherry beanie",
+    alt: "Pip, a blue ARIWA resident wearing a cherry beanie",
     name: "Pip",
     role: "The Lucky One",
     trait: "Cherry Beanie",
@@ -180,7 +180,7 @@ export const GALLERY_PIECES: NftPiece[] = [
   {
     id: 1500,
     src: "/art/nft/1500.webp",
-    alt: "Rose, a pink Hollow resident wearing a leaf beanie",
+    alt: "Rose, a pink ARIWA resident wearing a leaf beanie",
     name: "Rose",
     role: "The Bloom",
     trait: "Leaf Beanie",
@@ -190,7 +190,7 @@ export const GALLERY_PIECES: NftPiece[] = [
   {
     id: 1777,
     src: "/art/nft/1777.webp",
-    alt: "Fern, a lilac Hollow resident wearing a lilac beanie with a leaf",
+    alt: "Fern, a lilac ARIWA resident wearing a lilac beanie with a leaf",
     name: "Fern",
     role: "The Forager",
     trait: "Swirl Beanie",
@@ -200,7 +200,7 @@ export const GALLERY_PIECES: NftPiece[] = [
   {
     id: 2000,
     src: "/art/nft/2000.webp",
-    alt: "Prism, a pink Hollow resident wearing a bear beanie with a rainbow eye",
+    alt: "Prism, a pink ARIWA resident wearing a bear beanie with a rainbow eye",
     name: "Prism",
     role: "The Rainbow",
     trait: "Bear Beanie",
@@ -210,7 +210,7 @@ export const GALLERY_PIECES: NftPiece[] = [
   {
     id: 888,
     src: "/art/nft/888.webp",
-    alt: "Moth, a mint-green Hollow resident wearing a lilac beanie in the dark",
+    alt: "Moth, a mint-green ARIWA resident wearing a lilac beanie in the dark",
     name: "Moth",
     role: "The Night Owl",
     trait: "Swirl Beanie",

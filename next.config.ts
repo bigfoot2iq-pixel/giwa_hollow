@@ -65,6 +65,18 @@ const nextConfig: NextConfig = {
         destination: "/",
         permanent: true,
       },
+      // Raffles are hidden for now. Redirect the public page and any old
+      // detail links before they can render.
+      {
+        source: "/raffles",
+        destination: "/home",
+        permanent: false,
+      },
+      {
+        source: "/raffles/:path*",
+        destination: "/home",
+        permanent: false,
+      },
     ];
   },
   async headers() {

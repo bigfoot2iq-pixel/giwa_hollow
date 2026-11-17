@@ -6,10 +6,10 @@
     </linearGradient>
   </defs>
   <rect width="32" height="32" rx="8" fill="url(#giwaTile)"/>
-  <!-- katana threaded through the hollow -->
+  <!-- katana threaded through the ring -->
   <path d="M8 24 L24 8" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
   <path d="M8 20 L12 24" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
-  <!-- hollow ring -->
+  <!-- open ring -->
   <circle cx="16" cy="16" r="6.5" stroke="#ffffff" stroke-width="3.5" fill="none"/>
   <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="7.25" fill="none" stroke="#ffffff" stroke-opacity="0.18"/>
 </svg>

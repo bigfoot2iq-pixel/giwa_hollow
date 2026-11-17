@@ -4,7 +4,6 @@ import { ArrowUpRight } from "lucide-react";
 
 const PRODUCT = [
   { label: "Trade ARIWA", href: "/trade" },
-  { label: "Raffles", href: "/raffles" },
   { label: "Launchpad", href: "/launchpad" },
   { label: "Create", href: "/create" },
   { label: "Faucet", href: "/faucet" },
@@ -47,14 +46,14 @@ export function SiteFooter() {
                   ARIWA
                 </span>
                 <span className="mt-1 font-mono text-[8px] uppercase tracking-[0.26em] text-iris">
-                  the hollow
+                  genesis
                 </span>
               </span>
             </Link>
 
             <p className="mt-5 max-w-xs text-[12px] leading-6 text-ink-mute">
-              2,222 unique NFTs on GIWA. Trade the token, enter raffles, launch
-              a collection — and be part of the ecosystem.
+              2,222 unique NFTs on GIWA. Trade the token, launch a collection —
+              and be part of the ecosystem.
             </p>
 
             <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -71,7 +70,7 @@ export function SiteFooter() {
               rel="noopener noreferrer"
               className="mt-5 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft transition hover:text-iris"
             >
-              Follow the Hollow <ArrowUpRight className="size-3" />
+              Follow ARIWA <ArrowUpRight className="size-3" />
             </a>
           </div>
 
@@ -86,7 +85,7 @@ export function SiteFooter() {
           </p>
           <p className="max-w-xl text-[10px] leading-5 text-ink-mute sm:text-right">
             GIWA Sepolia is a testnet. ARIWA has no monetary value and nothing
-            here is financial advice. Raffles and mints are on-chain and final.
+            here is financial advice. Mints are on-chain and final.
           </p>
         </div>
       </div>

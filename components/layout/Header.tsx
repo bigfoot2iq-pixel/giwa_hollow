@@ -17,7 +17,6 @@ export function Header() {
     if (pathname === "/create") return "Launch your collection";
     if (pathname === "/launchpad/request") return "Launch your collection";
     if (pathname.startsWith("/launchpad")) return "Launchpad";
-    if (pathname.startsWith("/raffles")) return "Raffles";
     if (pathname.startsWith("/leaderboard")) return "Leaderboard";
     if (pathname.startsWith("/admin")) return "Admin Dashboard";
     return "Ariwa";

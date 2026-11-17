@@ -151,7 +151,7 @@ export function LaunchpadMintSuccess({
           </div>
 
           <p className="mt-2 text-center text-[10px] text-ink-mute">
-            Screenshot this card, or share the mint with the Hollow.
+            Screenshot this card, or share the mint with ARIWA.
           </p>
 
           <div className="mt-4 grid gap-2">
