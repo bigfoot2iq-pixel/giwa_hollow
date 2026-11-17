@@ -18,10 +18,13 @@ const POOL_ADDRESS = SWAP_POOL_ADDRESS as `0x${string}`;
 const ONE_ETHER = 10n ** 18n;
 
 /** How often the live reserves and chart refresh while the page is open. */
-const LIVE_REFRESH_MS = 8_000;
+const LIVE_REFRESH_MS = 1_000;
 
 /** Chart samples move only on trades, so a slower poll is enough. */
-const HISTORY_REFRESH_MS = 12_000;
+const HISTORY_REFRESH_MS = 2_000;
+
+/** The pause flag changes rarely; it does not need the live cadence. */
+const PAUSED_REFRESH_MS = 15_000;
 
 /**
  * Live AMM state: both reserves, the current mid price, and the swap fee.
@@ -99,7 +102,7 @@ export function useSwapPoolPaused() {
     functionName: "paused",
     query: {
       enabled: IS_SWAP_POOL_CONFIGURED,
-      refetchInterval: LIVE_REFRESH_MS,
+      refetchInterval: PAUSED_REFRESH_MS,
     },
   });
 }

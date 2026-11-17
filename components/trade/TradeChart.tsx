@@ -23,19 +23,37 @@ type TradeChartProps = {
   className?: string;
 };
 
-type RangeKey = "1H" | "4H" | "1D" | "ALL";
+type RangeKey = "1S" | "1M" | "1H" | "1D" | "ALL";
 type ChartMode = "area" | "candles";
 
-const RANGES: { key: RangeKey; label: string; seconds: number }[] = [
-  { key: "1H", label: "1H", seconds: 3_600 },
-  { key: "4H", label: "4H", seconds: 14_400 },
-  { key: "1D", label: "1D", seconds: 86_400 },
-  { key: "ALL", label: "ALL", seconds: 0 },
+/** How many candles each timeframe keeps on screen. */
+const CANDLE_COUNT = 120;
+
+type Range = {
+  key: RangeKey;
+  label: string;
+  /** Candle size in seconds. 0 lets the chart size them from the span. */
+  bucket: number;
+  /** Visible window in seconds. 0 shows every recorded sample. */
+  window: number;
+};
+
+/**
+ * Timeframes, narrowest first. Every button fixes a candle size and shows a
+ * run of candles wide enough to read. `1S` is the live ticker: each tick adds
+ * a one-second candle, so new pool prices appear in real time.
+ */
+const RANGES: Range[] = [
+  { key: "1S", label: "1S", bucket: 1, window: 120 },
+  { key: "1M", label: "1M", bucket: 60, window: 60 * CANDLE_COUNT },
+  { key: "1H", label: "1H", bucket: 3_600, window: 3_600 * CANDLE_COUNT },
+  { key: "1D", label: "1D", bucket: 86_400, window: 86_400 * CANDLE_COUNT },
+  { key: "ALL", label: "ALL", bucket: 0, window: 0 },
 ];
 
 const BUCKET_STEPS = [
-  30, 60, 120, 300, 600, 900, 1_800, 3_600, 7_200, 14_400, 21_600, 43_200,
-  86_400, 172_800, 604_800, 2_592_000, 7_776_000, 31_536_000,
+  1, 5, 15, 30, 60, 120, 300, 600, 900, 1_800, 3_600, 7_200, 14_400, 21_600,
+  43_200, 86_400, 172_800, 604_800, 2_592_000, 7_776_000, 31_536_000,
 ];
 
 const PRICE_SCALE = 1e18;
@@ -90,6 +108,7 @@ function formatTime(timestamp: number, span: number): string {
   const date = new Date(timestamp * 1_000);
   if (span > 60 * 86_400) return format(date, "MMM d");
   if (span > 2 * 86_400) return format(date, "MMM d, HH:mm");
+  if (span <= 600) return format(date, "HH:mm:ss");
   return format(date, "HH:mm");
 }
 
@@ -112,10 +131,15 @@ function downsample(points: Point[], limit: number): Point[] {
  * Turn individual samples into continuous OHLC buckets. Empty buckets carry
  * the previous close forward so the chart never opens gaps.
  */
-function buildCandles(points: Point[], bucket: number, end: number): Candle[] {
+function buildCandles(
+  points: Point[],
+  bucket: number,
+  start: number,
+  end: number,
+): Candle[] {
   if (points.length === 0) return [];
 
-  const startBucket = Math.floor(points[0].t / bucket) * bucket;
+  const startBucket = Math.floor(start / bucket) * bucket;
   const endBucket = Math.floor(end / bucket) * bucket;
 
   const byBucket = new Map<number, Candle>();
@@ -167,9 +191,9 @@ export function TradeChart({
   isLoading = false,
   className,
 }: TradeChartProps) {
-  const [range, setRange] = useState<RangeKey>("1D");
-  const [mode, setMode] = useState<ChartMode>("area");
-  const [now, setNow] = useState(0);
+  const [range, setRange] = useState<RangeKey>("1S");
+  const [mode, setMode] = useState<ChartMode>("candles");
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1_000));
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
@@ -198,7 +222,8 @@ export function TradeChart({
   useEffect(() => {
     const tick = () => setNow(Math.floor(Date.now() / 1_000));
     tick();
-    const timer = window.setInterval(tick, 15_000);
+    // One-second cadence keeps the live candle and its price edge moving.
+    const timer = window.setInterval(tick, 1_000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -245,22 +270,37 @@ export function TradeChart({
     return next;
   }, [points, livePrice, anchor]);
 
-  const rangeSeconds = RANGES.find((entry) => entry.key === range)?.seconds ?? 0;
+  const activeRange = RANGES.find((entry) => entry.key === range) ?? RANGES[0];
+  const rangeSeconds = activeRange.window;
+
+  /** Left edge of the visible window; `ALL` starts at the oldest sample. */
+  const windowStart =
+    rangeSeconds > 0
+      ? anchor - rangeSeconds
+      : series.length > 0
+        ? series[0].t
+        : anchor;
 
   const visible = useMemo<Point[]>(() => {
     if (series.length === 0) return [];
     if (rangeSeconds === 0) return series;
-    const cutoff = anchor - rangeSeconds;
-    const inside = series.filter((point) => point.t >= cutoff);
-    if (inside.length === 0) return [series[series.length - 1]];
-    // Keep the sample just before the window so the line starts at the edge.
-    const before = [...series].reverse().find((point) => point.t < cutoff);
-    return before ? [before, ...inside] : inside;
-  }, [series, rangeSeconds, anchor]);
+
+    const inside = series.filter((point) => point.t >= windowStart);
+    // Carry the last price from before the window to the left edge so the
+    // series is continuous instead of starting mid-air.
+    let seed: Point | undefined;
+    for (let index = series.length - 1; index >= 0; index -= 1) {
+      if (series[index].t < windowStart) {
+        seed = series[index];
+        break;
+      }
+    }
+    return seed ? [{ t: windowStart, p: seed.p }, ...inside] : inside;
+  }, [series, rangeSeconds, windowStart]);
 
   const hasData = visible.length > 0;
 
-  const xMin = hasData ? visible[0].t : 0;
+  const xMin = hasData ? windowStart : 0;
   const xMax = hasData
     ? Math.max(anchor, visible[visible.length - 1].t)
     : 60;
@@ -290,8 +330,14 @@ export function TradeChart({
     PADDING.top + ((yMax - price) / (yMax - yMin)) * plotH;
 
   const candles = useMemo(
-    () => buildCandles(visible, chooseBucket(span), xMax),
-    [visible, span, xMax],
+    () =>
+      buildCandles(
+        visible,
+        activeRange.bucket > 0 ? activeRange.bucket : chooseBucket(span),
+        xMin,
+        xMax,
+      ),
+    [visible, activeRange.bucket, span, xMin, xMax],
   );
 
   const areaPoints = useMemo(() => downsample(visible, 220), [visible]);
@@ -419,7 +465,7 @@ export function TradeChart({
               </span>
               <span className="pill">
                 <span className="live-dot" />
-                {isLoading ? "syncing" : "live"}
+                {isLoading ? "syncing" : range === "1S" ? "1s live" : "live"}
               </span>
             </div>
 
@@ -438,7 +484,7 @@ export function TradeChart({
                   "inline-flex items-center gap-1 text-[11px] font-semibold tabular-nums",
                   positive ? "text-success-ink" : "text-blush-ink",
                 )}
-                title="Price change over the selected range"
+                title="Price change across the visible window"
               >
                 {positive ? (
                   <TrendingUp className="size-3.5" />
@@ -449,7 +495,7 @@ export function TradeChart({
                 {change.toFixed(2)}%
               </span>
               <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-ink-mute">
-                {range === "ALL" ? "all time" : `${range.toLowerCase()} change`}
+                {range === "ALL" ? "all time" : "window change"}
               </span>
               <span className="text-ink-faint">·</span>
               <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-ink-mute">
@@ -503,7 +549,7 @@ export function TradeChart({
             <div
               className="flex items-center gap-0.5 rounded-full border border-ink/[0.08] bg-paper/70 p-0.5"
               role="group"
-              aria-label="Time range"
+              aria-label="Timeframe"
             >
               {RANGES.map((entry) => (
                 <button
@@ -796,7 +842,10 @@ export function TradeChart({
               }}
             >
               <p className="font-mono text-[8px] uppercase tracking-[0.14em] text-ink-mute">
-                {format(new Date(hovered.time * 1_000), "MMM d, HH:mm")}
+                {format(
+                  new Date(hovered.time * 1_000),
+                  span <= 600 ? "MMM d, HH:mm:ss" : "MMM d, HH:mm",
+                )}
               </p>
               {hovered.candle ? (
                 <dl className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-0.5 font-mono text-[9.5px]">
