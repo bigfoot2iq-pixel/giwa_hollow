@@ -60,7 +60,99 @@ npx hardhat run scripts/deploy-launchpad-nft.ts --network giwaSepolia
 ```
 Paste each printed address into `.env.local`.
 
-## 5. Run
+## 5. Launchpad artwork storage (Cloudflare R2)
+
+The collection is stored in a **private** R2 bucket and served only through the app's
+public metadata/image routes. The contract `baseURI` does not change.
+
+### One-time setup
+```bash
+# Private bucket (do NOT add a public custom domain or r2.dev URL)
+npx wrangler r2 bucket create ariwa-nft
+
+# Route-handler upload sessions (required in production)
+npx wrangler secret put UPLOAD_TOKEN_SECRET
+
+# Local dev: put a random 32+ byte secret in .env.local
+#   UPLOAD_TOKEN_SECRET=<openssl rand -hex 32>
+```
+
+`wrangler.jsonc` already binds the bucket as `NFT_BUCKET`. The app reads it through
+the Worker binding; no R2 S3 keys are used at runtime.
+
+### Publishing a collection
+1. Open `/admin` → **Launchpad** → **Artwork & metadata**.
+   If the `www` host is behind a Cloudflare challenge, the admin console is also
+   reachable at `https://giwa-hollow.medfata3.workers.dev/admin`; the storage APIs
+   still require the admin wallet signature.
+2. Select `build/images` and `build/json` (the HashLips output folders).
+3. Review the validation report, then **Upload & publish**.
+4. Keep the tab open while the 2,222 files upload. If the connection drops,
+   reopen the page, select the same folders, and press **Resume `<version>`**.
+5. Preview the samples and click **Activate** (separate confirmation).
+6. Public metadata updates within ~1 minute; image URLs carry `?v=<version>` so
+   their long-lived caches stay correct.
+
+Versions are immutable. Activating an older version is a rollback; deleting a
+version removes every object under its prefix. The active version cannot be
+deleted.
+
+### Storage layout
+```text
+launchpad/active.json
+launchpad/ariwa-genesis/v1/images/1.png ... 2222.png
+launchpad/ariwa-genesis/v1/metadata/1.json ... 2222.json
+launchpad/ariwa-genesis/v1/manifest.json
+launchpad/ariwa-genesis/v1/collection.json
+```
+
+### Pinata fallback
+The public routes serve Pinata while `launchpad/active.json` is absent. Keep
+`LAUNCHPAD_METADATA_CID`, `LAUNCHPAD_IMAGE_CID` and `PINATA_GATEWAY_URL` until an
+R2 version has been verified and active; remove them after a stability window.
+
+Pinata's shared gateway (and the public `ipfs.io`/`dweb.link` fallbacks) can
+rate-limit the Worker's egress and return `502` to the public routes. Activate an
+R2 version before minting or exposing the collection to the explorer; the R2 path
+never touches the legacy gateways.
+
+The metadata directory contains `<id>.json` files and the artwork directory
+contains the matching `<id>.png` files. Both are read server-side by
+`/api/launchpad/metadata/[id].json` and `/api/launchpad/image/[id].png`.
+Keep the contract base URI on the app proxy:
+`https://www.ariwa.xyz/api/launchpad/metadata/`. Never set it to a
+`gateway.pinata.cloud` URL — the gateway and CIDs must stay server-side.
+
+The proxy tries `PINATA_GATEWAY_URL` first, then public IPFS gateways
+(Filebase, ipfs.io, dweb.link). Pinata's public gateway can answer the Worker
+with `429 Too Many Requests`; the fallback keeps the collection readable until
+the artwork is moved to R2.
+
+### Explorer / holder checklist
+- Set `NEXT_PUBLIC_APP_URL=https://www.ariwa.xyz` so metadata image URLs are absolute.
+- **Exempt `/api/launchpad/*` from the Cloudflare challenge.** A server-side
+  metadata fetcher (Blockscout, marketplaces) cannot solve a browser challenge;
+  it will see a 403 and render a broken NFT. In the Cloudflare dashboard:
+  - Security → WAF → Custom rules → Create rule.
+  - Expression:
+    `(http.host eq "www.ariwa.xyz" and starts_with(http.request.uri.path, "/api/launchpad/"))`
+  - Action: **Skip** (Managed Rules, Bot Fight Mode / Super Bot Fight Mode,
+    Browser Integrity Check, and Security Level if available).
+  - If the zone uses a Configuration Rule instead, set Security Level to
+    **Essentially Off** for the same path. If the zone is in Under Attack Mode,
+    turn it off or scope the exemption.
+  - Test from a machine that is not carrying a browser cookie:
+    `curl -sSI https://www.ariwa.xyz/api/launchpad/metadata/1.json`
+    It must return `200`, not `403` with `Cf-Mitigated: challenge`.
+- The NFT contract does **not** need to be verified for the token to be indexed;
+  Blockscout indexes unverified ERC-721 contracts (the "not verified" label only
+  hides the source/ABI tabs).
+- The contract currently has `totalSupply = 0`. To see a token on the explorer
+  before the public mint, use the admin **Owner mint** panel to mint token #1 to a
+  treasury wallet, then open the Blockscout token page. This consumes token #1;
+  skip it if you want #1 available to the public.
+
+## 6. Run
 ```bash
 npm run dev
 ```

@@ -15,6 +15,7 @@ import { useAdminAuth } from "@/lib/hooks/useAdminAuth";
 import { contracts, AriwaTokenABI, THE_ARIWA_GAME_ADDRESS, THE_ARIWA_GAME_ABI } from "@/lib/contracts";
 import { RafflesMaintenanceToggle } from "@/components/admin/RafflesMaintenanceToggle";
 import { LaunchpadSettings } from "@/components/admin/LaunchpadSettings";
+import { LaunchpadStorage } from "@/components/admin/LaunchpadStorage";
 import { LaunchpadRequests } from "@/components/admin/LaunchpadRequests";
 import { SwapPoolSettings } from "@/components/admin/SwapPoolSettings";
 import { formatCompactNumber } from "@/lib/utils/format";
@@ -272,35 +273,35 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Launchpad */}
-      {activeTab === "launchpad" && (
-        <div className="space-y-6">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h2 className="font-header text-2xl font-extrabold tracking-[-0.03em] text-ink">
-                NFT Launchpad
-              </h2>
-              <p className="mt-2 max-w-2xl text-[13px] leading-6 text-ink-soft">
-                Control the public mint phase, pricing, per-wallet cap and holder
-                gate, mint to any wallet, then review community collection
-                requests.
-              </p>
-            </div>
-            <Link
-              href="/launchpad"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-soft h-11 px-4 text-[11px]"
-            >
-              <span className="material-symbols-outlined text-base">open_in_new</span>
-              View public page
-            </Link>
+      {/* Launchpad — kept mounted while hidden so a long artwork upload
+          survives switching tabs. */}
+      <div className={activeTab === "launchpad" ? "space-y-6" : "hidden"}>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 className="font-header text-2xl font-extrabold tracking-[-0.03em] text-ink">
+              NFT Launchpad
+            </h2>
+            <p className="mt-2 max-w-2xl text-[13px] leading-6 text-ink-soft">
+              Control the public mint phase, pricing, per-wallet cap and holder
+              gate, upload the collection artwork to private Cloudflare R2, mint
+              to any wallet, then review community collection requests.
+            </p>
           </div>
-
-          <LaunchpadSettings />
-          <LaunchpadRequests />
+          <Link
+            href="/launchpad"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-soft h-11 px-4 text-[11px]"
+          >
+            <span className="material-symbols-outlined text-base">open_in_new</span>
+            View public page
+          </Link>
         </div>
-      )}
+
+        <LaunchpadSettings />
+        <LaunchpadStorage />
+        <LaunchpadRequests />
+      </div>
 
       {/* Swap pool */}
       {activeTab === "trade" && (

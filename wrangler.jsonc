@@ -21,6 +21,15 @@
       "service": "giwa-hollow"
     }
   ],
+  "r2_buckets": [
+    {
+      // Private launchpad artwork/metadata storage. Never expose this bucket
+      // through a public R2 domain: the app's /api/launchpad routes are the
+      // only public surface.
+      "binding": "NFT_BUCKET",
+      "bucket_name": "ariwa-nft"
+    }
+  ],
   "images": {
     // Backs next/image optimization (/_next/image).
     "binding": "IMAGES"

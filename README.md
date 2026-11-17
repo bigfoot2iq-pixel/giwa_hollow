@@ -54,7 +54,14 @@ Copy `.env.example` → `.env.local` and fill in:
 | `NEXT_PUBLIC_SWAP_POOL_ADDRESS` | Constant-product ARIWA/ETH AMM pool (set after deploy) |
 | `SWAP_POOL_TOKENS_PER_ETH` / `SWAP_POOL_ETH_FUNDING` / `SWAP_POOL_TOKEN_FUNDING` / `SWAP_POOL_FEE_BPS` | Swap pool deploy inputs: opening price, seed liquidity, swap fee |
 | `ETHEREUM_RPC_URL` / `BNB_RPC_URL` / `BASE_RPC_URL` / `INK_RPC_URL` | Optional RPC overrides for the launchpad holder check |
+| `LAUNCHPAD_COLLECTION` / `LAUNCHPAD_ART_SUPPLY` | Launchpad R2 collection slug + expected token count |
+| `UPLOAD_TOKEN_SECRET` | HMAC secret for admin launchpad upload sessions (server-only) |
+| `LAUNCHPAD_METADATA_CID` / `LAUNCHPAD_IMAGE_CID` / `PINATA_GATEWAY_URL` | Legacy Pinata fallback, used only until an R2 version is activated |
 | `CRON_SECRET` | Auth for `/api/cron` |
+
+Launchpad artwork lives in the private `ariwa-nft` R2 bucket through the
+`NFT_BUCKET` binding in `wrangler.jsonc`; upload and activate it from
+`/admin` → Launchpad → Artwork & metadata. See **[SETUP_GIWA.md](./SETUP_GIWA.md#5-launchpad-artwork-storage-cloudflare-r2)**.
 
 ## Pages
 

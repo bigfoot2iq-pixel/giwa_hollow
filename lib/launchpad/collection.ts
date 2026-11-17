@@ -1,30 +1,34 @@
+import {
+  LAUNCHPAD_ART_SUPPLY,
+  LEGACY_IMAGE_CID,
+  LEGACY_METADATA_CID,
+  LEGACY_PINATA_GATEWAY,
+} from "./constants";
+import {
+  getNftBucket,
+  metadataKey,
+  parseTokenId,
+  readActiveCollection,
+} from "./storage";
+import type { ActiveCollection } from "./storage-types";
+
 /**
- * Launchpad collection source data.
+ * Launchpad source resolution.
  *
- * The artwork is pinned to Pinata as two IPFS directories: one for the ERC-721
- * metadata JSON files and one for the PNG images. Both are proxied through this
- * app so the public contract/metadata never exposes the Pinata directory
- * listings or the original image CIDs.
+ * Artwork and metadata live in a private R2 bucket. `active.json` picks the
+ * published version. Until an R2 version is activated, the old Pinata
+ * directories remain a read-only fallback so deploying this code cannot break
+ * the live collection.
  */
 
-const DEFAULT_METADATA_CID =
-  "bafybeib7obwtzah63c2suhhd4gozid5whvxis5q2u5ehlngrgca6r4r3m4";
-const DEFAULT_IMAGE_CID =
-  "bafybeidr4yey3n4sc44knh2hzprsf7mmpe6xkmrxyinfz3nzobrb6hlacq";
-const DEFAULT_ART_SUPPLY = 2222;
+export { LAUNCHPAD_ART_SUPPLY, parseTokenId };
+export const LAUNCHPAD_METADATA_CID = LEGACY_METADATA_CID;
+export const LAUNCHPAD_IMAGE_CID = LEGACY_IMAGE_CID;
+export const PINATA_GATEWAY = LEGACY_PINATA_GATEWAY;
 
-export const LAUNCHPAD_METADATA_CID =
-  process.env.LAUNCHPAD_METADATA_CID || DEFAULT_METADATA_CID;
-export const LAUNCHPAD_IMAGE_CID =
-  process.env.LAUNCHPAD_IMAGE_CID || DEFAULT_IMAGE_CID;
-export const LAUNCHPAD_ART_SUPPLY = Number(
-  process.env.LAUNCHPAD_ART_SUPPLY || DEFAULT_ART_SUPPLY
-);
-
-/** Base gateway, kept configurable for a dedicated Pinata gateway. */
-export const PINATA_GATEWAY = (
-  process.env.PINATA_GATEWAY_URL || "https://gateway.pinata.cloud"
-).replace(/\/+$/, "");
+export type LaunchpadSource =
+  | { kind: "r2"; active: ActiveCollection }
+  | { kind: "pinata"; metadataCid: string; imageCid: string };
 
 export interface LaunchpadTokenMetadata {
   name?: string;
@@ -33,77 +37,129 @@ export interface LaunchpadTokenMetadata {
   [key: string]: unknown;
 }
 
-/**
- * The contract builds tokenURI as `${baseURI}${tokenId}.json`, so the route
- * receives "1.json". Image URLs use "1.png"; both forms are accepted.
- */
-export function parseTokenId(raw: string): number | null {
-  const match = /^(\d+)(?:\.(?:json|png))?$/.exec(raw);
-  if (!match) return null;
-
-  const tokenId = Number(match[1]);
-  if (
-    !Number.isSafeInteger(tokenId) ||
-    tokenId < 1 ||
-    tokenId > LAUNCHPAD_ART_SUPPLY
-  ) {
-    return null;
-  }
-
-  return tokenId;
+export interface ResolvedTokenMetadata {
+  metadata: LaunchpadTokenMetadata;
+  source: LaunchpadSource;
 }
 
-export function getMetadataUrl(tokenId: number): string {
-  return `${PINATA_GATEWAY}/ipfs/${LAUNCHPAD_METADATA_CID}/${tokenId}.json`;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-export function getImageUrl(tokenId: number): string {
-  return `${PINATA_GATEWAY}/ipfs/${LAUNCHPAD_IMAGE_CID}/${tokenId}.png`;
-}
-
-/**
- * Reads one token's metadata from Pinata. Metadata is immutable per token, so
- * the Next.js data cache absorbs repeat reads.
- */
-export async function fetchTokenMetadata(
-  tokenId: number
-): Promise<LaunchpadTokenMetadata> {
-  const response = await fetch(getMetadataUrl(tokenId), {
-    next: { revalidate: 86_400 },
-    signal: AbortSignal.timeout(15_000),
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Pinata metadata for token ${tokenId} returned ${response.status}`
+export async function resolveLaunchpadSource(): Promise<LaunchpadSource> {
+  try {
+    const active = await readActiveCollection();
+    if (active) return { kind: "r2", active };
+  } catch (error) {
+    // A missing binding or a corrupt pointer must not take the live collection
+    // down; fall back to the legacy gateway until an admin re-activates.
+    console.error(
+      "Failed to read the active R2 launchpad collection; falling back to Pinata:",
+      error
     );
   }
 
-  const data: unknown = await response.json();
-  if (!data || typeof data !== "object" || Array.isArray(data)) {
-    throw new Error(`Pinata metadata for token ${tokenId} is not an object`);
-  }
-
-  return data as LaunchpadTokenMetadata;
+  return {
+    kind: "pinata",
+    metadataCid: LAUNCHPAD_METADATA_CID,
+    imageCid: LAUNCHPAD_IMAGE_CID,
+  };
 }
 
 /**
- * Converts the metadata's `ipfs://<cid>/<path>` image into a gateway URL.
- * Only IPFS paths and the configured gateway are accepted so the proxy can
- * never be pointed at an arbitrary host.
+ * Gateways tried in order for the legacy Pinata content. Pinata's gateway
+ * rate-limits shared egress (including the Worker's), so public gateways are
+ * kept as a temporary fallback until an R2 version is activated.
  */
-export function resolveImageUrl(image: unknown): string | null {
-  if (typeof image !== "string" || !image.trim()) return null;
+const LEGACY_GATEWAY_BASES = Array.from(
+  new Set([
+    PINATA_GATEWAY,
+    // Pinata rate-limits shared egress, including Workers. Filebase's public
+    // gateway serves the same IPFS content and has been reliable from GIWA's
+    // Worker egress; the other public gateways are kept as a last resort.
+    "https://ipfs.filebase.io",
+    "https://ipfs.io",
+    "https://dweb.link",
+  ])
+);
 
-  if (image.startsWith("ipfs://")) {
-    const path = image.slice("ipfs://".length).replace(/^ipfs\//, "");
-    if (!/^[A-Za-z0-9]+\/.+$/.test(path)) return null;
-    return `${PINATA_GATEWAY}/ipfs/${path}`;
+export function getLegacyMetadataUrls(tokenId: number): string[] {
+  return LEGACY_GATEWAY_BASES.map(
+    (base) => `${base}/ipfs/${LAUNCHPAD_METADATA_CID}/${tokenId}.json`
+  );
+}
+
+export function getLegacyImageUrls(tokenId: number): string[] {
+  return LEGACY_GATEWAY_BASES.map(
+    (base) => `${base}/ipfs/${LAUNCHPAD_IMAGE_CID}/${tokenId}.png`
+  );
+}
+
+export async function fetchLegacyTokenMetadata(
+  tokenId: number
+): Promise<LaunchpadTokenMetadata> {
+  let lastError: Error | null = null;
+
+  for (const url of getLegacyMetadataUrls(tokenId)) {
+    try {
+      const response = await fetch(url, {
+        // Legacy metadata is immutable; the Next data cache absorbs repeat reads.
+        next: { revalidate: 86_400 },
+        signal: AbortSignal.timeout(15_000),
+      });
+
+      if (!response.ok) {
+        lastError = new Error(
+          `Legacy metadata for token ${tokenId} returned ${response.status}`
+        );
+        continue;
+      }
+
+      const data: unknown = await response.json();
+      if (!isRecord(data)) {
+        lastError = new Error(
+          `Legacy metadata for token ${tokenId} is not an object`
+        );
+        continue;
+      }
+
+      return data as LaunchpadTokenMetadata;
+    } catch (error) {
+      lastError =
+        error instanceof Error
+          ? error
+          : new Error(`Legacy metadata for token ${tokenId} failed`);
+    }
   }
 
-  if (image.startsWith(`${PINATA_GATEWAY}/ipfs/`)) {
-    return image;
+  throw lastError || new Error(`Legacy metadata for token ${tokenId} failed`);
+}
+
+export async function fetchTokenMetadata(
+  tokenId: number
+): Promise<ResolvedTokenMetadata> {
+  const source = await resolveLaunchpadSource();
+
+  if (source.kind === "pinata") {
+    return {
+      metadata: await fetchLegacyTokenMetadata(tokenId),
+      source,
+    };
   }
 
-  return null;
+  const bucket = await getNftBucket();
+  const object = await bucket.get(metadataKey(source.active.version, tokenId));
+
+  if (!object) {
+    throw new Error(
+      `R2 metadata for token ${tokenId} (${source.active.version}) is missing`
+    );
+  }
+
+  const data = await object.json<unknown>();
+  if (!isRecord(data)) {
+    throw new Error(`R2 metadata for token ${tokenId} is not an object`);
+  }
+
+  return { metadata: data as LaunchpadTokenMetadata, source };
 }
