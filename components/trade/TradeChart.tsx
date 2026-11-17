@@ -23,7 +23,7 @@ type TradeChartProps = {
   className?: string;
 };
 
-type RangeKey = "1S" | "1M" | "1H" | "1D" | "ALL";
+type RangeKey = "1H" | "1D" | "1W" | "1M" | "1Y" | "ALL";
 type ChartMode = "area" | "candles";
 
 /** Live views stay readable by keeping roughly this many candles on screen. */
@@ -37,15 +37,16 @@ type Range = {
 };
 
 /**
- * Timeframes, narrowest first. The pool only records a sample when a trade
- * moves the price, so short windows can look dead — every view covers a long
- * stretch of history and the candle size is derived from the window.
+ * Timeframes, narrowest first — the same period set Uniswap's token chart
+ * uses. Each button selects a *window* (the last hour, day, week, …), not a
+ * candle interval; the candle size is derived from the window below.
  */
 const RANGES: Range[] = [
-  { key: "1S", label: "1S", window: 86_400 },
-  { key: "1M", label: "1M", window: 259_200 },
-  { key: "1H", label: "1H", window: 432_000 },
-  { key: "1D", label: "1D", window: 10_368_000 },
+  { key: "1H", label: "1H", window: 3_600 },
+  { key: "1D", label: "1D", window: 86_400 },
+  { key: "1W", label: "1W", window: 604_800 },
+  { key: "1M", label: "1M", window: 2_592_000 },
+  { key: "1Y", label: "1Y", window: 31_536_000 },
   { key: "ALL", label: "ALL", window: 0 },
 ];
 
@@ -55,7 +56,7 @@ const BUCKET_STEPS = [
 ];
 
 const PRICE_SCALE = 1e18;
-const PADDING = { top: 16, right: 64, bottom: 26, left: 8 };
+const PADDING = { top: 16, right: 80, bottom: 26, left: 8 };
 
 type Point = { t: number; p: number };
 type Candle = { t: number; o: number; h: number; l: number; c: number };
@@ -65,39 +66,63 @@ function toEthPerToken(tokensPerEth: bigint): number {
   return value > 0 ? PRICE_SCALE / value : 0;
 }
 
+/**
+ * Decimals that keep a price readable. When the series has a spread, ask for
+ * enough precision to tell adjacent prices apart — the same idea as Uniswap's
+ * low-variance axis handling, where every gridline must read differently.
+ */
+function priceDecimals(value: number, spread: number): number {
+  const magnitude = Math.floor(Math.log10(value));
+  const base = Math.min(10, Math.max(2, -magnitude + 4));
+  if (!Number.isFinite(spread) || spread <= 0) return base;
+  return Math.min(10, Math.max(base, Math.ceil(-Math.log10(spread)) + 1));
+}
+
 /** Keeps every significant digit visible when the token price is tiny. */
-function formatPrice(value: number | undefined): string {
+function formatPrice(value: number | undefined, spread = 0): string {
   if (value === undefined || !Number.isFinite(value) || value <= 0) return "—";
   if (value >= 1_000) {
     return formatCompactNumber(value, { maximumFractionDigits: 2 });
   }
+  const digits = priceDecimals(value, spread);
   if (value >= 1) {
     return value.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 4,
+      minimumFractionDigits: Math.min(2, digits),
+      maximumFractionDigits: digits,
     });
   }
-  const magnitude = Math.floor(Math.log10(value));
-  const digits = Math.min(10, Math.max(2, -magnitude + 4));
   return value.toFixed(digits);
 }
 
 /** Labels for the right-hand axis: compact for big numbers, precise for tiny. */
-function formatAxis(value: number): string {
+function formatAxis(value: number, axisSpan: number): string {
   if (!Number.isFinite(value)) return "";
   if (value <= 0) return "0";
   if (value >= 1_000) {
     return formatCompactNumber(value, { maximumFractionDigits: 1 });
   }
-  return formatPrice(value);
+  return formatPrice(value, axisSpan);
+}
+
+/** Show meaningful digits when a low-traffic token moves by a fraction of a percent. */
+function formatPercentChange(value: number): string {
+  const magnitude = Math.abs(value);
+  if (!Number.isFinite(value) || magnitude < 1e-9) return "0.00";
+  const digits =
+    magnitude < 0.01
+      ? Math.min(6, Math.max(2, Math.ceil(-Math.log10(magnitude)) + 1))
+      : 2;
+  return value.toFixed(digits);
 }
 
 function formatRate(tokensPerEth: bigint | undefined): string {
   if (tokensPerEth === undefined || tokensPerEth === 0n) return "—";
   const value = Number(tokensPerEth) / PRICE_SCALE;
   if (!Number.isFinite(value)) return "—";
+  // The rate line has room for grouping, so keep it exact instead of "6.2K".
   return formatCompactNumber(value, {
-    maximumFractionDigits: value >= 100 ? 0 : 2,
+    compactFrom: Number.POSITIVE_INFINITY,
+    maximumFractionDigits: value >= 100 ? 2 : 4,
     fallback: "—",
   });
 }
@@ -197,8 +222,9 @@ export function TradeChart({
   isLoading = false,
   className,
 }: TradeChartProps) {
-  const [range, setRange] = useState<RangeKey>("1S");
-  const [mode, setMode] = useState<ChartMode>("candles");
+  const [range, setRange] = useState<RangeKey>("1H");
+  // Uniswap opens on the line/area view; candles stay one tap away.
+  const [mode, setMode] = useState<ChartMode>("area");
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1_000));
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -243,8 +269,8 @@ export function TradeChart({
       ? toEthPerToken(liveTokensPerEth)
       : undefined;
 
-  /** History plus a synthetic sample at "now" so the line always reaches the edge. */
-  const series = useMemo<Point[]>(() => {
+  /** Normalised, sorted history. Re-sorts only when the on-chain samples move. */
+  const history = useMemo<Point[]>(() => {
     const next: Point[] = [];
 
     for (const sample of points ?? []) {
@@ -261,12 +287,22 @@ export function TradeChart({
     }
 
     next.sort((a, b) => a.t - b.t);
+    return next;
+  }, [points]);
+
+  /** History plus a synthetic sample at "now" so the line always reaches the edge. */
+  const series = useMemo<Point[]>(() => {
+    if (history.length === 0) {
+      return livePrice !== undefined && Number.isFinite(livePrice)
+        ? [{ t: anchor, p: livePrice }]
+        : [];
+    }
+
+    const next = history.slice();
+    const last = next[next.length - 1];
 
     if (livePrice !== undefined && Number.isFinite(livePrice)) {
-      const last = next[next.length - 1];
-      if (!last) {
-        next.push({ t: anchor, p: livePrice });
-      } else if (anchor > last.t) {
+      if (anchor > last.t) {
         next.push({ t: anchor, p: livePrice });
       } else if (last.p !== livePrice) {
         next.push({ t: last.t, p: livePrice });
@@ -274,18 +310,21 @@ export function TradeChart({
     }
 
     return next;
-  }, [points, livePrice, anchor]);
+  }, [history, livePrice, anchor]);
 
   const activeRange = RANGES.find((entry) => entry.key === range) ?? RANGES[0];
   const rangeSeconds = activeRange.window;
 
-  /** Left edge of the visible window; `ALL` starts at the oldest sample. */
+  /**
+   * Left edge of the visible window. Like Uniswap, a longer timeframe does not
+   * pad the chart with empty space before the pool's first sample: clamp the
+   * window to the oldest recorded point.
+   */
+  const firstSampleAt = series.length > 0 ? series[0].t : anchor;
   const windowStart =
     rangeSeconds > 0
-      ? anchor - rangeSeconds
-      : series.length > 0
-        ? series[0].t
-        : anchor;
+      ? Math.max(anchor - rangeSeconds, firstSampleAt)
+      : firstSampleAt;
 
   const visible = useMemo<Point[]>(() => {
     if (series.length === 0) return [];
@@ -315,15 +354,16 @@ export function TradeChart({
   const prices = visible.map((point) => point.p);
   if (livePrice !== undefined) prices.push(livePrice);
 
-  let yMin = prices.length > 0 ? Math.min(...prices) : 0;
-  let yMax = prices.length > 0 ? Math.max(...prices) : 1;
-  if (prices.length === 0) {
-    yMin = 0;
-    yMax = 1;
-  }
+  const rawMin = prices.length > 0 ? Math.min(...prices) : 0;
+  const rawMax = prices.length > 0 ? Math.max(...prices) : 1;
+  const priceSpread = rawMax - rawMin;
+
+  let yMin = rawMin;
+  let yMax = rawMax;
   const pad = yMax - yMin || Math.max(yMax * 0.02, 1e-12);
   yMin = Math.max(0, yMin - pad * 0.18);
   yMax = yMax + pad * 0.18;
+  const axisSpan = yMax - yMin;
 
   const width = size.width;
   const chartHeight = Math.max(220, size.height || 300);
@@ -356,24 +396,35 @@ export function TradeChart({
   const positive = change >= 0;
   const accent = positive ? "var(--color-success)" : "var(--color-danger)";
 
+  /**
+   * The pool only records a point when a trade moves the price. With a handful
+   * of trades, Uniswap draws a stepped line so each trade reads as a clear
+   * vertical move instead of a diagonal that implies gradual drift.
+   */
+  const stepLine = visible.length < 20;
+
   let linePath = "";
   let fillPath = "";
   if (areaPoints.length > 0) {
-    const coords = areaPoints.map(
-      (point) => `${xOf(point.t).toFixed(2)} ${yOf(point.p).toFixed(2)}`,
-    );
+    const firstPoint = areaPoints[0];
+    const firstX = xOf(firstPoint.t).toFixed(2);
+    const baseline = (PADDING.top + plotH).toFixed(2);
+    let path = `M ${firstX} ${yOf(firstPoint.p).toFixed(2)}`;
+
+    for (let index = 1; index < areaPoints.length; index += 1) {
+      const point = areaPoints[index];
+      const x = xOf(point.t).toFixed(2);
+      const y = yOf(point.p).toFixed(2);
+      path += stepLine ? ` H ${x} V ${y}` : ` L ${x} ${y}`;
+    }
+
+    // Extend to the live edge when the last sample is older than now.
     const lastX = xOf(xMax).toFixed(2);
     const lastY = yOf(areaPoints[areaPoints.length - 1].p).toFixed(2);
-    const firstX = xOf(areaPoints[0].t).toFixed(2);
-    const baseline = (PADDING.top + plotH).toFixed(2);
+    path += stepLine ? ` H ${lastX}` : ` L ${lastX} ${lastY}`;
 
-    linePath = `M ${coords[0]} ${coords
-      .slice(1)
-      .map((coord) => `L ${coord}`)
-      .join(" ")}`;
-    // Extend to the live edge when the last sample is older than now.
-    linePath += ` L ${lastX} ${lastY}`;
-    fillPath = `${linePath} L ${lastX} ${baseline} L ${firstX} ${baseline} Z`;
+    linePath = path;
+    fillPath = `${path} L ${lastX} ${baseline} L ${firstX} ${baseline} Z`;
   }
 
   const candlesSlot = candles.length > 0 ? plotW / candles.length : 0;
@@ -467,13 +518,13 @@ export function TradeChart({
               </span>
               <span className="pill">
                 <span className="live-dot" />
-                {isLoading ? "syncing" : range === "1S" ? "1s live" : "live"}
+                {isLoading ? "syncing" : "live"}
               </span>
             </div>
 
             <div className="mt-3 flex flex-wrap items-end gap-x-3 gap-y-1">
               <span className="font-header text-[clamp(1.8rem,4vw,2.4rem)] font-extrabold leading-none tracking-[-0.045em] text-ink">
-                {formatPrice(livePrice ?? lastPrice)}
+                {formatPrice(livePrice ?? lastPrice, priceSpread)}
               </span>
               <span className="pb-1 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-mute">
                 ETH per ARIWA
@@ -494,14 +545,14 @@ export function TradeChart({
                   <TrendingDown className="size-3.5" />
                 )}
                 {positive ? "+" : ""}
-                {change.toFixed(2)}%
+                {formatPercentChange(change)}%
               </span>
               <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-ink-mute">
-                {range === "ALL" ? "all time" : `${formatDuration(span)} change`}
+                {range === "ALL" ? "all recorded" : `${activeRange.label} change`}
               </span>
               <span className="text-ink-faint">·</span>
               <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-ink-mute">
-                H {formatPrice(high)} · L {formatPrice(low)}
+                H {formatPrice(high, priceSpread)} · L {formatPrice(low, priceSpread)}
               </span>
             </div>
           </div>
@@ -590,6 +641,7 @@ export function TradeChart({
               role="img"
               aria-label={`ARIWA price chart, ${formatPrice(
                 livePrice ?? lastPrice,
+                priceSpread,
               )} ETH per ARIWA`}
               className="absolute inset-0 block touch-none select-none"
               onPointerMove={handlePointerMove}
@@ -624,7 +676,7 @@ export function TradeChart({
                       fill="var(--color-ink-faint)"
                       fontFamily="var(--font-mono)"
                     >
-                      {formatAxis(value)}
+                      {formatAxis(value, axisSpan)}
                     </text>
                   </g>
                 );
@@ -785,7 +837,7 @@ export function TradeChart({
                     fill="var(--color-cream)"
                     fontFamily="var(--font-mono)"
                   >
-                    {formatPrice(livePrice)}
+                    {formatPrice(livePrice, priceSpread)}
                   </text>
                 </g>
               )}
@@ -844,14 +896,14 @@ export function TradeChart({
             <div
               className="pointer-events-none absolute z-10 rounded-xl border border-ink/10 bg-paper/95 px-3 py-2 shadow-[0_22px_50px_-32px_rgba(39,33,50,0.8)] backdrop-blur"
               style={{
-                left: Math.min(Math.max(hovered.x + 12, 6), Math.max(6, width - 164)),
+                left: Math.min(Math.max(hovered.x + 12, 6), Math.max(6, width - 208)),
                 top: 8,
               }}
             >
               <p className="font-mono text-[8px] uppercase tracking-[0.14em] text-ink-mute">
                 {format(
                   new Date(hovered.time * 1_000),
-                  span <= 600 ? "MMM d, HH:mm:ss" : "MMM d, HH:mm",
+                  span <= 3_600 ? "MMM d, HH:mm:ss" : "MMM d, HH:mm",
                 )}
               </p>
               {hovered.candle ? (
@@ -866,13 +918,15 @@ export function TradeChart({
                   ).map(([label, value]) => (
                     <div key={label} className="flex items-center gap-1">
                       <dt className="text-ink-faint">{label}</dt>
-                      <dd className="tabular-nums text-ink">{formatPrice(value)}</dd>
+                      <dd className="tabular-nums text-ink">
+                        {formatPrice(value, priceSpread)}
+                      </dd>
                     </div>
                   ))}
                 </dl>
               ) : (
                 <p className="mt-1 font-header text-sm font-extrabold tracking-[-0.02em] text-ink">
-                  {formatPrice(hovered.price)}
+                  {formatPrice(hovered.price, priceSpread)}
                   <span className="ml-1 font-mono text-[8px] font-normal uppercase tracking-[0.12em] text-ink-mute">
                     ETH
                   </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAccount, useBalance } from "wagmi";
@@ -19,6 +19,7 @@ import {
   Copy,
   Droplets,
   Loader2,
+  Settings2,
   ShieldCheck,
   Sparkles,
   Wallet,
@@ -54,14 +55,14 @@ import { TokenChip } from "@/components/trade/token-marks";
 const EXPLORER_URL =
   giwaSepolia.blockExplorers?.default.url ?? "https://sepolia-explorer.giwa.io";
 
-const SLIPPAGE_BPS = 100n; // 1%
+/** Default max slippage, matching Uniswap's Auto setting. */
+const DEFAULT_SLIPPAGE_BPS = 50n;
 
-/** Percent shortcuts shown under the amount, like a DEX swap form. */
-const PRESET_PERCENTS = [5, 50] as const;
-type Preset = (typeof PRESET_PERCENTS)[number] | "max";
+/** Uniswap-style slippage presets: 0.1%, 0.5% and 1%. */
+const SLIPPAGE_PRESETS = [10n, 50n, 100n] as const;
 
-/** Presets are rounded down to this many decimals so they never exceed the balance. */
-const PRESET_DECIMALS = 6;
+/** Max fills are rounded down to this many decimals so they never exceed the balance. */
+const AMOUNT_DECIMALS = 6;
 
 /** Keep a little ETH back on "Max" so the wallet can still pay gas. */
 const ETH_GAS_BUFFER = parseEther("0.0005");
@@ -86,6 +87,16 @@ function formatAmount(value: bigint | undefined, fractionDigits = 6): string {
   });
 }
 
+/** Grouped, non-abbreviated amount for the pool rate line. */
+function formatFullAmount(value: bigint | undefined, fractionDigits = 2): string {
+  if (value === undefined) return "—";
+  return formatCompactNumber(formatEther(value), {
+    compactFrom: Number.POSITIVE_INFINITY,
+    maximumFractionDigits: fractionDigits,
+    fallback: "—",
+  });
+}
+
 /**
  * Display a quote with a precision that matches its size: ARIWA normally
  * shows 2 decimals, but a dust-sized quote stays visible instead of reading 0.
@@ -100,8 +111,35 @@ function formatQuoteAmount(
   return formatAmount(value, value > 0n && value < dustThreshold ? 8 : standard);
 }
 
+/** Percent impact with Uniswap's "<0.01%" treatment for tiny values. */
+function formatImpact(percent: number | undefined, hasImpact = false): string {
+  if (percent === undefined) return "—";
+  if (hasImpact && percent < 0.01) return "<0.01%";
+  return `${percent.toFixed(2)}%`;
+}
+
+/** Slippage in basis points as a short percent: 50n -> "0.5%". */
+function formatSlippage(bps: bigint): string {
+  return `${Number(bps) / 100}%`;
+}
+
+/** Sonner action that opens the transaction in the GIWA explorer. */
+function explorerAction(hash: `0x${string}` | undefined) {
+  return hash
+    ? {
+        label: "View tx",
+        onClick: () =>
+          window.open(
+            `${EXPLORER_URL}/tx/${hash}`,
+            "_blank",
+            "noopener,noreferrer",
+          ),
+      }
+    : undefined;
+}
+
 /** Round wei down to a number of decimals. Never rounds up past a balance. */
-function floorTo(value: bigint, decimals = PRESET_DECIMALS): bigint {
+function floorTo(value: bigint, decimals = AMOUNT_DECIMALS): bigint {
   const factor = 10n ** BigInt(18 - decimals);
   return (value / factor) * factor;
 }
@@ -303,8 +341,8 @@ function TradeDesk() {
 
   const [mode, setMode] = useState<Mode>("buy");
   const [amount, setAmount] = useState("");
-  const [preset, setPreset] = useState<Preset | null>(null);
   const [amountFocused, setAmountFocused] = useState(false);
+  const [slippageBps, setSlippageBps] = useState<bigint>(DEFAULT_SLIPPAGE_BPS);
 
   const {
     ethBalance: poolEth,
@@ -319,14 +357,10 @@ function TradeDesk() {
     usePriceHistory();
   // Wallet reads follow the chain while the desk is open, so both the pay and
   // receive balances stay current even when a trade settles in another tab.
-  const {
-    data: walletTokens,
-    refetch: refetchWalletTokens,
-  } = useTokenBalance(address, { refetchInterval: LIVE_WALLET_REFRESH_MS });
-  const {
-    data: walletEth,
-    refetch: refetchWalletEth,
-  } = useBalance({
+  const { data: walletTokens } = useTokenBalance(address, {
+    refetchInterval: LIVE_WALLET_REFRESH_MS,
+  });
+  const { data: walletEth, refetch: refetchWalletEth } = useBalance({
     address,
     query: {
       enabled: !!address,
@@ -334,17 +368,16 @@ function TradeDesk() {
       refetchOnWindowFocus: true,
     },
   });
-  const {
-    data: allowance,
-    refetch: refetchAllowance,
-  } = useTokenAllowance(
-    address,
+  const { data: allowance } = useTokenAllowance(
+    // Allowance only matters when selling; skip the read in buy mode.
+    mode === "sell" ? address : undefined,
     SWAP_POOL_ADDRESS as `0x${string}`,
     { refetchInterval: LIVE_WALLET_REFRESH_MS },
   );
 
   const {
     buy,
+    hash: buyHash,
     isPending: isBuyPending,
     isConfirming: isBuyConfirming,
     isSuccess: isBuySuccess,
@@ -353,6 +386,7 @@ function TradeDesk() {
   } = useBuyAriwa();
   const {
     sell,
+    hash: sellHash,
     isPending: isSellPending,
     isConfirming: isSellConfirming,
     isSuccess: isSellSuccess,
@@ -361,6 +395,7 @@ function TradeDesk() {
   } = useSellAriwa();
   const {
     approve,
+    hash: approveHash,
     isPending: isApprovePending,
     isConfirming: isApproveConfirming,
     isSuccess: isApproveSuccess,
@@ -394,21 +429,44 @@ function TradeDesk() {
 
   const minOut =
     quoteOut !== undefined
-      ? (quoteOut * (BPS_DENOMINATOR - SLIPPAGE_BPS)) / BPS_DENOMINATOR
+      ? (quoteOut * (BPS_DENOMINATOR - slippageBps)) / BPS_DENOMINATOR
       : undefined;
 
-  /** How far this order moves the mid price, including the swap fee. */
+  /** How far this order moves the mid price, with the pool fee shown separately. */
   const impactBps =
     quoteOut !== undefined &&
     amountValue !== null &&
     poolEth !== undefined &&
     poolTokens !== undefined
       ? mode === "buy"
-        ? priceImpactBps(amountValue, quoteOut, poolEth, poolTokens)
-        : priceImpactBps(amountValue, quoteOut, poolTokens, poolEth)
+        ? priceImpactBps(amountValue, quoteOut, poolEth, poolTokens, poolFeeBps)
+        : priceImpactBps(amountValue, quoteOut, poolTokens, poolEth, poolFeeBps)
       : undefined;
   const impactPercent =
     impactBps !== undefined ? Number(impactBps) / 100 : undefined;
+
+  /**
+   * Integer basis points round tiny trades down to zero. Compare against the
+   * fee-adjusted mid-price output so the UI can still say "<0.01%".
+   */
+  const feeAdjustedIn =
+    amountValue !== null
+      ? amountValue * (BPS_DENOMINATOR - poolFeeBps)
+      : undefined;
+  const noImpactOut =
+    feeAdjustedIn !== undefined &&
+    poolEth !== undefined &&
+    poolTokens !== undefined &&
+    poolEth > 0n &&
+    poolTokens > 0n
+      ? mode === "buy"
+        ? (feeAdjustedIn * poolTokens) / (poolEth * BPS_DENOMINATOR)
+        : (feeAdjustedIn * poolEth) / (poolTokens * BPS_DENOMINATOR)
+      : undefined;
+  const hasPriceImpact =
+    quoteOut !== undefined &&
+    noImpactOut !== undefined &&
+    quoteOut < noImpactOut;
 
   const outputSymbol: "ETH" | "ARIWA" = mode === "buy" ? "ARIWA" : "ETH";
   const quoteDisplay =
@@ -430,49 +488,21 @@ function TradeDesk() {
       ? walletBalance - ETH_GAS_BUFFER
       : 0n;
 
-  const canUsePresets =
-    !!address &&
-    walletBalance !== undefined &&
-    walletBalance > 0n &&
-    (mode === "sell" || spendableEth > 0n);
+  /** The wei value the Max button fills in, keeping gas back on a buy. */
+  const maxAmount =
+    walletBalance === undefined || walletBalance === 0n
+      ? 0n
+      : floorTo(
+          mode === "buy" && walletBalance > spendableEth
+            ? spendableEth
+            : walletBalance,
+        );
+  const canUseMax = !!address && maxAmount > 0n;
 
-  /** The wei value a 5/50/Max chip would fill in. */
-  const presetAmount = useCallback(
-    (next: Preset): bigint => {
-      if (walletBalance === undefined || walletBalance === 0n) return 0n;
-      const share = next === "max" ? 100n : BigInt(next);
-      let value = (walletBalance * share) / 100n;
-      if (mode === "buy" && value > spendableEth) value = spendableEth;
-      return floorTo(value);
-    },
-    [walletBalance, mode, spendableEth],
-  );
-
-  const applyPreset = useCallback(
-    (next: Preset) => {
-      if (!canUsePresets) return;
-      const value = presetAmount(next);
-      setAmount(value > 0n ? formatEther(value) : "");
-      setPreset(value > 0n ? next : null);
-    },
-    [canUsePresets, presetAmount],
-  );
-
-  /**
-   * Start the form on 5% once the wallet balance is readable, so the field is
-   * never an empty box. This runs once per connected account; after a trade or
-   * a manual edit the field is left alone.
-   */
-  const defaultPresetFor = useRef<string | null>(null);
-  useEffect(() => {
-    if (!address || !canUsePresets) return;
-    const previousFor = defaultPresetFor.current;
-    if (previousFor === address) return;
-    defaultPresetFor.current = address;
-    // First visit: respect anything typed while the balance was loading.
-    // A different account: replace the stale amount with its own 5% default.
-    if (previousFor !== null || amount === "") applyPreset(5);
-  }, [address, canUsePresets, amount, applyPreset]);
+  const applyMax = () => {
+    if (!canUseMax) return;
+    setAmount(formatEther(maxAmount));
+  };
 
   const poolReady =
     poolEth !== undefined && poolTokens !== undefined && poolEth > 0n && poolTokens > 0n;
@@ -501,53 +531,53 @@ function TradeDesk() {
     !allowanceLoading;
 
   /**
-   * A confirmed receipt means the chain has moved. Ask the wallet reads for
-   * their new values right away instead of waiting for the next poll tick, so
-   * the balance line and the sell allowance update as the toast appears.
+   * A confirmed receipt means the chain has moved. Invalidate the on-chain
+   * reads (pool, history, balances, allowance) instead of every query in the
+   * app, and refresh the native balance, which lives under a separate key.
    */
-  const refreshWalletState = useCallback(() => {
+  const refreshChainReads = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ["readContract"] });
     void refetchWalletEth();
-    void refetchWalletTokens();
-    void refetchAllowance();
-  }, [refetchWalletEth, refetchWalletTokens, refetchAllowance]);
+  }, [queryClient, refetchWalletEth]);
 
   useEffect(() => {
     if (!isBuySuccess) return;
     toast.success("ARIWA bought", {
       description: "The tokens are already in your wallet.",
+      duration: 6_000,
+      action: explorerAction(buyHash),
     });
-    queryClient.invalidateQueries();
-    refreshWalletState();
+    refreshChainReads();
     // Reset the form once the tx lands. This intentionally runs on success.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAmount("");
-    setPreset(null);
     resetBuy();
-  }, [isBuySuccess, queryClient, refreshWalletState, resetBuy]);
+  }, [isBuySuccess, buyHash, refreshChainReads, resetBuy]);
 
   useEffect(() => {
     if (!isSellSuccess) return;
     toast.success("ARIWA sold", {
       description: "The ETH is back in your wallet.",
+      duration: 6_000,
+      action: explorerAction(sellHash),
     });
-    queryClient.invalidateQueries();
-    refreshWalletState();
+    refreshChainReads();
     // Reset the form once the tx lands. This intentionally runs on success.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAmount("");
-    setPreset(null);
     resetSell();
-  }, [isSellSuccess, queryClient, refreshWalletState, resetSell]);
+  }, [isSellSuccess, sellHash, refreshChainReads, resetSell]);
 
   useEffect(() => {
     if (!isApproveSuccess) return;
     toast.success("Approval confirmed", {
       description: "You can sell your ARIWA now.",
+      duration: 6_000,
+      action: explorerAction(approveHash),
     });
-    queryClient.invalidateQueries();
-    refreshWalletState();
+    refreshChainReads();
     resetApprove();
-  }, [isApproveSuccess, queryClient, refreshWalletState, resetApprove]);
+  }, [isApproveSuccess, approveHash, refreshChainReads, resetApprove]);
 
   useEffect(() => {
     if (!buyError) return;
@@ -572,7 +602,6 @@ function TradeDesk() {
     // Carry the quote across the flip so the trade keeps its size, like a DEX.
     const carry = quoteOut !== undefined ? floorTo(quoteOut) : 0n;
     setMode(next);
-    setPreset(null);
     setAmount(carry > 0n ? formatEther(carry) : "");
   };
 
@@ -580,8 +609,6 @@ function TradeDesk() {
     const next = normalizeAmountInput(value);
     if (next === null) return;
     setAmount(next);
-    // Any manual edit takes over from the percent shortcut.
-    setPreset(null);
   };
 
   const handleAmountBlur = () => {
@@ -677,16 +704,33 @@ function TradeDesk() {
                 <span className="text-[11px] font-medium text-ink-mute">
                   {mode === "buy" ? "You pay" : "You sell"}
                 </span>
-                <span className="text-[11px] text-ink-mute">
-                  Balance{" "}
-                  <span
-                    className={cn(
-                      "font-medium tabular-nums",
-                      insufficientBalance ? "text-danger" : "text-ink-soft",
-                    )}
-                  >
-                    {formatAmount(walletBalance, 6)} {balanceSymbol}
+                <span className="flex items-center gap-1.5 text-[11px] text-ink-mute">
+                  <span>
+                    Balance{" "}
+                    <span
+                      className={cn(
+                        "font-medium tabular-nums",
+                        insufficientBalance ? "text-danger" : "text-ink-soft",
+                      )}
+                    >
+                      {formatAmount(walletBalance, 6)} {balanceSymbol}
+                    </span>
                   </span>
+                  {canUseMax && (
+                    <button
+                      type="button"
+                      onClick={applyMax}
+                      disabled={isProcessing}
+                      title={
+                        mode === "buy"
+                          ? `Use your full ETH balance, keeping ${formatEther(ETH_GAS_BUFFER)} ETH for gas`
+                          : "Use your full ARIWA balance"
+                      }
+                      className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-iris transition hover:bg-iris/[0.08] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Max
+                    </button>
+                  )}
                 </span>
               </div>
               <div className="mt-1 flex items-center gap-3">
@@ -721,49 +765,6 @@ function TradeDesk() {
                 <TokenChip symbol={mode === "buy" ? "ETH" : "ARIWA"} />
               </div>
 
-              {canUsePresets && (
-                <div
-                  className="mt-3 grid grid-cols-3 gap-1.5"
-                  role="group"
-                  aria-label="Fill a percentage of your balance"
-                >
-                  {([...PRESET_PERCENTS, "max"] as const).map((option) => {
-                    const active = preset === option;
-                    const label = option === "max" ? "Max" : `${option}%`;
-                    return (
-                      <button
-                        key={label}
-                        type="button"
-                        onClick={() => applyPreset(option)}
-                        disabled={isProcessing}
-                        aria-pressed={active}
-                        title={
-                          option === "max"
-                            ? mode === "buy"
-                              ? `Use your full ETH balance, keeping ${formatEther(ETH_GAS_BUFFER)} ETH for gas`
-                              : "Use your full ARIWA balance"
-                            : `Fill ${option}% of your ${balanceSymbol} balance`
-                        }
-                        className={cn(
-                          "h-8 rounded-xl text-[11px] font-medium transition",
-                          active
-                            ? "bg-iris/[0.14] text-iris ring-1 ring-iris/30"
-                            : "bg-paper/60 text-ink-mute hover:bg-paper hover:text-ink",
-                          "disabled:cursor-not-allowed disabled:opacity-40",
-                        )}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {canUsePresets && mode === "buy" && preset === "max" && (
-                <p className="mt-2 text-right text-[10px] text-ink-faint">
-                  Keeping {formatEther(ETH_GAS_BUFFER)} ETH back for gas
-                </p>
-              )}
             </div>
 
             <div className="relative z-10 -my-2.5 flex justify-center">
@@ -811,35 +812,49 @@ function TradeDesk() {
             </div>
 
             <details className="group mt-3 rounded-2xl border border-ink/[0.07] bg-paper/45">
-              <summary className="flex cursor-pointer items-center justify-between gap-3 px-3.5 py-2.5 text-[11px] text-ink-mute transition hover:text-ink">
+              <summary
+                title="Transaction details and settings"
+                className="flex cursor-pointer items-center justify-between gap-3 px-3.5 py-2.5 text-[11px] text-ink-mute transition hover:text-ink"
+              >
                 <span className="tabular-nums">
                   {tokensPerEth !== undefined
-                    ? `1 ETH = ${formatAmount(tokensPerEth, 2)} ARIWA`
+                    ? `1 ETH = ${formatFullAmount(tokensPerEth, 2)} ARIWA`
                     : "Pool rate"}
                 </span>
                 <span className="inline-flex items-center gap-1">
+                  <Settings2 className="size-3.5 text-ink-faint" />
                   Details
                   <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />
                 </span>
               </summary>
               <dl className="space-y-2 border-t border-ink/[0.06] px-3.5 py-3 text-[11px]">
                 <div className="flex items-center justify-between gap-3">
-                  <dt className="text-ink-mute">Price impact</dt>
+                  <dt
+                    className="text-ink-mute"
+                    title="Difference between the pool mid price and your execution price; the pool fee is shown separately"
+                  >
+                    Price impact
+                  </dt>
                   <dd
                     className={cn(
                       "font-medium tabular-nums",
                       impactPercent !== undefined && impactPercent >= 5
-                        ? "text-warning-ink"
+                        ? impactPercent >= 15
+                          ? "text-danger-ink"
+                          : "text-warning-ink"
                         : "text-ink-soft",
                     )}
                   >
-                    {impactPercent !== undefined
-                      ? `${impactPercent.toFixed(2)}%`
-                      : "—"}
+                    {formatImpact(impactPercent, hasPriceImpact)}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <dt className="text-ink-mute">Min received</dt>
+                  <dt
+                    className="text-ink-mute"
+                    title="The minimum amount you will accept after slippage"
+                  >
+                    Min received
+                  </dt>
                   <dd className="font-medium tabular-nums text-ink-soft">
                     {minOutDisplay
                       ? `${minOutDisplay} ${outputSymbol}`
@@ -847,13 +862,39 @@ function TradeDesk() {
                   </dd>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <dt className="text-ink-mute">Slippage</dt>
-                  <dd className="font-medium tabular-nums text-ink-soft">
-                    {Number(SLIPPAGE_BPS) / 100}%
+                  <dt
+                    className="text-ink-mute"
+                    title="Maximum price movement you will accept before the swap reverts"
+                  >
+                    Max slippage
+                  </dt>
+                  <dd className="flex items-center gap-0.5 rounded-lg bg-ink/[0.04] p-0.5">
+                    {SLIPPAGE_PRESETS.map((bps) => (
+                      <button
+                        key={bps.toString()}
+                        type="button"
+                        onClick={() => setSlippageBps(bps)}
+                        aria-pressed={slippageBps === bps}
+                        title={`Allow up to ${formatSlippage(bps)} price movement`}
+                        className={cn(
+                          "rounded-md px-2 py-1 text-[10px] font-medium tabular-nums transition",
+                          slippageBps === bps
+                            ? "bg-paper text-ink shadow-[0_2px_8px_-5px_rgba(39,33,50,0.45)]"
+                            : "text-ink-mute hover:text-ink",
+                        )}
+                      >
+                        {formatSlippage(bps)}
+                      </button>
+                    ))}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <dt className="text-ink-mute">Pool fee</dt>
+                  <dt
+                    className="text-ink-mute"
+                    title="Fee that stays in the pool for liquidity providers"
+                  >
+                    Pool fee
+                  </dt>
                   <dd className="font-medium tabular-nums text-ink-soft">
                     {feeBps !== undefined
                       ? `${(Number(feeBps) / 100).toFixed(2)}%`
@@ -862,6 +903,28 @@ function TradeDesk() {
                 </div>
               </dl>
             </details>
+
+            {impactPercent !== undefined && impactPercent >= 5 && (
+              <div
+                role="status"
+                className={cn(
+                  "mt-3 flex items-start gap-2 rounded-2xl border px-3.5 py-2.5 text-[10.5px] leading-5",
+                  impactPercent >= 15
+                    ? "border-danger/25 bg-danger/[0.06] text-danger-ink"
+                    : "border-warning/25 bg-warning/[0.08] text-warning-ink",
+                )}
+              >
+                <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-current" />
+                <span>
+                  Price impact is{" "}
+                  {impactPercent >= 15 ? "very high" : "high"} (
+                  {formatImpact(impactPercent, hasPriceImpact)}).{" "}
+                  {impactPercent >= 15
+                    ? "This trade would move the pool price significantly — consider splitting it."
+                    : "You may receive a noticeably worse rate than the current pool price."}
+                </span>
+              </div>
+            )}
 
             <div className="mt-4">
               <ConnectButton.Custom>
@@ -1019,7 +1082,8 @@ function TradeDesk() {
             <li className="flex items-start gap-2.5 text-[11.5px] leading-5 text-ink-soft">
               <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-iris" />
               A {feeBps !== undefined ? (Number(feeBps) / 100).toFixed(2) : "0.30"}%
-              fee stays in the pool, and a 1% slippage guard protects each order.
+              fee stays in the pool, and your max-slippage setting protects
+              each order.
             </li>
           </ul>
           <Link

@@ -6,11 +6,11 @@ import { contracts, AriwaTokenABI } from "@/lib/contracts";
 import { formatCompactNumber } from "@/lib/utils/format";
 
 /**
- * Cadence for wallet reads that must stay live while a trading desk is open.
- * Giwa Sepolia mines roughly a block per second, so polling at the same rhythm
- * makes balances move with the chain instead of only after a page refresh.
+ * Cadence for wallet reads while a trading desk is open. Balances only change
+ * when a transaction lands, so a five-second poll is enough; confirmed trades
+ * still refetch immediately instead of waiting for the next tick.
  */
-export const LIVE_WALLET_REFRESH_MS = 1_000;
+export const LIVE_WALLET_REFRESH_MS = 5_000;
 
 type LiveReadOptions = {
   /** Poll cadence in ms. Omit for read-once queries. */

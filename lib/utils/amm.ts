@@ -26,21 +26,25 @@ export function getAmountOut(
 }
 
 /**
- * Price impact of a swap in basis points, including the swap fee. Compares the
- * executed rate with the mid price before the trade.
+ * Price impact of a swap in basis points, excluding the swap fee — the fee is
+ * displayed as its own line, exactly like Uniswap. Compares the executed rate
+ * with the no-impact rate for the same fee-adjusted input.
  */
 export function priceImpactBps(
   amountIn: bigint,
   amountOut: bigint,
   reserveIn: bigint,
   reserveOut: bigint,
+  feeBps: bigint = DEFAULT_FEE_BPS,
 ): bigint {
   if (amountIn <= 0n || amountOut <= 0n || reserveIn <= 0n || reserveOut <= 0n) {
     return 0n;
   }
 
-  const ideal = amountIn * reserveOut;
-  const actual = amountOut * reserveIn;
+  const fee = feeBps > BPS_DENOMINATOR ? BPS_DENOMINATOR : feeBps;
+  const amountInWithFee = amountIn * (BPS_DENOMINATOR - fee);
+  const ideal = amountInWithFee * reserveOut;
+  const actual = amountOut * reserveIn * BPS_DENOMINATOR;
   if (ideal === 0n || actual >= ideal) return 0n;
 
   return ((ideal - actual) * BPS_DENOMINATOR) / ideal;
