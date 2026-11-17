@@ -26,29 +26,27 @@ type TradeChartProps = {
 type RangeKey = "1S" | "1M" | "1H" | "1D" | "ALL";
 type ChartMode = "area" | "candles";
 
-/** How many candles each timeframe keeps on screen. */
-const CANDLE_COUNT = 120;
+/** Live views stay readable by keeping roughly this many candles on screen. */
+const TARGET_CANDLES = 160;
 
 type Range = {
   key: RangeKey;
   label: string;
-  /** Candle size in seconds. 0 lets the chart size them from the span. */
-  bucket: number;
   /** Visible window in seconds. 0 shows every recorded sample. */
   window: number;
 };
 
 /**
- * Timeframes, narrowest first. Every button fixes a candle size and shows a
- * run of candles wide enough to read. `1S` is the live ticker: each tick adds
- * a one-second candle, so new pool prices appear in real time.
+ * Timeframes, narrowest first. The pool only records a sample when a trade
+ * moves the price, so short windows can look dead — every view covers a long
+ * stretch of history and the candle size is derived from the window.
  */
 const RANGES: Range[] = [
-  { key: "1S", label: "1S", bucket: 1, window: 120 },
-  { key: "1M", label: "1M", bucket: 60, window: 60 * CANDLE_COUNT },
-  { key: "1H", label: "1H", bucket: 3_600, window: 3_600 * CANDLE_COUNT },
-  { key: "1D", label: "1D", bucket: 86_400, window: 86_400 * CANDLE_COUNT },
-  { key: "ALL", label: "ALL", bucket: 0, window: 0 },
+  { key: "1S", label: "1S", window: 86_400 },
+  { key: "1M", label: "1M", window: 259_200 },
+  { key: "1H", label: "1H", window: 432_000 },
+  { key: "1D", label: "1D", window: 10_368_000 },
+  { key: "ALL", label: "ALL", window: 0 },
 ];
 
 const BUCKET_STEPS = [
@@ -106,16 +104,24 @@ function formatRate(tokensPerEth: bigint | undefined): string {
 
 function formatTime(timestamp: number, span: number): string {
   const date = new Date(timestamp * 1_000);
-  if (span > 60 * 86_400) return format(date, "MMM d");
+  if (span > 7 * 86_400) return format(date, "MMM d");
   if (span > 2 * 86_400) return format(date, "MMM d, HH:mm");
   if (span <= 600) return format(date, "HH:mm:ss");
   return format(date, "HH:mm");
 }
 
+/** Compact duration used for window and candle-size labels. */
+function formatDuration(seconds: number): string {
+  if (seconds >= 86_400) return `${Math.round(seconds / 86_400)}d`;
+  if (seconds >= 3_600) return `${Math.round(seconds / 3_600)}h`;
+  if (seconds >= 60) return `${Math.round(seconds / 60)}m`;
+  return `${Math.round(seconds)}s`;
+}
+
 /** Bucket size that keeps the candle count readable for any window. */
 function chooseBucket(span: number): number {
   for (const step of BUCKET_STEPS) {
-    if (span / step <= 56) return step;
+    if (span / step <= TARGET_CANDLES) return step;
   }
   return BUCKET_STEPS[BUCKET_STEPS.length - 1];
 }
@@ -329,15 +335,11 @@ export function TradeChart({
   const yOf = (price: number) =>
     PADDING.top + ((yMax - price) / (yMax - yMin)) * plotH;
 
+  const bucket = chooseBucket(span);
+
   const candles = useMemo(
-    () =>
-      buildCandles(
-        visible,
-        activeRange.bucket > 0 ? activeRange.bucket : chooseBucket(span),
-        xMin,
-        xMax,
-      ),
-    [visible, activeRange.bucket, span, xMin, xMax],
+    () => buildCandles(visible, bucket, xMin, xMax),
+    [visible, bucket, xMin, xMax],
   );
 
   const areaPoints = useMemo(() => downsample(visible, 220), [visible]);
@@ -495,7 +497,7 @@ export function TradeChart({
                 {change.toFixed(2)}%
               </span>
               <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-ink-mute">
-                {range === "ALL" ? "all time" : "window change"}
+                {range === "ALL" ? "all time" : `${formatDuration(span)} change`}
               </span>
               <span className="text-ink-faint">·</span>
               <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-ink-mute">
@@ -560,6 +562,11 @@ export function TradeChart({
                     setHoverIndex(null);
                   }}
                   aria-pressed={range === entry.key}
+                  title={
+                    entry.window > 0
+                      ? `Last ${formatDuration(entry.window)}`
+                      : "All recorded history"
+                  }
                   className={cn(
                     "h-7 rounded-full px-2.5 font-mono text-[8.5px] font-semibold uppercase tracking-[0.1em] transition",
                     range === entry.key
@@ -883,6 +890,8 @@ export function TradeChart({
             </span>
           </span>
           <span className="flex items-center gap-3">
+            <span>{formatDuration(bucket)} bars</span>
+            <span className="text-ink-faint">·</span>
             <span>Fee {feeLabel}</span>
             <span className="text-ink-faint">·</span>
             <span>On-chain price feed</span>
