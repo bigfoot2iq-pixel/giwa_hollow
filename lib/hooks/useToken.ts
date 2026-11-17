@@ -5,7 +5,22 @@ import { formatEther, parseEther } from "viem";
 import { contracts, AriwaTokenABI } from "@/lib/contracts";
 import { formatCompactNumber } from "@/lib/utils/format";
 
-export function useTokenBalance(address: `0x${string}` | undefined) {
+/**
+ * Cadence for wallet reads that must stay live while a trading desk is open.
+ * Giwa Sepolia mines roughly a block per second, so polling at the same rhythm
+ * makes balances move with the chain instead of only after a page refresh.
+ */
+export const LIVE_WALLET_REFRESH_MS = 1_000;
+
+type LiveReadOptions = {
+  /** Poll cadence in ms. Omit for read-once queries. */
+  refetchInterval?: number;
+};
+
+export function useTokenBalance(
+  address: `0x${string}` | undefined,
+  { refetchInterval }: LiveReadOptions = {},
+) {
   return useReadContract({
     address: contracts.ariwaToken.address,
     abi: AriwaTokenABI,
@@ -13,11 +28,19 @@ export function useTokenBalance(address: `0x${string}` | undefined) {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address,
+      refetchInterval,
+      // Intervals pause in a hidden tab. Catch up as soon as the trader
+      // returns instead of showing a balance from before they left.
+      refetchOnWindowFocus: refetchInterval !== undefined,
     },
   });
 }
 
-export function useTokenAllowance(owner: `0x${string}` | undefined, spender: `0x${string}`) {
+export function useTokenAllowance(
+  owner: `0x${string}` | undefined,
+  spender: `0x${string}`,
+  { refetchInterval }: LiveReadOptions = {},
+) {
   return useReadContract({
     address: contracts.ariwaToken.address,
     abi: AriwaTokenABI,
@@ -25,6 +48,8 @@ export function useTokenAllowance(owner: `0x${string}` | undefined, spender: `0x
     args: owner ? [owner, spender] : undefined,
     query: {
       enabled: !!owner,
+      refetchInterval,
+      refetchOnWindowFocus: refetchInterval !== undefined,
     },
   });
 }

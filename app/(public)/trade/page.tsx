@@ -29,6 +29,7 @@ import {
   SWAP_POOL_ADDRESS,
 } from "@/lib/contracts";
 import {
+  LIVE_WALLET_REFRESH_MS,
   useApproveTokens,
   useBuyAriwa,
   usePriceHistory,
@@ -316,14 +317,30 @@ function TradeDesk() {
   const { data: paused } = useSwapPoolPaused();
   const { data: priceHistory, isLoading: isPriceHistoryLoading } =
     usePriceHistory();
-  const { data: walletTokens } = useTokenBalance(address);
-  const { data: walletEth } = useBalance({
+  // Wallet reads follow the chain while the desk is open, so both the pay and
+  // receive balances stay current even when a trade settles in another tab.
+  const {
+    data: walletTokens,
+    refetch: refetchWalletTokens,
+  } = useTokenBalance(address, { refetchInterval: LIVE_WALLET_REFRESH_MS });
+  const {
+    data: walletEth,
+    refetch: refetchWalletEth,
+  } = useBalance({
     address,
-    query: { enabled: !!address },
+    query: {
+      enabled: !!address,
+      refetchInterval: LIVE_WALLET_REFRESH_MS,
+      refetchOnWindowFocus: true,
+    },
   });
-  const { data: allowance } = useTokenAllowance(
+  const {
+    data: allowance,
+    refetch: refetchAllowance,
+  } = useTokenAllowance(
     address,
     SWAP_POOL_ADDRESS as `0x${string}`,
+    { refetchInterval: LIVE_WALLET_REFRESH_MS },
   );
 
   const {
@@ -483,18 +500,30 @@ function TradeDesk() {
     !insufficientBalance &&
     !allowanceLoading;
 
+  /**
+   * A confirmed receipt means the chain has moved. Ask the wallet reads for
+   * their new values right away instead of waiting for the next poll tick, so
+   * the balance line and the sell allowance update as the toast appears.
+   */
+  const refreshWalletState = useCallback(() => {
+    void refetchWalletEth();
+    void refetchWalletTokens();
+    void refetchAllowance();
+  }, [refetchWalletEth, refetchWalletTokens, refetchAllowance]);
+
   useEffect(() => {
     if (!isBuySuccess) return;
     toast.success("ARIWA bought", {
       description: "The tokens are already in your wallet.",
     });
     queryClient.invalidateQueries();
+    refreshWalletState();
     // Reset the form once the tx lands. This intentionally runs on success.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAmount("");
     setPreset(null);
     resetBuy();
-  }, [isBuySuccess, queryClient, resetBuy]);
+  }, [isBuySuccess, queryClient, refreshWalletState, resetBuy]);
 
   useEffect(() => {
     if (!isSellSuccess) return;
@@ -502,12 +531,13 @@ function TradeDesk() {
       description: "The ETH is back in your wallet.",
     });
     queryClient.invalidateQueries();
+    refreshWalletState();
     // Reset the form once the tx lands. This intentionally runs on success.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAmount("");
     setPreset(null);
     resetSell();
-  }, [isSellSuccess, queryClient, resetSell]);
+  }, [isSellSuccess, queryClient, refreshWalletState, resetSell]);
 
   useEffect(() => {
     if (!isApproveSuccess) return;
@@ -515,8 +545,9 @@ function TradeDesk() {
       description: "You can sell your ARIWA now.",
     });
     queryClient.invalidateQueries();
+    refreshWalletState();
     resetApprove();
-  }, [isApproveSuccess, queryClient, resetApprove]);
+  }, [isApproveSuccess, queryClient, refreshWalletState, resetApprove]);
 
   useEffect(() => {
     if (!buyError) return;
