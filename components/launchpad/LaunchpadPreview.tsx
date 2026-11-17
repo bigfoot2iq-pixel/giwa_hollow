@@ -28,8 +28,10 @@ function serverReducedMotionSnapshot() {
 
 /**
  * The genesis set showcase. A fixed description sits above the artwork, the
- * piece itself fills the frame edge to edge, and the set is paged with arrows,
- * dots, and a quiet auto-rotation instead of a strip of thumbnails.
+ * piece keeps its full square crop, and the set is paged with arrows, dots, and
+ * a quiet auto-rotation instead of a strip of thumbnails. On desktop the card
+ * stretches to match the mint panel's height; the artwork stays square and an
+ * ambient blurred copy of the active slide fills the extra space around it.
  */
 export function LaunchpadPreview() {
   const [activeId, setActiveId] = useState(PREVIEW_ITEMS[0].id);
@@ -65,7 +67,7 @@ export function LaunchpadPreview() {
   }
 
   return (
-    <div className="ui-container self-start overflow-hidden rounded-[30px]">
+    <div className="ui-container flex flex-col overflow-hidden rounded-[30px]">
       <div className="border-b border-ink/[0.07] bg-paper/35 p-4 sm:p-5">
         <div className="flex items-center justify-between gap-2">
           <p className="eyebrow">The genesis set</p>
@@ -88,8 +90,30 @@ export function LaunchpadPreview() {
 
       <div
         id="launchpad-preview-stage"
-        className="relative aspect-square w-full overflow-hidden bg-cream-2"
+        className="relative aspect-square w-full overflow-hidden bg-cream-2 lg:aspect-auto lg:min-h-0 lg:flex-1"
       >
+        {/* When the mint panel is short the stage is wider than the square art.
+            Fill those side gutters with a soft, blurred copy of the slide. */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden lg:block">
+          {PREVIEW_ITEMS.map((item, index) => (
+            <Image
+              key={`ambient-${item.id}`}
+              src={item.src}
+              alt=""
+              fill
+              sizes="(max-width: 1024px) 92vw, 720px"
+              loading="lazy"
+              fetchPriority="low"
+              draggable={false}
+              className={cn(
+                "scale-110 object-cover object-center blur-2xl transition-opacity duration-700 ease-out",
+                index === activeIndex ? "opacity-80" : "opacity-0",
+              )}
+            />
+          ))}
+          <div className="absolute inset-0 bg-cream/20 dark:bg-ink/25" />
+        </div>
+
         {PREVIEW_ITEMS.map((item, index) => {
           const isActive = index === activeIndex;
 
@@ -105,13 +129,14 @@ export function LaunchpadPreview() {
               // at low priority instead of ten eager requests at once.
               loading={isActive ? "eager" : "lazy"}
               fetchPriority={isActive ? "high" : "low"}
-              preload={index === 0}
               draggable={false}
               sizes="(max-width: 1024px) 92vw, 720px"
               className={cn(
                 // The collection art is square, so a square stage shows the whole
                 // resident edge to edge instead of cropping the bottom away.
-                "object-cover object-center transition-[opacity,transform] duration-700 ease-out",
+                // On desktop the stage stretches to the mint panel's height, so
+                // the artwork is contained and keeps every pixel visible.
+                "object-contain object-center transition-[opacity,transform] duration-700 ease-out",
                 isActive ? "scale-100 opacity-100" : "scale-[1.015] opacity-0",
               )}
             />
