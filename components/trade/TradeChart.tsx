@@ -223,8 +223,7 @@ export function TradeChart({
   className,
 }: TradeChartProps) {
   const [range, setRange] = useState<RangeKey>("1H");
-  // Uniswap opens on the line/area view; candles stay one tap away.
-  const [mode, setMode] = useState<ChartMode>("area");
+  const [mode, setMode] = useState<ChartMode>("candles");
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1_000));
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
