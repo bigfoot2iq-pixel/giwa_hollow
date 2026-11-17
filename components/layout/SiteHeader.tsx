@@ -15,11 +15,11 @@ import { ThemeToggle } from "./ThemeToggle";
 const NAV = [
   { label: "Home", href: "/home" },
   { label: "Trade", href: "/trade" },
-  { label: "Raffles", href: "/raffles" },
   { label: "Launchpad", href: "/launchpad" },
   { label: "Create", href: "/create" },
   { label: "Faucet", href: "/faucet" },
   { label: "Leaderboard", href: "/leaderboard" },
+  { label: "Raffles", href: "/raffles" },
 ] as const;
 
 export function SiteHeader() {
