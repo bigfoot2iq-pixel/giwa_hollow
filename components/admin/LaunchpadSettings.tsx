@@ -8,10 +8,19 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
-import { formatEther, isAddress, parseEther } from "viem";
+import { formatEther, formatUnits, isAddress, parseUnits, zeroAddress } from "viem";
 import { toast } from "sonner";
-import { AriwaNFTABI, giwaSepolia, LAUNCHPAD_NFT_ADDRESS } from "@/lib/contracts";
+import {
+  AriwaNFTABI,
+  contracts,
+  giwaSepolia,
+  LAUNCHPAD_NFT_ADDRESS,
+} from "@/lib/contracts";
 import { useConfig } from "@/lib/hooks";
+import {
+  DEFAULT_ERC20_DECIMALS,
+  ERC20_PAYMENT_ABI,
+} from "@/lib/launchpad/currency";
 import {
   HOLDER_CHAINS,
   HOLDER_CHAIN_KEYS,
@@ -118,6 +127,66 @@ export function LaunchpadSettings() {
     query: { enabled: contractConfigured },
   });
 
+  const {
+    data: paymentToken,
+    refetch: refetchPaymentToken,
+    isError: paymentTokenUnsupported,
+  } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    chainId: giwaSepolia.id,
+    abi: AriwaNFTABI,
+    functionName: "paymentToken",
+    query: { enabled: contractConfigured },
+  });
+
+  const paymentTokenAddress =
+    paymentToken && paymentToken !== zeroAddress ? paymentToken : undefined;
+
+  const { data: paymentSymbol } = useReadContract({
+    address: paymentTokenAddress,
+    chainId: giwaSepolia.id,
+    abi: ERC20_PAYMENT_ABI,
+    functionName: "symbol",
+    query: { enabled: Boolean(paymentTokenAddress) },
+  });
+
+  const { data: paymentDecimalsData } = useReadContract({
+    address: paymentTokenAddress,
+    chainId: giwaSepolia.id,
+    abi: ERC20_PAYMENT_ABI,
+    functionName: "decimals",
+    query: { enabled: Boolean(paymentTokenAddress) },
+  });
+
+  const paymentDecimals =
+    typeof paymentDecimalsData === "number"
+      ? paymentDecimalsData
+      : DEFAULT_ERC20_DECIMALS;
+
+  // Wait for the token's own decimals before turning the stored price into an
+  // input value; otherwise a 6-decimal asset would render 1,000x too large.
+  const paymentDecimalsReady =
+    !paymentTokenAddress || typeof paymentDecimalsData === "number";
+
+  const paymentSymbolLabel =
+    paymentTokenAddress && typeof paymentSymbol === "string" && paymentSymbol.trim()
+      ? paymentSymbol.trim()
+      : paymentTokenAddress
+        ? "ARIWA"
+        : "ETH";
+
+  const {
+    data: paymentBalance,
+    refetch: refetchPaymentBalance,
+  } = useReadContract({
+    address: paymentTokenAddress,
+    chainId: giwaSepolia.id,
+    abi: ERC20_PAYMENT_ABI,
+    functionName: "balanceOf",
+    args: CONTRACT_ADDRESS ? [CONTRACT_ADDRESS] : undefined,
+    query: { enabled: Boolean(paymentTokenAddress && CONTRACT_ADDRESS) },
+  });
+
   const { data: maxPerWallet, refetch: refetchMaxPerWallet } = useReadContract({
     address: CONTRACT_ADDRESS,
     chainId: giwaSepolia.id,
@@ -194,6 +263,7 @@ export function LaunchpadSettings() {
   });
 
   const [priceInput, setPriceInput] = useState("");
+  const [paymentTokenInput, setPaymentTokenInput] = useState("");
   const [maxPerWalletInput, setMaxPerWalletInput] = useState("");
   const [baseUriInput, setBaseUriInput] = useState("");
   const [mintTo, setMintTo] = useState("");
@@ -209,10 +279,16 @@ export function LaunchpadSettings() {
       : undefined;
 
   useEffect(() => {
-    if (publicPrice !== undefined && !priceInput) {
-      setPriceInput(formatEther(publicPrice));
+    if (publicPrice !== undefined && paymentDecimalsReady && !priceInput) {
+      setPriceInput(formatUnits(publicPrice, paymentDecimals));
     }
-  }, [publicPrice, priceInput]);
+  }, [publicPrice, priceInput, paymentDecimals, paymentDecimalsReady]);
+
+  useEffect(() => {
+    if (paymentToken !== undefined && !paymentTokenInput) {
+      setPaymentTokenInput(paymentToken === zeroAddress ? "" : paymentToken);
+    }
+  }, [paymentToken, paymentTokenInput]);
 
   useEffect(() => {
     if (maxPerWallet !== undefined && !maxPerWalletInput) {
@@ -242,6 +318,8 @@ export function LaunchpadSettings() {
   const refetchAll = () => {
     void refetchMintOpen();
     void refetchPublicPrice();
+    void refetchPaymentToken();
+    void refetchPaymentBalance();
     void refetchMaxPerWallet();
     void refetchTotalMinted();
     void refetchContractBalance();
@@ -255,6 +333,11 @@ export function LaunchpadSettings() {
 
   const priceTx = useTxAction("Public price updated", () => {
     void refetchPublicPrice();
+  });
+
+  const paymentTokenTx = useTxAction("Payment token updated", () => {
+    void refetchPaymentToken();
+    void refetchPaymentBalance();
   });
 
   const maxPerWalletTx = useTxAction("Max per wallet updated", () => {
@@ -271,6 +354,10 @@ export function LaunchpadSettings() {
 
   const withdrawTx = useTxAction("Fees withdrawn", () => {
     void refetchContractBalance();
+  });
+
+  const withdrawTokenTx = useTxAction("Mint proceeds withdrawn", () => {
+    void refetchPaymentBalance();
   });
 
   const handleTogglePhase = () => {
@@ -305,15 +392,17 @@ export function LaunchpadSettings() {
   const handleSavePrice = () => {
     if (!CONTRACT_ADDRESS) return;
 
-    let priceWei: bigint;
+    let priceUnits: bigint;
     try {
       const trimmed = priceInput.trim();
       if (!/^\d+(\.\d{1,18})?$/.test(trimmed)) {
         throw new Error("invalid amount");
       }
-      priceWei = parseEther(trimmed);
+      priceUnits = parseUnits(trimmed, paymentDecimals);
     } catch {
-      toast.error("Mint price must be a valid ETH amount");
+      toast.error(
+        `Mint price must be a valid ${paymentSymbolLabel} amount (up to ${paymentDecimals} decimals)`
+      );
       return;
     }
 
@@ -322,8 +411,44 @@ export function LaunchpadSettings() {
       chainId: giwaSepolia.id,
       abi: AriwaNFTABI,
       functionName: "setPublicPrice",
-      args: [priceWei],
+      args: [priceUnits],
     });
+  };
+
+  const handleSavePaymentToken = () => {
+    if (!CONTRACT_ADDRESS) return;
+
+    const trimmed = paymentTokenInput.trim();
+    const normalized =
+      trimmed === "" || trimmed.toLowerCase() === "eth"
+        ? zeroAddress
+        : trimmed;
+
+    if (normalized !== zeroAddress && !isAddress(normalized)) {
+      toast.error("Enter a valid ERC20 address, or leave it empty for native ETH");
+      return;
+    }
+
+    paymentTokenTx.writeContract({
+      address: CONTRACT_ADDRESS,
+      chainId: giwaSepolia.id,
+      abi: AriwaNFTABI,
+      functionName: "setPaymentToken",
+      args: [normalized],
+    });
+  };
+
+  const handleUseAriwaToken = () => {
+    const ariwa = contracts.ariwaToken.address;
+    if (!isAddress(ariwa)) {
+      toast.error("NEXT_PUBLIC_HOLLOW_TOKEN_ADDRESS is not configured");
+      return;
+    }
+    setPaymentTokenInput(ariwa);
+  };
+
+  const handleUseNativeEth = () => {
+    setPaymentTokenInput("");
   };
 
   const handleSaveBaseUri = () => {
@@ -389,8 +514,33 @@ export function LaunchpadSettings() {
     });
   };
 
+  const handleWithdrawPaymentToken = () => {
+    if (!CONTRACT_ADDRESS || !paymentTokenAddress) return;
+    if (!withdrawTo || !isAddress(withdrawTo)) {
+      toast.error("Enter a valid recipient address");
+      return;
+    }
+    if (paymentBalance === undefined || paymentBalance === 0n) {
+      toast.error(`No ${paymentSymbolLabel} to withdraw`);
+      return;
+    }
+
+    withdrawTokenTx.writeContract({
+      address: CONTRACT_ADDRESS,
+      chainId: giwaSepolia.id,
+      abi: AriwaNFTABI,
+      functionName: "withdrawToken",
+      args: [
+        paymentTokenAddress,
+        withdrawTo as `0x${string}`,
+        paymentBalance as bigint,
+      ],
+    });
+  };
+
   const handleResetForm = () => {
     setPriceInput("");
+    setPaymentTokenInput("");
     setMaxPerWalletInput("");
     setBaseUriInput("");
     refetchAll();
@@ -534,8 +684,8 @@ export function LaunchpadSettings() {
             </h3>
             <p className="mt-1 text-[11px] text-muted-blue">
               These values live in the ARIWA NFT contract. The public phase is a
-              switch the owner opens and closes on-chain; the cap and price are
-              owner-controlled. Supply is fixed at 2,222.
+              switch the owner opens and closes on-chain; the cap, price and
+              payment asset are owner-controlled. Supply is fixed at 2,222.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -583,7 +733,7 @@ export function LaunchpadSettings() {
                   Price:{" "}
                   <span className="font-bold text-text-primary">
                     {publicPrice !== undefined
-                      ? `${formatEther(publicPrice)} ETH`
+                      ? `${formatUnits(publicPrice, paymentDecimals)} ${paymentSymbolLabel}`
                       : "…"}
                   </span>
                 </p>
@@ -645,13 +795,13 @@ export function LaunchpadSettings() {
 
             <label className="block">
               <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-muted-blue">
-                Public price (ETH)
+                Public price ({paymentSymbolLabel})
               </span>
               <div className="flex gap-2">
                 <input
                   value={priceInput}
                   onChange={(event) => setPriceInput(event.target.value)}
-                  placeholder="0.1"
+                  placeholder="1"
                   className={`${inputClass} py-2.5`}
                 />
                 <button
@@ -671,9 +821,91 @@ export function LaunchpadSettings() {
                 </button>
               </div>
               <p className="mt-1.5 text-[10px] leading-4 text-muted-blue">
-                Charged per NFT during the public phase, in GIWA ETH.
+                Charged per NFT during the public phase, in {paymentSymbolLabel}.
               </p>
             </label>
+          </div>
+
+          <div className="rounded-lg border border-ink/10 bg-ink/[0.02] p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-blue">
+                  Payment asset
+                </p>
+                <p className="mt-1 text-[11px] text-text-primary">
+                  Currently{" "}
+                  <span className="font-bold">
+                    {paymentTokenAddress
+                      ? `${paymentSymbolLabel} · ${paymentTokenAddress.slice(0, 6)}…${paymentTokenAddress.slice(-4)}`
+                      : "native ETH"}
+                  </span>
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={handleUseAriwaToken}
+                  disabled={!canWrite || paymentTokenUnsupported}
+                  className="rounded border border-ink/10 bg-paper px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-text-primary transition-all hover:bg-ink/[0.04] disabled:opacity-40"
+                >
+                  Use ARIWA
+                </button>
+                <button
+                  onClick={handleUseNativeEth}
+                  disabled={!canWrite || paymentTokenUnsupported}
+                  className="rounded border border-ink/10 bg-paper px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-text-primary transition-all hover:bg-ink/[0.04] disabled:opacity-40"
+                >
+                  Use ETH
+                </button>
+              </div>
+            </div>
+
+            {paymentTokenUnsupported ? (
+              <p className="mt-2 rounded border border-orange-500/20 bg-orange-500/5 px-3 py-2 text-[10px] leading-4 text-orange-700 dark:text-orange-300">
+                This collection was deployed before configurable payments, so it
+                still charges native ETH. Run{" "}
+                <code className="rounded bg-ink/[0.05] px-1 py-0.5 font-mono">
+                  scripts/deploy-launchpad-nft.ts
+                </code>{" "}
+                and update{" "}
+                <code className="rounded bg-ink/[0.05] px-1 py-0.5 font-mono">
+                  NEXT_PUBLIC_LAUNCHPAD_NFT_ADDRESS
+                </code>{" "}
+                to charge mints in ARIWA.
+              </p>
+            ) : null}
+
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <input
+                value={paymentTokenInput}
+                onChange={(event) => setPaymentTokenInput(event.target.value)}
+                placeholder="0x… ERC20 address (empty = native ETH)"
+                spellCheck={false}
+                disabled={paymentTokenUnsupported}
+                className={`${inputClass} flex-1 py-2.5 font-mono text-xs`}
+              />
+              <button
+                onClick={handleSavePaymentToken}
+                disabled={
+                  !canWrite ||
+                  paymentTokenUnsupported ||
+                  paymentTokenTx.isPending ||
+                  paymentTokenTx.isConfirming
+                }
+                className="whitespace-nowrap rounded border border-ink/10 bg-paper px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-text-primary transition-all hover:bg-ink/[0.04] disabled:opacity-40"
+              >
+                {paymentTokenTx.isPending
+                  ? "Confirm…"
+                  : paymentTokenTx.isConfirming
+                    ? "Saving…"
+                    : "Update asset"}
+              </button>
+            </div>
+
+            <p className="mt-1.5 text-[10px] leading-4 text-muted-blue">
+              Public mints charge {paymentSymbolLabel}. With an ERC20, minters
+              approve the collection once before the mint. Changing the asset
+              does not change the price.
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
@@ -754,21 +986,39 @@ export function LaunchpadSettings() {
           <div className="border-b border-ink/10 px-6 py-4">
             <h3 className="text-xl font-header text-text-primary">Treasury</h3>
             <p className="mt-1 text-[11px] text-muted-blue">
-              Sweep the ETH collected by public mints to a wallet.
+              Sweep the mint proceeds ({paymentSymbolLabel}) and any ETH held by
+              the collection to a wallet.
             </p>
           </div>
           <div className="space-y-3 p-6">
-            <div className="flex items-center justify-between rounded-lg border border-ink/10 bg-ink/[0.02] px-4 py-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-blue">
-                Balance
-              </span>
-              <span className="font-mono text-sm font-bold text-text-primary">
-                {contractBalance
-                  ? `${formatCompactNumber(formatEther(contractBalance.value), {
-                      maximumFractionDigits: 4,
-                    })} ${contractBalance.symbol}`
-                  : "…"}
-              </span>
+            <div className="space-y-2 rounded-lg border border-ink/10 bg-ink/[0.02] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-blue">
+                  Mint proceeds ({paymentSymbolLabel})
+                </span>
+                <span className="font-mono text-sm font-bold text-text-primary">
+                  {paymentTokenAddress
+                    ? paymentBalance !== undefined
+                      ? `${formatCompactNumber(
+                          formatUnits(paymentBalance, paymentDecimals),
+                          { maximumFractionDigits: 4 }
+                        )} ${paymentSymbolLabel}`
+                      : "…"
+                    : "Native ETH"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-t border-ink/[0.07] pt-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-blue">
+                  Native balance
+                </span>
+                <span className="font-mono text-sm font-bold text-text-primary">
+                  {contractBalance
+                    ? `${formatCompactNumber(formatEther(contractBalance.value), {
+                        maximumFractionDigits: 4,
+                      })} ${contractBalance.symbol}`
+                    : "…"}
+                </span>
+              </div>
             </div>
             <input
               value={withdrawTo}
@@ -777,21 +1027,39 @@ export function LaunchpadSettings() {
               spellCheck={false}
               className={`${inputClass} font-mono`}
             />
-            <button
-              onClick={handleWithdraw}
-              disabled={
-                !canWrite || withdrawTx.isPending || withdrawTx.isConfirming
-              }
-              className="rounded border border-ink/10 bg-paper px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-text-primary transition-all hover:bg-ink/[0.04] disabled:opacity-40"
-            >
-              {withdrawTx.isPending
-                ? "Confirm in wallet…"
-                : withdrawTx.isConfirming
-                  ? "Sending…"
-                  : "Withdraw balance"}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={handleWithdrawPaymentToken}
+                disabled={
+                  !canWrite ||
+                  !paymentTokenAddress ||
+                  withdrawTokenTx.isPending ||
+                  withdrawTokenTx.isConfirming
+                }
+                className="rounded border border-ink/10 bg-paper px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-text-primary transition-all hover:bg-ink/[0.04] disabled:opacity-40"
+              >
+                {withdrawTokenTx.isPending
+                  ? "Confirm in wallet…"
+                  : withdrawTokenTx.isConfirming
+                    ? "Sending…"
+                    : `Withdraw ${paymentSymbolLabel}`}
+              </button>
+              <button
+                onClick={handleWithdraw}
+                disabled={
+                  !canWrite || withdrawTx.isPending || withdrawTx.isConfirming
+                }
+                className="rounded border border-ink/10 bg-paper px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-text-primary transition-all hover:bg-ink/[0.04] disabled:opacity-40"
+              >
+                {withdrawTx.isPending
+                  ? "Confirm in wallet…"
+                  : withdrawTx.isConfirming
+                    ? "Sending…"
+                    : "Withdraw ETH"}
+              </button>
+            </div>
             <p className="text-[10px] leading-4 text-muted-blue">
-              Sends the full contract balance to the recipient.
+              Each button sends the full balance of that asset to the recipient.
             </p>
           </div>
         </div>

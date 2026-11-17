@@ -1,12 +1,21 @@
-import { formatEther } from "viem";
 import { formatCompactNumber } from "@/lib/utils/format";
+
+export {
+  DEFAULT_ERC20_DECIMALS,
+  ERC20_PAYMENT_ABI,
+  NATIVE_CURRENCY,
+  formatCurrency,
+  isErc20Payment,
+} from "@/lib/launchpad/currency";
+export type { PaymentCurrency } from "@/lib/launchpad/currency";
 
 /**
  * The live mint parameters read from the AriwaNFT collection.
  *
  * The contract keeps the public phase on-chain: `publicMintOpen` is the switch,
- * `publicPrice` is the price, `maxSupply` is the immutable 2,222 cap and
- * `maxPerWallet` is the owner-controlled per-wallet cap.
+ * `paymentToken` is the asset mints are paid in (zero address = native ETH),
+ * `publicPrice` is the price per NFT in that asset, `maxSupply` is the
+ * immutable 2,222 cap and `maxPerWallet` is the owner-controlled cap.
  */
 export type MintValues = {
   price: bigint;
@@ -14,6 +23,7 @@ export type MintValues = {
   walletLimit: bigint;
   minted: bigint;
   publicMintOpen: boolean;
+  paymentToken: `0x${string}`;
 };
 
 export type DropTone =
@@ -107,26 +117,6 @@ export function getDropStatus(
     tone: "live",
     detail: "Minting is open. First come, first served.",
   };
-}
-
-export function formatEth(value: bigint, maxDecimals = 4): string {
-  if (value === 0n) return "Free";
-
-  const numeric = Number(formatEther(value));
-  if (!Number.isFinite(numeric)) return "—";
-  if (numeric < 0.00001) return "<0.00001 ETH";
-
-  const formatted = formatCompactNumber(numeric, {
-    maximumFractionDigits: maxDecimals,
-  });
-
-  if (formatted === "0") {
-    return `<${(10 ** -maxDecimals).toLocaleString(undefined, {
-      maximumFractionDigits: maxDecimals,
-    })} ETH`;
-  }
-
-  return `${formatted} ETH`;
 }
 
 export function formatCount(value: bigint | number): string {

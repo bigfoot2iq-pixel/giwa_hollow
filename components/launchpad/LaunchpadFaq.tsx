@@ -1,12 +1,19 @@
-import { Plus, ShieldCheck } from "lucide-react";
-import { formatCount, type MintValues } from "./launchpad-format";
+import Link from "next/link";
+import { ArrowUpRight, Plus, ShieldCheck } from "lucide-react";
+import {
+  formatCount,
+  type MintValues,
+  type PaymentCurrency,
+} from "./launchpad-format";
 
 export function LaunchpadFaq({
   values,
   symbol,
+  currency,
 }: {
   values?: MintValues;
   symbol: string;
+  currency: PaymentCurrency;
 }) {
   const walletLimit =
     values && values.walletLimit > 0n
@@ -16,12 +23,19 @@ export function LaunchpadFaq({
     values && values.supply > 0n
       ? `${formatCount(values.supply)} pieces`
       : "a fixed supply";
+  const priceAsset = currency.symbol;
 
-  const faqs = [
+  type Faq = {
+    question: string;
+    answer: string;
+    href?: string;
+    linkLabel?: string;
+  };
+
+  const faqs: Faq[] = [
     {
       question: "How do I mint?",
-      answer:
-        "Connect a wallet on GIWA Sepolia, choose how many pieces you want, and confirm the transaction. The contract mints immediately; the supply counters update as soon as GIWA confirms the block.",
+      answer: `Connect a wallet on GIWA Sepolia, choose how many pieces you want, and confirm the transaction. The mint is priced in ${priceAsset}: the first confirmation approves ${priceAsset} for the collection, then the mint itself goes through. The supply counters update as soon as GIWA confirms the block.`,
     },
     {
       question: "When can I mint?",
@@ -30,8 +44,13 @@ export function LaunchpadFaq({
     },
     {
       question: "Which network and currency do I need?",
-      answer:
-        `GIWA Sepolia (chain 91342). Gas and the mint price are paid in ETH. If your wallet is on another network, the mint panel offers to switch it to GIWA before submitting.`,
+      answer: `GIWA Sepolia (chain 91342). Gas is paid in ETH, and the mint price is paid in ${priceAsset}. If your wallet is on another network, the mint panel offers to switch it to GIWA before submitting.`,
+    },
+    {
+      question: `Where do I get ${priceAsset}?`,
+      answer: `If you don't hold enough ${priceAsset}, the mint panel shows exactly how much more you need and links straight to the pool. On the Trade page you can buy ${priceAsset} with ETH at the live pool price, then come back and mint.`,
+      href: "/trade",
+      linkLabel: `Buy ${priceAsset} in the pool`,
     },
     {
       question: "Why does the panel check holder balances?",
@@ -44,8 +63,7 @@ export function LaunchpadFaq({
     },
     {
       question: "Why did my transaction fail?",
-      answer:
-        "Common causes are a closed or sold-out mint, a wallet that already reached its limit, insufficient ETH for the price plus gas, or a wallet on the wrong network. The page surfaces the contract's reason so you can fix it before retrying.",
+      answer: `Common causes are a closed or sold-out mint, a wallet that already reached its limit, not enough ${priceAsset} for the price (plus ETH for gas), or a wallet on the wrong network. The page surfaces the contract's reason so you can fix it before retrying.`,
     },
     {
       question: "Where can I see my NFT after minting?",
@@ -54,8 +72,7 @@ export function LaunchpadFaq({
     },
     {
       question: "Are mints refundable?",
-      answer:
-        `No. Blockchain transactions are final, and minting sends real ETH for the price and gas. Check the collection address on GIWA Explorer before you confirm.`,
+      answer: `No. Blockchain transactions are final, and minting sends real ${priceAsset} for the price and ETH for gas. Check the collection address on GIWA Explorer before you confirm.`,
     },
   ];
 
@@ -96,9 +113,20 @@ export function LaunchpadFaq({
                   <Plus className="size-3" />
                 </span>
               </summary>
-              <p className="pb-4 pr-8 text-[11px] leading-6 text-ink-mute">
+              <p className="pb-2 pr-8 text-[11px] leading-6 text-ink-mute">
                 {item.answer}
               </p>
+              {item.href ? (
+                <Link
+                  href={item.href}
+                  className="mb-4 inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.14em] text-iris-deep transition hover:text-iris"
+                >
+                  {item.linkLabel}
+                  <ArrowUpRight className="size-3" />
+                </Link>
+              ) : (
+                <span className="mb-4 block" />
+              )}
             </details>
           ))}
         </div>

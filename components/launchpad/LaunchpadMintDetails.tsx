@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import {
   AlertTriangle,
   ArrowUpRight,
   Check,
+  Coins,
   Loader2,
   Minus,
   Plus,
@@ -19,11 +21,12 @@ import { DropStatusPill } from "./DropStatusPill";
 import {
   formatAmount,
   formatCount,
-  formatEth,
+  formatCurrency,
   shortAddress,
   type DropStatus,
   type EligibilityResponse,
   type MintValues,
+  type PaymentCurrency,
 } from "./launchpad-format";
 
 /**
@@ -37,6 +40,10 @@ export function LaunchpadMintDetails({
   address,
   configured,
   price,
+  currency,
+  paymentBalance,
+  paymentBalanceError,
+  totalCost,
   walletLimit,
   maxQuantity,
   quantity,
@@ -56,6 +63,10 @@ export function LaunchpadMintDetails({
   address?: `0x${string}`;
   configured: boolean;
   price: bigint;
+  currency: PaymentCurrency;
+  paymentBalance?: bigint;
+  paymentBalanceError?: boolean;
+  totalCost: bigint;
   walletLimit: bigint;
   maxQuantity: number;
   quantity: number;
@@ -100,7 +111,7 @@ export function LaunchpadMintDetails({
             </p>
           </div>
           <p className="mt-1.5 font-header text-[20px] font-extrabold leading-none tracking-[-0.03em] text-ink">
-            {values ? formatEth(price) : "—"}
+            {values ? formatCurrency(price, currency) : "—"}
           </p>
         </div>
 
@@ -151,6 +162,15 @@ export function LaunchpadMintDetails({
         </span>
       </div>
 
+      <PaymentBalance
+        address={address}
+        currency={currency}
+        balance={paymentBalance}
+        error={paymentBalanceError}
+        totalCost={totalCost}
+        busy={busy || confirming}
+      />
+
       <HolderGate
         address={address}
         eligibility={eligibility}
@@ -196,6 +216,105 @@ export function LaunchpadMintDetails({
           <ArrowUpRight className="size-3" />
         </a>
       ) : null}
+    </div>
+  );
+}
+
+function PaymentBalance({
+  address,
+  currency,
+  balance,
+  error,
+  totalCost,
+  busy,
+}: {
+  address?: `0x${string}`;
+  currency: PaymentCurrency;
+  balance?: bigint;
+  error?: boolean;
+  totalCost: bigint;
+  busy: boolean;
+}) {
+  if (!address || totalCost === 0n) return null;
+
+  const symbol = currency.symbol;
+
+  if (balance === undefined) {
+    return (
+      <div className="mt-3 flex items-center gap-2 rounded-xl border border-ink/[0.08] bg-cream-2/40 px-3 py-2.5 text-[10px] text-ink-mute">
+        {error ? (
+          <>
+            <AlertTriangle className="size-3.5 text-warning" />
+            Couldn&apos;t read your {symbol} balance. The contract will verify it
+            when you mint.
+          </>
+        ) : (
+          <>
+            <Loader2 className="size-3.5 animate-spin text-iris" />
+            Checking your {symbol} balance…
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (balance >= totalCost) {
+    return (
+      <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-ink/[0.08] bg-cream-2/40 px-3 py-2.5">
+        <span className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-ink-mute">
+          Your {symbol}
+        </span>
+        <span className="tabular font-mono text-[10px] font-semibold text-ink">
+          {formatCurrency(balance, currency)}
+        </span>
+      </div>
+    );
+  }
+
+  const shortfall = totalCost - balance;
+
+  return (
+    <div className="mt-3 rounded-2xl border border-danger/25 bg-danger/[0.05] p-3">
+      <p className="flex items-center gap-1.5 text-[10.5px] font-semibold text-ink">
+        <AlertTriangle className="size-3.5 text-danger" />
+        Not enough {symbol} to mint
+      </p>
+      <p className="mt-1 text-[10px] leading-5 text-ink-mute">
+        You have{" "}
+        <span className="font-semibold text-ink-soft">
+          {formatCurrency(balance, currency)}
+        </span>{" "}
+        but this mint needs{" "}
+        <span className="font-semibold text-ink-soft">
+          {formatCurrency(totalCost, currency)}
+        </span>
+        . You&apos;re{" "}
+        <span className="font-semibold text-ink-soft">
+          {formatCurrency(shortfall, currency)}
+        </span>{" "}
+        short.
+      </p>
+
+      {currency.isNative ? null : (
+        <Link
+          href="/trade"
+          aria-disabled={busy}
+          className={cn(
+            "mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-iris/25 bg-iris/[0.07] px-3 py-2 font-mono text-[9px] font-semibold uppercase tracking-[0.14em] text-iris-deep transition hover:border-iris/40 hover:bg-iris/[0.12]",
+            busy && "pointer-events-none opacity-50",
+          )}
+        >
+          <Coins className="size-3.5" />
+          Buy {symbol} in the pool
+          <ArrowUpRight className="size-3" />
+        </Link>
+      )}
+
+      <p className="mt-2 text-center text-[9px] leading-4 text-ink-faint">
+        {currency.isNative
+          ? "Add ETH on GIWA Sepolia to cover the mint price plus gas."
+          : "You still need a little ETH in your wallet for gas."}
+      </p>
     </div>
   );
 }

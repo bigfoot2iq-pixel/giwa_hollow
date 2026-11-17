@@ -9,9 +9,10 @@ import { giwaSepolia } from "@/lib/contracts";
 import { DropStatusPill } from "./DropStatusPill";
 import {
   formatCount,
-  formatEth,
+  formatCurrency,
   type DropStatus,
   type MintValues,
+  type PaymentCurrency,
 } from "./launchpad-format";
 
 const STAT_LABELS = ["Supply", "Minted", "Price", "Max / wallet"] as const;
@@ -24,6 +25,7 @@ export function LaunchpadSummary({
   displayMinted,
   contractAddress,
   configured,
+  currency,
 }: {
   collectionName: string;
   symbol: string;
@@ -32,6 +34,7 @@ export function LaunchpadSummary({
   displayMinted?: bigint;
   contractAddress?: `0x${string}`;
   configured: boolean;
+  currency: PaymentCurrency;
 }) {
   const supply = values?.supply;
   const minted = displayMinted ?? values?.minted;
@@ -48,7 +51,7 @@ export function LaunchpadSummary({
   const statValues = [
     supply !== undefined ? formatCount(supply) : "—",
     minted !== undefined ? formatCount(minted) : "—",
-    values ? formatEth(values.price) : "—",
+    values ? formatCurrency(values.price, currency) : "—",
     values ? formatCount(values.walletLimit) : "—",
   ];
 

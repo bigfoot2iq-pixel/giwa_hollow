@@ -1,9 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import {
   useAccount,
+  useBalance,
+  usePublicClient,
   useReadContract,
   useSwitchChain,
   useWaitForTransactionReceipt,
@@ -14,6 +17,7 @@ import { toast } from "sonner";
 import {
   AlertTriangle,
   Check,
+  Coins,
   Loader2,
   Plus,
   RefreshCw,
@@ -26,11 +30,14 @@ import { LaunchpadMintActions, type MintAction } from "./LaunchpadMintActions";
 import { LaunchpadMintDetails } from "./LaunchpadMintDetails";
 import { LaunchpadMintSuccess } from "./LaunchpadMintSuccess";
 import {
+  ERC20_PAYMENT_ABI,
   formatCount,
-  formatEth,
+  formatCurrency,
+  isErc20Payment,
   type DropStatus,
   type EligibilityResponse,
   type MintValues,
+  type PaymentCurrency,
 } from "./launchpad-format";
 
 function shortError(error: unknown): string {
@@ -45,6 +52,7 @@ export function LaunchpadMintCard({
   configured,
   values,
   status,
+  currency,
   contractAddress,
   onMinted,
   onRetryContract,
@@ -52,6 +60,7 @@ export function LaunchpadMintCard({
   configured: boolean;
   values?: MintValues;
   status: DropStatus;
+  currency: PaymentCurrency;
   contractAddress?: `0x${string}`;
   onMinted?: (quantity: number) => void;
   onRetryContract?: () => void;
@@ -60,6 +69,8 @@ export function LaunchpadMintCard({
   const { openConnectModal } = useConnectModal();
   const { switchChain, isPending: isSwitching } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient({ chainId: giwaSepolia.id });
+  const router = useRouter();
 
   const [quantity, setQuantity] = useState(1);
   const [busy, setBusy] = useState(false);
@@ -88,6 +99,57 @@ export function LaunchpadMintCard({
   });
 
   const walletMinted = (walletMintedData as bigint | undefined) ?? 0n;
+
+  // The collection charges in ARIWA by default, but the owner can switch the
+  // payment asset back to native ETH on-chain. Read the minter's balance in the
+  // configured asset so the UI can send them to the pool before they sign a
+  // transaction the contract would reject.
+  const erc20Payment = isErc20Payment(currency);
+
+  const paymentBalanceQuery = useReadContract({
+    address: erc20Payment ? currency.token : undefined,
+    chainId: giwaSepolia.id,
+    abi: ERC20_PAYMENT_ABI,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+    query: { enabled: erc20Payment && Boolean(address) },
+  });
+
+  const nativeBalanceQuery = useBalance({
+    address,
+    chainId: giwaSepolia.id,
+    query: { enabled: !erc20Payment && Boolean(address) },
+  });
+
+  const paymentBalance = erc20Payment
+    ? (paymentBalanceQuery.data as bigint | undefined)
+    : nativeBalanceQuery.data?.value;
+
+  const paymentBalanceError = erc20Payment
+    ? paymentBalanceQuery.isError
+    : nativeBalanceQuery.isError;
+
+  const { data: allowanceData, refetch: refetchAllowance } = useReadContract({
+    address: erc20Payment ? currency.token : undefined,
+    chainId: giwaSepolia.id,
+    abi: ERC20_PAYMENT_ABI,
+    functionName: "allowance",
+    args: address && contractAddress ? [address, contractAddress] : undefined,
+    query: { enabled: erc20Payment && Boolean(address && contractAddress) },
+  });
+
+  const allowance = allowanceData as bigint | undefined;
+
+  const refetchTokenBalance = paymentBalanceQuery.refetch;
+  const refetchNativeBalance = nativeBalanceQuery.refetch;
+
+  const refetchPaymentBalance = useCallback(() => {
+    if (erc20Payment) {
+      void refetchTokenBalance();
+    } else {
+      void refetchNativeBalance();
+    }
+  }, [erc20Payment, refetchNativeBalance, refetchTokenBalance]);
 
   // Mirror the supply floor above for the wallet counter: a confirmed mint can
   // land before the chain read catches up, so keep the new total visible until
@@ -157,6 +219,17 @@ export function LaunchpadMintCard({
     maxQuantity > 0;
 
   const totalCost = price * BigInt(Math.max(quantity, 0));
+
+  const balanceKnown = paymentBalance !== undefined || paymentBalanceError;
+  const insufficientBalance =
+    Boolean(address) &&
+    paymentBalance !== undefined &&
+    paymentBalance < totalCost;
+  const needsApproval =
+    erc20Payment &&
+    allowance !== undefined &&
+    totalCost > 0n &&
+    allowance < totalCost;
 
   const checkEligibility = useCallback(async () => {
     if (!address) {
@@ -236,11 +309,16 @@ export function LaunchpadMintCard({
       },
     );
     void refetchWalletMinted();
+    refetchPaymentBalance();
+    if (erc20Payment) void refetchAllowance();
     onMinted?.(mintedQuantity);
   }, [
     address,
+    erc20Payment,
     hash,
     receipt.isSuccess,
+    refetchAllowance,
+    refetchPaymentBalance,
     refetchWalletMinted,
     onMinted,
     walletMinted,
@@ -269,6 +347,12 @@ export function LaunchpadMintCard({
       toast.error("Choose a valid quantity");
       return;
     }
+    if (insufficientBalance) {
+      toast.error(`Not enough ${currency.symbol}`, {
+        description: `Buy ${currency.symbol} in the pool, then come back to mint.`,
+      });
+      return;
+    }
 
     setBusy(true);
     setHash(undefined);
@@ -277,13 +361,58 @@ export function LaunchpadMintCard({
     lastQuantity.current = quantity;
 
     try {
+      let paymentValue = 0n;
+
+      if (erc20Payment) {
+        // Refresh first: the wallet may have approved the collection already.
+        const { data: freshAllowance } = await refetchAllowance();
+        const currentAllowance =
+          (freshAllowance as bigint | undefined) ?? allowance ?? 0n;
+
+        if (currentAllowance < totalCost) {
+          if (!publicClient) throw new Error("GIWA client unavailable");
+
+          const approveHash = await writeContractAsync({
+            address: currency.token,
+            chainId: giwaSepolia.id,
+            abi: ERC20_PAYMENT_ABI,
+            functionName: "approve",
+            args: [contractAddress, totalCost],
+          });
+
+          toast.loading(`Approving ${currency.symbol}`, {
+            id: approveHash,
+            description: "Confirm the approval in your wallet. The mint follows automatically.",
+          });
+
+          const approveReceipt = await publicClient.waitForTransactionReceipt({
+            hash: approveHash,
+          });
+          if (approveReceipt.status !== "success") {
+            toast.error(`${currency.symbol} approval failed`, {
+              id: approveHash,
+            });
+            throw new Error(`${currency.symbol} approval reverted`);
+          }
+
+          toast.success(`${currency.symbol} approved`, {
+            id: approveHash,
+            description: "Submitting the mint…",
+          });
+
+          await refetchAllowance();
+        }
+      } else {
+        paymentValue = totalCost;
+      }
+
       const txHash = await writeContractAsync({
         address: contractAddress,
         chainId: giwaSepolia.id,
         abi: AriwaNFTABI,
         functionName: "publicMint",
         args: [BigInt(quantity)],
-        value: totalCost,
+        value: paymentValue,
       });
 
       setHash(txHash);
@@ -327,19 +456,19 @@ export function LaunchpadMintCard({
     isLive,
     quantity,
     totalCost,
+    currency,
+    balanceKnown,
+    insufficientBalance,
+    needsApproval,
     onConnect: () => openConnectModal?.(),
     onSwitch: () => switchChain({ chainId: giwaSepolia.id }),
     onRetryEligibility: () => void checkEligibility(),
     onRetryContract,
+    onBuyAriwa: () => router.push("/trade"),
     onMint: () => void submitMint(),
   });
 
-  const totalLabel =
-    values === undefined
-      ? "—"
-      : totalCost === 0n
-        ? "Free"
-        : formatEth(totalCost);
+  const totalLabel = values === undefined ? "—" : formatCurrency(totalCost, currency);
 
   const statusDetail =
     status.tone === "live" && values
@@ -356,6 +485,10 @@ export function LaunchpadMintCard({
         address={address}
         configured={configured}
         price={price}
+        currency={currency}
+        paymentBalance={paymentBalance}
+        paymentBalanceError={paymentBalanceError}
+        totalCost={totalCost}
         walletLimit={walletLimit}
         maxQuantity={maxQuantity}
         quantity={quantity}
@@ -408,10 +541,15 @@ function getPrimaryAction({
   isLive,
   quantity,
   totalCost,
+  currency,
+  balanceKnown,
+  insufficientBalance,
+  needsApproval,
   onConnect,
   onSwitch,
   onRetryEligibility,
   onRetryContract,
+  onBuyAriwa,
   onMint,
 }: {
   configured: boolean;
@@ -433,10 +571,15 @@ function getPrimaryAction({
   isLive: boolean;
   quantity: number;
   totalCost: bigint;
+  currency: PaymentCurrency;
+  balanceKnown: boolean;
+  insufficientBalance: boolean;
+  needsApproval: boolean;
   onConnect: () => void;
   onSwitch: () => void;
   onRetryEligibility: () => void;
   onRetryContract?: () => void;
+  onBuyAriwa: () => void;
   onMint: () => void;
 }): MintAction {
   if (!configured) {
@@ -560,9 +703,41 @@ function getPrimaryAction({
     };
   }
 
-  if (isLive) {
+  // Balance checks come after the transient states so a confirmation is never
+  // replaced by a stale "buy" prompt.
+  if (!balanceKnown) {
     return {
-      label: `Mint ${quantity} · ${formatEth(totalCost)}`,
+      label: `Checking ${currency.symbol} balance…`,
+      disabled: true,
+      icon: <Loader2 className="size-4 animate-spin" />,
+      onClick: onConnect,
+    };
+  }
+
+  if (insufficientBalance) {
+    if (currency.isNative) {
+      return {
+        label: "Not enough ETH for mint + gas",
+        disabled: true,
+        icon: <Wallet className="size-4" />,
+        onClick: onConnect,
+      };
+    }
+
+    return {
+      label: `Buy ${currency.symbol} to mint`,
+      disabled: false,
+      icon: <Coins className="size-4" />,
+      onClick: onBuyAriwa,
+    };
+  }
+
+  if (isLive) {
+    const amount = formatCurrency(totalCost, currency);
+    return {
+      label: needsApproval
+        ? `Approve & mint ${quantity} · ${amount}`
+        : `Mint ${quantity} · ${amount}`,
       disabled: false,
       icon: <Plus className="size-4" />,
       onClick: onMint,
