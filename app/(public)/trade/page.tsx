@@ -61,7 +61,11 @@ const DEFAULT_SLIPPAGE_BPS = 50n;
 /** Uniswap-style slippage presets: 0.1%, 0.5% and 1%. */
 const SLIPPAGE_PRESETS = [10n, 50n, 100n] as const;
 
-/** Max fills are rounded down to this many decimals so they never exceed the balance. */
+/** Percent shortcuts shown under the amount. */
+const PRESET_PERCENTS = [5, 50] as const;
+type Preset = (typeof PRESET_PERCENTS)[number] | "max";
+
+/** Preset fills are rounded down to this many decimals so they never exceed the balance. */
 const AMOUNT_DECIMALS = 6;
 
 /** Keep a little ETH back on "Max" so the wallet can still pay gas. */
@@ -341,6 +345,7 @@ function TradeDesk() {
 
   const [mode, setMode] = useState<Mode>("buy");
   const [amount, setAmount] = useState("");
+  const [preset, setPreset] = useState<Preset | null>(null);
   const [amountFocused, setAmountFocused] = useState(false);
   const [slippageBps, setSlippageBps] = useState<bigint>(DEFAULT_SLIPPAGE_BPS);
 
@@ -488,21 +493,33 @@ function TradeDesk() {
       ? walletBalance - ETH_GAS_BUFFER
       : 0n;
 
-  /** The wei value the Max button fills in, keeping gas back on a buy. */
-  const maxAmount =
-    walletBalance === undefined || walletBalance === 0n
-      ? 0n
-      : floorTo(
-          mode === "buy" && walletBalance > spendableEth
-            ? spendableEth
-            : walletBalance,
-        );
-  const canUseMax = !!address && maxAmount > 0n;
+  const canUsePresets =
+    !!address &&
+    walletBalance !== undefined &&
+    walletBalance > 0n &&
+    (mode === "sell" || spendableEth > 0n);
 
-  const applyMax = () => {
-    if (!canUseMax) return;
-    setAmount(formatEther(maxAmount));
-  };
+  /** The wei value a 5/50/Max chip would fill in. */
+  const presetAmount = useCallback(
+    (next: Preset): bigint => {
+      if (walletBalance === undefined || walletBalance === 0n) return 0n;
+      const share = next === "max" ? 100n : BigInt(next);
+      let value = (walletBalance * share) / 100n;
+      if (mode === "buy" && value > spendableEth) value = spendableEth;
+      return floorTo(value);
+    },
+    [walletBalance, mode, spendableEth],
+  );
+
+  const applyPreset = useCallback(
+    (next: Preset) => {
+      if (!canUsePresets) return;
+      const value = presetAmount(next);
+      setAmount(value > 0n ? formatEther(value) : "");
+      setPreset(value > 0n ? next : null);
+    },
+    [canUsePresets, presetAmount],
+  );
 
   const poolReady =
     poolEth !== undefined && poolTokens !== undefined && poolEth > 0n && poolTokens > 0n;
@@ -551,6 +568,7 @@ function TradeDesk() {
     // Reset the form once the tx lands. This intentionally runs on success.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAmount("");
+    setPreset(null);
     resetBuy();
   }, [isBuySuccess, buyHash, refreshChainReads, resetBuy]);
 
@@ -565,6 +583,7 @@ function TradeDesk() {
     // Reset the form once the tx lands. This intentionally runs on success.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAmount("");
+    setPreset(null);
     resetSell();
   }, [isSellSuccess, sellHash, refreshChainReads, resetSell]);
 
@@ -602,6 +621,7 @@ function TradeDesk() {
     // Carry the quote across the flip so the trade keeps its size, like a DEX.
     const carry = quoteOut !== undefined ? floorTo(quoteOut) : 0n;
     setMode(next);
+    setPreset(null);
     setAmount(carry > 0n ? formatEther(carry) : "");
   };
 
@@ -609,6 +629,8 @@ function TradeDesk() {
     const next = normalizeAmountInput(value);
     if (next === null) return;
     setAmount(next);
+    // Any manual edit takes over from the percentage shortcut.
+    setPreset(null);
   };
 
   const handleAmountBlur = () => {
@@ -704,33 +726,16 @@ function TradeDesk() {
                 <span className="text-[11px] font-medium text-ink-mute">
                   {mode === "buy" ? "You pay" : "You sell"}
                 </span>
-                <span className="flex items-center gap-1.5 text-[11px] text-ink-mute">
-                  <span>
-                    Balance{" "}
-                    <span
-                      className={cn(
-                        "font-medium tabular-nums",
-                        insufficientBalance ? "text-danger" : "text-ink-soft",
-                      )}
-                    >
-                      {formatAmount(walletBalance, 6)} {balanceSymbol}
-                    </span>
+                <span className="text-[11px] text-ink-mute">
+                  Balance{" "}
+                  <span
+                    className={cn(
+                      "font-medium tabular-nums",
+                      insufficientBalance ? "text-danger" : "text-ink-soft",
+                    )}
+                  >
+                    {formatAmount(walletBalance, 6)} {balanceSymbol}
                   </span>
-                  {canUseMax && (
-                    <button
-                      type="button"
-                      onClick={applyMax}
-                      disabled={isProcessing}
-                      title={
-                        mode === "buy"
-                          ? `Use your full ETH balance, keeping ${formatEther(ETH_GAS_BUFFER)} ETH for gas`
-                          : "Use your full ARIWA balance"
-                      }
-                      className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-iris transition hover:bg-iris/[0.08] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      Max
-                    </button>
-                  )}
                 </span>
               </div>
               <div className="mt-1 flex items-center gap-3">
@@ -765,6 +770,49 @@ function TradeDesk() {
                 <TokenChip symbol={mode === "buy" ? "ETH" : "ARIWA"} />
               </div>
 
+              {canUsePresets && (
+                <div
+                  className="mt-3 grid grid-cols-3 gap-1.5"
+                  role="group"
+                  aria-label="Fill a percentage of your balance"
+                >
+                  {([...PRESET_PERCENTS, "max"] as const).map((option) => {
+                    const active = preset === option;
+                    const label = option === "max" ? "Max" : `${option}%`;
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => applyPreset(option)}
+                        disabled={isProcessing}
+                        aria-pressed={active}
+                        title={
+                          option === "max"
+                            ? mode === "buy"
+                              ? `Use your full ETH balance, keeping ${formatEther(ETH_GAS_BUFFER)} ETH for gas`
+                              : "Use your full ARIWA balance"
+                            : `Fill ${option}% of your ${balanceSymbol} balance`
+                        }
+                        className={cn(
+                          "h-8 rounded-xl text-[11px] font-medium transition",
+                          active
+                            ? "bg-iris/[0.14] text-iris ring-1 ring-iris/30"
+                            : "bg-paper/60 text-ink-mute hover:bg-paper hover:text-ink",
+                          "disabled:cursor-not-allowed disabled:opacity-40",
+                        )}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {canUsePresets && mode === "buy" && preset === "max" && (
+                <p className="mt-2 text-right text-[10px] text-ink-faint">
+                  Keeping {formatEther(ETH_GAS_BUFFER)} ETH back for gas
+                </p>
+              )}
             </div>
 
             <div className="relative z-10 -my-2.5 flex justify-center">
