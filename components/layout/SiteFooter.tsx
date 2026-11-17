@@ -17,19 +17,11 @@ const NETWORK = [
   { label: "GIWA docs", href: "https://docs.giwa.io" },
 ];
 
-const COLLECTION = [
-  { label: "The residents", href: "/home#residents" },
-  { label: "The story", href: "/home#origin" },
-  { label: "Roadmap", href: "/home#roadmap" },
-  { label: "How it works", href: "/home#how-it-works" },
-  { label: "FAQ", href: "/home#faq" },
-];
-
 export function SiteFooter() {
   return (
     <footer className="relative border-t border-ink/[0.08]">
       <div className="section-shell pb-10 pt-14 sm:pb-12 sm:pt-16">
-        <div className="grid gap-10 md:grid-cols-[1.35fr_0.7fr_0.7fr_0.7fr]">
+        <div className="grid gap-10 md:grid-cols-[1.35fr_0.7fr_0.7fr]">
           <div>
             <Link href="/home" className="inline-flex items-center gap-3" aria-label="ARIWA home">
               <span className="relative inline-flex size-11 overflow-hidden rounded-full border border-ink/10">
@@ -75,7 +67,6 @@ export function SiteFooter() {
           </div>
 
           <FooterColumn title="Product" links={PRODUCT} />
-          <FooterColumn title="The collection" links={COLLECTION} />
           <FooterColumn title="GIWA" links={NETWORK} />
         </div>
 
