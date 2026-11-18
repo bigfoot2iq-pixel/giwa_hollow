@@ -134,7 +134,7 @@ export function LaunchpadMintCard({
   currency: PaymentCurrency;
   contractAddress?: `0x${string}`;
   ipMinted?: boolean;
-  onMinted?: (quantity: number) => void;
+  onMinted?: (quantity: number, mintedAtSubmit: bigint) => void;
   onRetryContract?: () => void;
 }) {
   const { address, isConnected, chainId } = useAccount();
@@ -164,6 +164,10 @@ export function LaunchpadMintCard({
   const [eligibilityError, setEligibilityError] = useState<string | null>(null);
 
   const lastQuantity = useRef(1);
+  // Capture the supply this minter saw when they submitted. The success
+  // callback uses it as the base for the optimistic counter, so a live poll
+  // that lands first cannot make the floor double-count the new NFT.
+  const mintedAtSubmit = useRef(0n);
   const closeSuccess = useCallback(() => setSuccessOpen(false), []);
 
   const networkBlocked = ipBlocked || ipMinted;
@@ -394,7 +398,7 @@ export function LaunchpadMintCard({
     void refetchWalletMinted();
     refetchPaymentBalance();
     if (erc20Payment) void refetchAllowance();
-    onMinted?.(mintedQuantity);
+    onMinted?.(mintedQuantity, mintedAtSubmit.current);
   }, [
     address,
     erc20Payment,
@@ -437,6 +441,7 @@ export function LaunchpadMintCard({
       return;
     }
 
+    mintedAtSubmit.current = values.minted;
     setBusy(true);
     setHash(undefined);
     setConfirmed(null);

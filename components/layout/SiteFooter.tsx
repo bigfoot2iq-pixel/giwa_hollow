@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { XLogo } from "./XAccountLink";
+import { TELEGRAM_URL, TelegramLogo } from "./TelegramLink";
 
 const PRODUCT = [
   { label: "Profile", href: "/profile" },
@@ -54,14 +56,26 @@ export function SiteFooter() {
               <span className="pill">Chain 91342</span>
             </div>
 
-            <a
-              href="https://x.com/ARIWA_on_Giwa"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-5 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft transition hover:text-iris"
-            >
-              Follow ARIWA <ArrowUpRight className="size-3" />
-            </a>
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2.5">
+              <a
+                href="https://x.com/ARIWA_on_Giwa"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft transition hover:text-iris"
+              >
+                <XLogo className="size-3" />
+                Follow ARIWA <ArrowUpRight className="size-3" />
+              </a>
+              <a
+                href={TELEGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft transition hover:text-[#229ED9]"
+              >
+                <TelegramLogo className="size-3.5 text-[#229ED9]" />
+                Join Telegram <ArrowUpRight className="size-3" />
+              </a>
+            </div>
           </div>
 
           <FooterColumn title="Product" links={PRODUCT} />

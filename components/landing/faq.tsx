@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, Plus } from "lucide-react";
+import { TELEGRAM_URL, TelegramLogo } from "@/components/layout/TelegramLink";
 
 const FAQS = [
   {
@@ -42,14 +43,25 @@ export function Faq() {
             Everything about the collection, the token, the raffles, and the
             very small print at the bottom.
           </p>
-          <a
-            href="https://x.com/ARIWA_on_Giwa"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft transition hover:text-iris"
-          >
-            Ask on X <ArrowUpRight className="size-3" />
-          </a>
+          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2.5">
+            <a
+              href={TELEGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft transition hover:text-[#229ED9]"
+            >
+              <TelegramLogo className="size-3.5 text-[#229ED9]" />
+              Ask on Telegram <ArrowUpRight className="size-3" />
+            </a>
+            <a
+              href="https://x.com/ARIWA_on_Giwa"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft transition hover:text-iris"
+            >
+              Ask on X <ArrowUpRight className="size-3" />
+            </a>
+          </div>
         </div>
 
         <div className="border-t border-ink/[0.08]">

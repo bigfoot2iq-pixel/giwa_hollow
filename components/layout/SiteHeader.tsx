@@ -10,6 +10,7 @@ import { useAccount } from "wagmi";
 import { useAdminStatus, useTokenBalance, formatCompactBalance } from "@/lib/hooks";
 import { cn } from "@/lib/utils/cn";
 import { XAccountLink } from "./XAccountLink";
+import { TelegramIconLink } from "./TelegramLink";
 import { ThemeToggle } from "./ThemeToggle";
 
 const NAV = [
@@ -101,6 +102,8 @@ export function SiteHeader() {
           )}
 
           <XAccountLink className="hidden sm:inline-flex" />
+
+          <TelegramIconLink />
 
           <ThemeToggle />
 

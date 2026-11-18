@@ -22,6 +22,12 @@ const LAUNCHPAD_ADDRESS =
     ? LAUNCHPAD_NFT_ADDRESS
     : undefined;
 
+// The public supply is the only launchpad value that changes while a visitor
+// sits on the page. One eth_call every five seconds keeps the top progress bar
+// live without re-reading the whole config batch; React Query pauses the
+// interval in background tabs.
+const LIVE_MINT_REFRESH_MS = 5_000;
+
 const subscribeToHydration = () => () => {};
 const clientHydrationSnapshot = () => true;
 const serverHydrationSnapshot = () => false;
@@ -74,12 +80,6 @@ export function LaunchpadMint({ ipMinted = false }: { ipMinted?: boolean }) {
         address: LAUNCHPAD_ADDRESS,
         chainId: giwaSepolia.id,
         abi: AriwaNFTABI,
-        functionName: "totalMinted",
-      },
-      {
-        address: LAUNCHPAD_ADDRESS,
-        chainId: giwaSepolia.id,
-        abi: AriwaNFTABI,
         functionName: "publicMintOpen",
       },
       {
@@ -108,16 +108,15 @@ export function LaunchpadMint({ ipMinted = false }: { ipMinted?: boolean }) {
     query: { enabled: configured },
   });
 
-  const values = useMemo<MintValues | undefined>(() => {
+  const configValues = useMemo(() => {
     if (!mintConfig) return undefined;
 
-    const [price, supply, walletLimit, minted, publicMintOpen, paymentToken] =
+    const [price, supply, walletLimit, publicMintOpen, paymentToken] =
       mintConfig;
     if (
       price.status !== "success" ||
       supply.status !== "success" ||
       walletLimit.status !== "success" ||
-      minted.status !== "success" ||
       publicMintOpen.status !== "success"
     ) {
       return undefined;
@@ -127,7 +126,6 @@ export function LaunchpadMint({ ipMinted = false }: { ipMinted?: boolean }) {
       price: price.result,
       supply: supply.result,
       walletLimit: walletLimit.result,
-      minted: minted.result,
       publicMintOpen: publicMintOpen.result,
       // Older deployments do not expose `paymentToken`; those collections
       // charge native ETH, so fall back to the zero address.
@@ -135,6 +133,42 @@ export function LaunchpadMint({ ipMinted = false }: { ipMinted?: boolean }) {
         paymentToken.status === "success" ? paymentToken.result : zeroAddress,
     };
   }, [mintConfig]);
+
+  // Poll the minted total on its own cadence. Keeping it out of the batch
+  // above means the live counter costs one RPC read instead of six, and the
+  // interval only runs while the tab is visible. It also stops for good once
+  // the collection sells out.
+  const {
+    data: onChainMinted,
+    isError: isMintedError,
+    refetch: refetchMinted,
+  } = useReadContract({
+    address: LAUNCHPAD_ADDRESS,
+    chainId: giwaSepolia.id,
+    abi: AriwaNFTABI,
+    functionName: "totalMinted",
+    query: {
+      enabled: configured,
+      refetchInterval: (query) => {
+        const minted = query.state.data;
+        if (
+          minted !== undefined &&
+          configValues &&
+          configValues.supply > 0n &&
+          minted >= configValues.supply
+        ) {
+          return false;
+        }
+        return LIVE_MINT_REFRESH_MS;
+      },
+      refetchOnWindowFocus: true,
+    },
+  });
+
+  const values = useMemo<MintValues | undefined>(() => {
+    if (!configValues || onChainMinted === undefined) return undefined;
+    return { ...configValues, minted: onChainMinted };
+  }, [configValues, onChainMinted]);
 
   // Resolve the asset the collection charges in. A zero address means the
   // owner kept native ETH; otherwise read the token's own symbol and decimals
@@ -200,23 +234,25 @@ export function LaunchpadMint({ ipMinted = false }: { ipMinted?: boolean }) {
   }, [values, displayMinted]);
 
   const handleMinted = useCallback(
-    (quantity: number) => {
-      setMintedFloor((current) => {
-        const base =
-          current !== null && values && current > values.minted
-            ? current
-            : (values?.minted ?? 0n);
-        return base + BigInt(quantity);
-      });
-      void refetch();
+    (quantity: number, mintedAtSubmit: bigint) => {
+      const expected = mintedAtSubmit + BigInt(quantity);
+      setMintedFloor((current) =>
+        current !== null && current > expected ? current : expected,
+      );
+      void refetchMinted();
     },
-    [refetch, values],
+    [refetchMinted],
   );
 
   const liveValues = hydrated ? displayValues : undefined;
   const status = getDropStatus(liveValues, {
     configured,
-    error: hydrated && isError,
+    // A single failed poll is not fatal: keep showing the last known supply
+    // and let the interval catch up. Only surface an error when the counter
+    // has never loaded.
+    error:
+      hydrated &&
+      (isError || (isMintedError && onChainMinted === undefined)),
   });
 
   const displayName =
@@ -252,7 +288,10 @@ export function LaunchpadMint({ ipMinted = false }: { ipMinted?: boolean }) {
             contractAddress={LAUNCHPAD_ADDRESS}
             ipMinted={ipMinted}
             onMinted={handleMinted}
-            onRetryContract={() => void refetch()}
+            onRetryContract={() => {
+              void refetch();
+              void refetchMinted();
+            }}
           />
         </div>
       </section>

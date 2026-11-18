@@ -1,4 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
+import { TELEGRAM_URL, TelegramLogo } from "@/components/layout/TelegramLink";
 
 const X_URL = "https://x.com/ARIWA_on_Giwa";
 
@@ -45,12 +46,13 @@ export function FinalCta() {
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <a
-              href={X_URL}
+              href={TELEGRAM_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-12 items-center gap-2 rounded-full bg-[#f7e3a0] px-5 text-[12px] font-bold text-[#272132] transition hover:brightness-105"
             >
-              Join Our Community
+              <TelegramLogo className="size-4 text-[#229ED9]" />
+              Join Our Telegram
               <ArrowUpRight className="size-3.5" />
             </a>
             <a
