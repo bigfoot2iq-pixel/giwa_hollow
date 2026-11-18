@@ -49,6 +49,75 @@ function shortError(error: unknown): string {
   return "The transaction could not be submitted.";
 }
 
+const PERMIT_RETRY_DELAYS_MS = [350, 900];
+
+type PermitFetchResult =
+  | { ok: true; permit: MintPermit }
+  | { ok: false; alreadyMinted: boolean; error: string };
+
+function wait(ms: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+/**
+ * Ask the server for this wallet's mint permit.
+ *
+ * The route reads an RPC and signs locally, so a single transient upstream
+ * hiccup should not make the visitor click "Mint" again. 5xx/network failures
+ * are retried twice before the panel shows an error; an already-minted answer
+ * is final.
+ */
+async function requestMintPermit(
+  address: `0x${string}`,
+): Promise<PermitFetchResult> {
+  let lastError = "Could not verify your mint.";
+
+  for (let attempt = 0; attempt <= PERMIT_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      const response = await fetch("/api/launchpad/mint-permit", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ address }),
+        cache: "no-store",
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | (MintPermit & { error?: string; code?: string })
+        | null;
+
+      if (response.ok && payload) {
+        return { ok: true, permit: payload };
+      }
+
+      if (payload?.code === "already_minted") {
+        return {
+          ok: false,
+          alreadyMinted: true,
+          error: payload.error || "You have already minted.",
+        };
+      }
+
+      lastError = payload?.error || "Could not verify your mint.";
+      if (response.status < 500 || attempt >= PERMIT_RETRY_DELAYS_MS.length) {
+        return { ok: false, alreadyMinted: false, error: lastError };
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : lastError;
+      if (attempt >= PERMIT_RETRY_DELAYS_MS.length) {
+        return { ok: false, alreadyMinted: false, error: lastError };
+      }
+    }
+
+    await wait(PERMIT_RETRY_DELAYS_MS[attempt]);
+  }
+
+  return { ok: false, alreadyMinted: false, error: lastError };
+}
+
 export function LaunchpadMintCard({
   configured,
   values,
@@ -77,7 +146,7 @@ export function LaunchpadMintCard({
 
   const [quantity, setQuantity] = useState(1);
   const [busy, setBusy] = useState(false);
-  // The server render tells us whether this network already minted. Keep it in
+  // The server render tells us whether this user already minted. Keep it in
   // state so a permit rejection or a confirmed mint can lock the panel without
   // a full reload. A prop can only turn this on, never off, so OR-ing it with
   // the local flag avoids a state-sync effect.
@@ -209,7 +278,7 @@ export function LaunchpadMintCard({
     remainingBySupply < remainingByWallet
       ? remainingBySupply
       : remainingByWallet;
-  // The collection's permit gate is one NFT per network, so a transaction can
+  // The collection's permit gate is one NFT per user, so a transaction can
   // never batch several pieces even when the supply and wallet caps allow it.
   const maxQuantity = remainingCap > 0n ? 1 : 0;
 
@@ -358,7 +427,7 @@ export function LaunchpadMintCard({
   async function submitMint() {
     if (!contractAddress || !address || !values) return;
     if (quantity !== 1 || maxQuantity < 1) {
-      toast.error("One NFT per network");
+      toast.error("One NFT per user");
       return;
     }
     if (insufficientBalance) {
@@ -375,38 +444,25 @@ export function LaunchpadMintCard({
     lastQuantity.current = quantity;
 
     try {
-      // The collection only accepts a mint with a server-signed permit for
-      // this network. Fetch it before asking the wallet for anything so a
-      // blocked network never has to approve ARIWA first.
-      const permitResponse = await fetch("/api/launchpad/mint-permit", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ address }),
-        cache: "no-store",
-      });
-      const permitData = (await permitResponse.json()) as
-        | MintPermit
-        | { error?: string; code?: string };
+      // The collection only accepts a mint with a server-signed permit.
+      // Fetch it before asking the wallet for anything so an already-minted
+      // user never has to approve ARIWA first. Transient failures retry here.
+      const permitResult = await requestMintPermit(address);
 
-      if (!permitResponse.ok) {
-        const failure = permitData as { error?: string; code?: string };
-
-        if (failure.code === "already_minted") {
+      if (!permitResult.ok) {
+        if (permitResult.alreadyMinted) {
           setIpBlocked(true);
-          toast.error("This network already minted", {
+          toast.error("You already minted", {
             description:
-              "One NFT per network. Switching wallets won't unlock another mint.",
+              "One NFT per user. Switching wallets won't unlock another mint.",
           });
           return;
         }
 
-        throw new Error(failure.error || "Could not verify your network");
+        throw new Error(permitResult.error);
       }
 
-      const { ipHash, signature } = permitData as MintPermit;
+      const { ipHash, signature } = permitResult.permit;
       let paymentValue = 0n;
 
       if (erc20Payment) {
@@ -518,7 +574,7 @@ export function LaunchpadMintCard({
   const totalLabel = values === undefined ? "—" : formatCurrency(totalCost, currency);
 
   const statusDetail = networkBlocked
-    ? "This network has already minted its piece. One NFT per network — switching wallets won't unlock another mint."
+    ? "You've already minted your piece. One NFT per user — switching wallets won't unlock another mint."
     : status.tone === "live" && values
       ? `${formatCount(remainingBySupply)} of ${formatCount(supply)} pieces remain. First come, first served.`
       : values && !values.publicMintOpen
@@ -545,7 +601,6 @@ export function LaunchpadMintCard({
         onQuantity={handleQuantity}
         totalLabel={totalLabel}
         eligibility={eligibility}
-        checkingEligibility={checkingEligibility}
         eligibilityError={eligibilityError}
         onRetryEligibility={() => void checkEligibility()}
         statusDetail={statusDetail}
@@ -680,7 +735,7 @@ function getPrimaryAction({
 
   if (ipBlocked) {
     return {
-      label: "Network already minted",
+      label: "Already minted",
       disabled: true,
       icon: <ShieldCheck className="size-4" />,
       onClick: onConnect,

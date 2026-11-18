@@ -47,7 +47,7 @@ const MINT_OPEN =
 
 // The collection requires an EIP-712 permit for every public mint. The signer
 // address must match the key the app holds in
-// LAUNCHPAD_PERMIT_SIGNER_PRIVATE_KEY; one permit is issued per network.
+// LAUNCHPAD_PERMIT_SIGNER_PRIVATE_KEY; one permit is issued per user.
 const PERMIT_SIGNER_PRIVATE_KEY =
   process.env.LAUNCHPAD_PERMIT_SIGNER_PRIVATE_KEY || "";
 let PERMIT_SIGNER = process.env.LAUNCHPAD_PERMIT_SIGNER || "";

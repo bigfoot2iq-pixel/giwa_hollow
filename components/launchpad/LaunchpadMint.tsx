@@ -31,7 +31,7 @@ const serverHydrationSnapshot = () => false;
  * supply floor, then hands the same values to the summary and the mint panel so
  * both surfaces always agree.
  *
- * `ipMinted` comes from the server render: if this network already handled its
+ * `ipMinted` comes from the server render: if this user already handled their
  * mint, the panel starts locked instead of flashing a live button.
  */
 export function LaunchpadMint({ ipMinted = false }: { ipMinted?: boolean }) {

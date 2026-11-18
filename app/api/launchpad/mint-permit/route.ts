@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 const NO_STORE = { "Cache-Control": "no-store" } as const;
 
 /**
- * Read whether this network already minted. Used by the page and by the mint
+ * Read whether this user already minted. Used by the page and by the mint
  * panel to keep the UI honest after a transaction.
  */
 export async function GET(request: NextRequest) {
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   // Signatures are cheap, but this route sits on the public internet. A small
   // per-instance limit keeps a loop from hammering the RPC reads.
   const limit = checkRateLimit(request, "launchpad-mint-permit", {
-    limit: 12,
+    limit: 30,
     windowMs: 60_000,
   });
   if (!limit.ok) {

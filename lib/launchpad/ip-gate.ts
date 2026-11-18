@@ -25,13 +25,13 @@ import {
 } from "./mint-permit";
 
 /**
- * Server-side half of the one-mint-per-network rule.
+ * Server-side half of the one-mint-per-user rule.
  *
  * The browser never sees a raw IP. It asks this module (through
  * `/api/launchpad/mint-permit`) for an EIP-712 permit, and the contract records
  * the resulting hash. The signature is bound to the connected wallet so it
  * cannot be copied, but the hash is what the contract remembers: switching
- * wallets on the same network still cannot mint twice.
+ * wallets still cannot mint twice.
  *
  * IPs are read from Cloudflare's `cf-connecting-ip` first; that header is set
  * by the edge and cannot be spoofed by the browser. `x-forwarded-for` and
@@ -43,6 +43,14 @@ const IP_HEADER_NAMES = [
   "x-forwarded-for",
   "x-real-ip",
 ] as const;
+
+function shortErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    const short = (error as Error & { shortMessage?: string }).shortMessage;
+    return (short || error.message).split("\n")[0];
+  }
+  return String(error);
+}
 
 export function getRequestIp(headersList: Headers): string {
   for (const name of IP_HEADER_NAMES) {
@@ -90,11 +98,45 @@ function getRpcUrl(): string {
 
 let publicClient: ReturnType<typeof createPublicClient> | null = null;
 
+const TRUSTED_SIGNER_TTL_MS = 5 * 60_000;
+const USED_TRUE_TTL_MS = 5 * 60_000;
+const USED_FALSE_TTL_MS = 15_000;
+const MAX_USED_CACHE_ENTRIES = 5_000;
+
+let trustedSignerCache: { address: Address; fetchedAt: number } | null = null;
+
+const usedCache = new Map<string, { used: boolean; fetchedAt: number }>();
+
+function readUsedCache(ipHash: Hex): boolean | null {
+  const hit = usedCache.get(ipHash);
+  if (!hit) return null;
+
+  const ttl = hit.used ? USED_TRUE_TTL_MS : USED_FALSE_TTL_MS;
+  if (Date.now() - hit.fetchedAt > ttl) {
+    usedCache.delete(ipHash);
+    return null;
+  }
+
+  return hit.used;
+}
+
+function writeUsedCache(ipHash: Hex, used: boolean) {
+  usedCache.set(ipHash, { used, fetchedAt: Date.now() });
+
+  if (usedCache.size > MAX_USED_CACHE_ENTRIES) {
+    const oldest = usedCache.keys().next().value;
+    if (oldest !== undefined) usedCache.delete(oldest);
+  }
+}
+
 function getPublicClient() {
   if (!publicClient) {
     publicClient = createPublicClient({
       chain: giwaSepolia,
-      transport: http(getRpcUrl(), { timeout: 10_000, retryCount: 1 }),
+      // The permit route must stay fast under load. These reads are
+      // best-effort, so keep the timeout short and retry once; the contract is
+      // the real authority and the client retries transient route failures.
+      transport: http(getRpcUrl(), { timeout: 4_000, retryCount: 1 }),
     });
   }
 
@@ -107,13 +149,67 @@ function normalizePrivateKey(value: string): Hex | null {
   return /^0x[0-9a-fA-F]{64}$/.test(prefixed) ? (prefixed as Hex) : null;
 }
 
-async function readIpUsed(ipHash: Hex, contractAddress: Address) {
+async function fetchIpUsed(ipHash: Hex, contractAddress: Address) {
   return getPublicClient().readContract({
     address: contractAddress,
     abi: AriwaNFTABI,
     functionName: "usedIpHashes",
     args: [ipHash],
   });
+}
+
+/**
+ * Best-effort read with a short-lived cache.
+ *
+ * `null` means "the RPC did not answer". Callers must not treat that as
+ * "unused": the contract is the real authority, so an unknown value should
+ * never block a legitimate mint.
+ */
+async function readIpUsedSafe(
+  ipHash: Hex,
+  contractAddress: Address,
+): Promise<boolean | null> {
+  const cached = readUsedCache(ipHash);
+  if (cached !== null) return cached;
+
+  try {
+    const used = await fetchIpUsed(ipHash, contractAddress);
+    writeUsedCache(ipHash, used);
+    return used;
+  } catch (error) {
+    console.error(
+      "[launchpad] Could not read the user's mint status:",
+      shortErrorMessage(error),
+    );
+    return null;
+  }
+}
+
+async function readTrustedSignerSafe(
+  contractAddress: Address,
+): Promise<Address | null> {
+  if (
+    trustedSignerCache &&
+    Date.now() - trustedSignerCache.fetchedAt < TRUSTED_SIGNER_TTL_MS
+  ) {
+    return trustedSignerCache.address;
+  }
+
+  try {
+    const address = await getPublicClient().readContract({
+      address: contractAddress,
+      abi: AriwaNFTABI,
+      functionName: "trustedSigner",
+    });
+    trustedSignerCache = { address, fetchedAt: Date.now() };
+    return address;
+  } catch (error) {
+    console.error(
+      "[launchpad] Could not read the trusted signer:",
+      shortErrorMessage(error),
+    );
+    return null;
+  }
 }
 
 export async function getIpMintStatus(
@@ -125,16 +221,9 @@ export async function getIpMintStatus(
   }
 
   const ipHash = hashRequestIp(getRequestIp(headersList));
+  const used = await readIpUsedSafe(ipHash, contractAddress);
 
-  try {
-    const used = await readIpUsed(ipHash, contractAddress);
-    return { used, ipHash, configured: true };
-  } catch (error) {
-    // A read failure must not lock the whole page. The mint route checks again
-    // and the contract itself is the final authority.
-    console.error("[launchpad] Could not read the network mint status:", error);
-    return { used: false, ipHash, configured: true };
-  }
+  return { used: used === true, ipHash, configured: true };
 }
 
 export type CreateMintPermitResult =
@@ -169,25 +258,26 @@ export async function createMintPermit(
   const ipHash = hashRequestIp(getRequestIp(headersList));
 
   try {
+    // Both reads are best-effort. The contract is the source of truth, so an
+    // RPC hiccup must not stop the user from reaching their wallet: an unused
+    // permit is harmless, and a used permit is rejected on-chain.
     const [used, trustedSigner] = await Promise.all([
-      readIpUsed(ipHash, contractAddress),
-      getPublicClient().readContract({
-        address: contractAddress,
-        abi: AriwaNFTABI,
-        functionName: "trustedSigner",
-      }),
+      readIpUsedSafe(ipHash, contractAddress),
+      readTrustedSignerSafe(contractAddress),
     ]);
 
-    if (used) {
+    if (used === true) {
       return {
         ok: false,
         code: "already_minted",
-        error:
-          "This network has already minted its ARIWA NFT. One mint per network.",
+        error: "You have already minted an ARIWA NFT. One NFT per user.",
       };
     }
 
-    if (trustedSigner.toLowerCase() !== account.address.toLowerCase()) {
+    if (
+      trustedSigner &&
+      trustedSigner.toLowerCase() !== account.address.toLowerCase()
+    ) {
       console.error(
         "[launchpad] The configured permit signer does not match the contract's trustedSigner",
       );

@@ -1,10 +1,10 @@
 /**
- * Shared shape of the one-mint-per-network permit.
+ * Shared shape of the one-mint-per-user permit.
  *
  * The contract (`AriwaNFT.sol`) verifies an EIP-712
  * `MintPermit(bytes32 ipHash, address wallet)` signature produced by the
  * server. The wallet field stops a copied permit from being submitted by
- * someone else; the ipHash is what enforces one mint per network. Keeping the
+ * someone else; the ipHash is what enforces one mint per user. Keeping the
  * domain and type here means the browser and the route handler can never drift
  * apart.
  *
@@ -31,7 +31,7 @@ export type MintPermit = {
   chainId: number;
 };
 
-/** Whether the current network already used its mint. */
+/** Whether the current user already used their mint. */
 export type IpMintStatus = {
   used: boolean;
   ipHash: `0x${string}` | null;

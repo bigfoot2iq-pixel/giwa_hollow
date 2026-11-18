@@ -31,7 +31,7 @@ export const AriwaNFTABI = parseAbi([
   // ---- Public write --------------------------------------------------------
   // Payable only in native-ETH mode; ARIWA mode pulls `publicPrice` through
   // transferFrom, so approve the collection first. `ipHash` + `signature` come
-  // from /api/launchpad/mint-permit: one permit per network, quantity is 1.
+  // from /api/launchpad/mint-permit: one permit per user, quantity is 1.
   "function publicMint(uint256 quantity, bytes32 ipHash, bytes signature) payable",
 
   // ---- Owner writes --------------------------------------------------------

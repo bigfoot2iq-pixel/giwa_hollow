@@ -35,7 +35,7 @@ export function LaunchpadFaq({
   const faqs: Faq[] = [
     {
       question: "How do I mint?",
-      answer: `Connect a wallet on GIWA Sepolia and confirm the transaction. Each network can mint one NFT, and each wallet is capped at ${walletLimit}. The mint is priced in ${priceAsset}: the first confirmation approves ${priceAsset} for the collection, then the mint itself goes through. The supply counters update as soon as GIWA confirms the block.`,
+      answer: `Connect a wallet on GIWA Sepolia and confirm the transaction. Each user can mint one NFT, and each wallet is capped at ${walletLimit}. The mint is priced in ${priceAsset}: the first confirmation approves ${priceAsset} for the collection, then the mint itself goes through. The supply counters update as soon as GIWA confirms the block.`,
     },
     {
       question: "When can I mint?",
@@ -59,11 +59,11 @@ export function LaunchpadFaq({
     },
     {
       question: "What is the maximum per wallet?",
-      answer: `This drop allows ${walletLimit} across ${supply}. Each network can also mint only one NFT: the contract records the network hash, so switching wallets on the same connection will not unlock another mint. The contract is the final authority, so the counters in the mint panel always follow the on-chain rule.`,
+      answer: `This drop allows ${walletLimit} across ${supply}. Each user can also mint only one NFT: the contract records the mint, so switching wallets will not unlock another mint. The contract is the final authority, so the counters in the mint panel always follow the on-chain rule.`,
     },
     {
       question: "Why did my transaction fail?",
-      answer: `Common causes are a closed or sold-out mint, a wallet or network that already reached its limit, not enough ${priceAsset} for the price (plus ETH for gas), or a wallet on the wrong network. The page surfaces the contract's reason so you can fix it before retrying.`,
+      answer: `Common causes are a closed or sold-out mint, a wallet or user that already reached its limit, not enough ${priceAsset} for the price (plus ETH for gas), or a wallet on the wrong network. The page surfaces the contract's reason so you can fix it before retrying.`,
     },
     {
       question: "Where can I see my NFT after minting?",

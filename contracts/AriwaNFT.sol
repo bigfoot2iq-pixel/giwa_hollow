@@ -14,10 +14,11 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  * @notice 2,222 ARIWA NFT on GIWA.
  *
  *   - Public — anyone mints one NFT for {publicPrice} of {paymentToken} while
- *     {publicMintOpen}, and only once per network. The website's permit
- *     signer attests to the visitor's network; the contract records that
- *     network hash and rejects any later mint with it, no matter which wallet
- *     signs. {maxPerWallet} is a second, owner-controlled wallet-level cap.
+ *     {publicMintOpen}, and only once per user. The website's permit signer
+ *     attests to the visitor's network (keyed by a salted IP hash); the
+ *     contract records that hash and rejects any later mint with it, no matter
+ *     which wallet signs. {maxPerWallet} is a second, owner-controlled
+ *     wallet-level cap.
  *   - Owner — {ownerMint} mints straight to any address for free (team,
  *     treasury, and any manual distributions), exempt from both caps.
  *
@@ -26,16 +27,15 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  * {maxPerWallet} (default 1), applies to the public phase. Owner mints are
  * exempt from that cap but still bounded by total supply.
  *
- * ## One mint per network
+ * ## One mint per user
  *
  * Every public mint carries a `bytes32 ipHash` (produced off-chain from the
  * visitor's IP with a server-side secret) and an EIP-712 signature from
  * {trustedSigner}. The signature covers the hash and the minting wallet, so
- * only that wallet can submit it — but the network itself is what the contract
- * records. Once {usedIpHashes} records a hash, that network can never mint
- * again, even from a different wallet. A visitor behind a different network
- * gets a different hash, which is the intended trade-off for an IP-based
- * limit.
+ * only that wallet can submit it — but the user is what the contract records.
+ * Once {usedIpHashes} records a hash, that user can never mint again, even
+ * from a different wallet. A visitor behind a different network gets a
+ * different hash, which is the intended trade-off for an IP-based limit.
  *
  * {paymentToken} is an owner-controlled ERC20 address. Setting it to the zero
  * address makes the mint payable in the chain's native currency (ETH on GIWA);
@@ -61,7 +61,7 @@ contract AriwaNFT is ERC721A, Ownable, ReentrancyGuard, EIP712 {
     uint256 public maxPerWallet = 1;
 
     // ---- Per-network mint gate ----------------------------------------------
-    /// @notice Server-side signer that authorises one public mint per network.
+    /// @notice Server-side signer that authorises one public mint per user.
     /// @dev Set by the owner after deployment. A zero signer closes the public
     ///      mint, so the permit check can never fall through to an empty key.
     address public trustedSigner;
@@ -132,15 +132,15 @@ contract AriwaNFT is ERC721A, Ownable, ReentrancyGuard, EIP712 {
 
     // ---- Minting ------------------------------------------------------------
 
-    /// @notice Paid mint open to everyone, limited to one NFT per network.
+    /// @notice Paid mint open to everyone, limited to one NFT per user.
     /// @param quantity Must be exactly 1.
     /// @param ipHash Server-side hash of the visitor's network.
     /// @param signature EIP-712 signature of {MintPermit} from {trustedSigner}.
     /// @dev When {paymentToken} is an ERC20, the caller must have approved this
     ///      contract for at least `publicPrice` first. Any ETH sent in ERC20
     ///      mode is rejected. The signature is bound to `msg.sender`, so a
-    ///      copied permit cannot be used by anyone else; the network hash still
-    ///      prevents a second mint after a wallet switch.
+    ///      copied permit cannot be used by anyone else; the salted IP hash
+    ///      still prevents a second mint after a wallet switch.
     function publicMint(uint256 quantity, bytes32 ipHash, bytes calldata signature)
         external
         payable
@@ -200,7 +200,7 @@ contract AriwaNFT is ERC721A, Ownable, ReentrancyGuard, EIP712 {
         publicMintOpen = value;
     }
 
-    /// @notice Set the server-side signer that authorises one mint per network.
+    /// @notice Set the server-side signer that authorises one mint per user.
     /// @dev Setting a zero address is rejected; rotate the key by pointing this
     ///      at a new signer. Permits signed by the old key stop working at once.
     function setTrustedSigner(address signer) external onlyOwner {

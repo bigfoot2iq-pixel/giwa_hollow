@@ -12,8 +12,6 @@ import {
   RefreshCw,
   Sparkles,
 } from "lucide-react";
-import { formatEther } from "viem";
-import { useBalance } from "wagmi";
 import { giwaSepolia } from "@/lib/contracts";
 import { cn } from "@/lib/utils/cn";
 import { ChainIcon } from "./ChainIcon";
@@ -52,7 +50,6 @@ export function LaunchpadMintDetails({
   onQuantity,
   totalLabel,
   eligibility,
-  checkingEligibility,
   eligibilityError,
   onRetryEligibility,
   statusDetail,
@@ -76,7 +73,6 @@ export function LaunchpadMintDetails({
   onQuantity: (delta: number) => void;
   totalLabel: string;
   eligibility: EligibilityResponse | null;
-  checkingEligibility: boolean;
   eligibilityError: string | null;
   onRetryEligibility: () => void;
   statusDetail: string;
@@ -126,7 +122,7 @@ export function LaunchpadMintDetails({
               {address
                 ? `${formatCount(Math.max(maxQuantity, 0))} left for you`
                 : values
-                  ? `1 per network`
+                  ? `1 per user`
                   : "—"}
             </p>
           </div>
@@ -176,7 +172,6 @@ export function LaunchpadMintDetails({
       <HolderGate
         address={address}
         eligibility={eligibility}
-        checking={checkingEligibility}
         error={eligibilityError}
         onRetry={onRetryEligibility}
       />
@@ -185,11 +180,11 @@ export function LaunchpadMintDetails({
         <div className="mt-3 rounded-2xl border border-success/30 bg-success/[0.06] p-3">
           <p className="flex items-center gap-1.5 text-[10.5px] font-semibold text-ink">
             <Check className="size-3.5 text-success-ink" />
-            This network already minted
+            You already minted
           </p>
           <p className="mt-1 text-[10px] leading-5 text-ink-mute">
-            One NFT per network, and {formatCount(walletLimit)} per wallet.
-            Switching wallets on this connection won&apos;t unlock another mint.
+            One NFT per user, and {formatCount(walletLimit)} per wallet.
+            Switching wallets won&apos;t unlock another mint.
           </p>
         </div>
       ) : null}
@@ -337,32 +332,21 @@ function PaymentBalance({
 function HolderGate({
   address,
   eligibility,
-  checking,
   error,
   onRetry,
 }: {
   address?: `0x${string}`;
   eligibility: EligibilityResponse | null;
-  checking: boolean;
   error: string | null;
   onRetry: () => void;
 }) {
-  const { data: nativeBalance } = useBalance({
-    address,
-    chainId: giwaSepolia.id,
-    query: { enabled: Boolean(address) },
-  });
-
   if (!address) return null;
 
-  if (checking && !eligibility) {
-    return (
-      <div className="mt-3 flex items-center gap-2 rounded-xl border border-ink/[0.08] bg-cream-2/40 px-3 py-2.5 text-[10px] text-ink-mute">
-        <Loader2 className="size-3.5 animate-spin text-iris" />
-        Checking holder access…
-      </div>
-    );
-  }
+  // The holder gate is opt-in: when no chain/currency has a requirement the
+  // server answers `gateEnabled: false`, and the panel should be absent
+  // entirely rather than advertising an "open to all" state. Wait for that
+  // answer before rendering anything so a disabled gate never flashes.
+  if (!eligibility && !error) return null;
 
   if (error) {
     return (
@@ -384,60 +368,7 @@ function HolderGate({
     );
   }
 
-  if (!eligibility) return null;
-
-  if (!eligibility.gateEnabled) {
-    const balanceLabel = nativeBalance
-      ? `${formatAmount(formatEther(nativeBalance.value), 4)} ${nativeBalance.symbol}`
-      : "…";
-
-    return (
-      <div className="mt-3 rounded-2xl border border-success/30 bg-success/[0.06] p-3">
-        <div className="flex items-center justify-between gap-2">
-          <p className="font-mono text-[8.5px] uppercase tracking-[0.16em] text-ink-mute">
-            Holder access
-          </p>
-          <span className="inline-flex items-center gap-1 font-mono text-[8px] uppercase tracking-[0.14em] text-success-ink">
-            <Check className="size-3" />
-            Open to all
-          </span>
-        </div>
-
-        <div className="mt-2 rounded-xl border border-ink/[0.07] bg-paper/55 px-2.5 py-2">
-          <div className="flex items-center gap-1.5">
-            <ChainIcon chain="giwa" />
-            <p className="min-w-0 flex-1 truncate text-[10px] font-semibold text-ink">
-              GIWA Sepolia
-            </p>
-            <span
-              className="size-1.5 rounded-full bg-success"
-              title="Wallet balance available"
-            />
-          </div>
-          <p className="mt-1.5 font-mono text-[8px] uppercase tracking-[0.06em] text-ink-mute">
-            no minimum
-          </p>
-          <p className="mt-0.5 font-mono text-[8px] uppercase tracking-[0.06em] text-ink-mute">
-            you <span className="text-ink-soft">{balanceLabel}</span>
-          </p>
-        </div>
-
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <p className="text-[9px] leading-4 text-ink-mute">
-            No holder minimum on this drop — minting is unlocked.
-          </p>
-          <button
-            type="button"
-            onClick={onRetry}
-            className="inline-flex shrink-0 items-center gap-1 font-mono text-[8px] uppercase tracking-[0.12em] text-iris-deep transition hover:text-iris"
-          >
-            <RefreshCw className="size-2.5" />
-            Refresh
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (!eligibility || !eligibility.gateEnabled) return null;
 
   return (
     <div
