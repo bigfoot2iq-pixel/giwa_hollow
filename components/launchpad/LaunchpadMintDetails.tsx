@@ -57,6 +57,7 @@ export function LaunchpadMintDetails({
   onRetryEligibility,
   statusDetail,
   contractAddress,
+  ipBlocked = false,
 }: {
   status: DropStatus;
   values?: MintValues;
@@ -80,6 +81,7 @@ export function LaunchpadMintDetails({
   onRetryEligibility: () => void;
   statusDetail: string;
   contractAddress?: `0x${string}`;
+  ipBlocked?: boolean;
 }) {
   return (
     <div className="ui-container relative isolate overflow-hidden rounded-[30px] p-4">
@@ -124,7 +126,7 @@ export function LaunchpadMintDetails({
               {address
                 ? `${formatCount(Math.max(maxQuantity, 0))} left for you`
                 : values
-                  ? `Max ${formatCount(walletLimit)} / wallet`
+                  ? `1 per network`
                   : "—"}
             </p>
           </div>
@@ -178,6 +180,19 @@ export function LaunchpadMintDetails({
         error={eligibilityError}
         onRetry={onRetryEligibility}
       />
+
+      {ipBlocked ? (
+        <div className="mt-3 rounded-2xl border border-success/30 bg-success/[0.06] p-3">
+          <p className="flex items-center gap-1.5 text-[10.5px] font-semibold text-ink">
+            <Check className="size-3.5 text-success-ink" />
+            This network already minted
+          </p>
+          <p className="mt-1 text-[10px] leading-5 text-ink-mute">
+            One NFT per network, and {formatCount(walletLimit)} per wallet.
+            Switching wallets on this connection won&apos;t unlock another mint.
+          </p>
+        </div>
+      ) : null}
 
       {!configured ? (
         <div className="mt-4 rounded-2xl border border-dashed border-iris/25 bg-iris/[0.04] p-4 text-center">

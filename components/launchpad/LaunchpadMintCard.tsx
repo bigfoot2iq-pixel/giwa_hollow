@@ -26,6 +26,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { AriwaNFTABI, giwaSepolia } from "@/lib/contracts";
+import type { MintPermit } from "@/lib/launchpad/mint-permit";
 import { LaunchpadMintActions, type MintAction } from "./LaunchpadMintActions";
 import { LaunchpadMintDetails } from "./LaunchpadMintDetails";
 import { LaunchpadMintSuccess } from "./LaunchpadMintSuccess";
@@ -54,6 +55,7 @@ export function LaunchpadMintCard({
   status,
   currency,
   contractAddress,
+  ipMinted = false,
   onMinted,
   onRetryContract,
 }: {
@@ -62,6 +64,7 @@ export function LaunchpadMintCard({
   status: DropStatus;
   currency: PaymentCurrency;
   contractAddress?: `0x${string}`;
+  ipMinted?: boolean;
   onMinted?: (quantity: number) => void;
   onRetryContract?: () => void;
 }) {
@@ -74,6 +77,11 @@ export function LaunchpadMintCard({
 
   const [quantity, setQuantity] = useState(1);
   const [busy, setBusy] = useState(false);
+  // The server render tells us whether this network already minted. Keep it in
+  // state so a permit rejection or a confirmed mint can lock the panel without
+  // a full reload. A prop can only turn this on, never off, so OR-ing it with
+  // the local flag avoids a state-sync effect.
+  const [ipBlocked, setIpBlocked] = useState(false);
   const [hash, setHash] = useState<Hash>();
   const [confirmed, setConfirmed] = useState<{
     hash: Hash;
@@ -88,6 +96,8 @@ export function LaunchpadMintCard({
 
   const lastQuantity = useRef(1);
   const closeSuccess = useCallback(() => setSuccessOpen(false), []);
+
+  const networkBlocked = ipBlocked || ipMinted;
 
   const { data: walletMintedData, refetch: refetchWalletMinted } = useReadContract({
     address: contractAddress,
@@ -199,7 +209,9 @@ export function LaunchpadMintCard({
     remainingBySupply < remainingByWallet
       ? remainingBySupply
       : remainingByWallet;
-  const maxQuantity = Number(remainingCap < 20n ? remainingCap : 20n);
+  // The collection's permit gate is one NFT per network, so a transaction can
+  // never batch several pieces even when the supply and wallet caps allow it.
+  const maxQuantity = remainingCap > 0n ? 1 : 0;
 
   const gateEnabled = eligibility?.gateEnabled === true;
   const holderEligible = eligibility?.eligible === true;
@@ -215,6 +227,7 @@ export function LaunchpadMintCard({
     Boolean(values) &&
     publicMintOpen &&
     !soldOut &&
+    !networkBlocked &&
     !gateBlocksMint &&
     maxQuantity > 0;
 
@@ -287,6 +300,7 @@ export function LaunchpadMintCard({
     const mintedQuantity = lastQuantity.current;
 
     setQuantity(1);
+    setIpBlocked(true);
     setConfirmed({ hash, quantity: mintedQuantity });
     if (address) {
       setWalletMintedFloor((current) => {
@@ -343,8 +357,8 @@ export function LaunchpadMintCard({
 
   async function submitMint() {
     if (!contractAddress || !address || !values) return;
-    if (quantity < 1 || quantity > maxQuantity) {
-      toast.error("Choose a valid quantity");
+    if (quantity !== 1 || maxQuantity < 1) {
+      toast.error("One NFT per network");
       return;
     }
     if (insufficientBalance) {
@@ -361,6 +375,38 @@ export function LaunchpadMintCard({
     lastQuantity.current = quantity;
 
     try {
+      // The collection only accepts a mint with a server-signed permit for
+      // this network. Fetch it before asking the wallet for anything so a
+      // blocked network never has to approve ARIWA first.
+      const permitResponse = await fetch("/api/launchpad/mint-permit", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ address }),
+        cache: "no-store",
+      });
+      const permitData = (await permitResponse.json()) as
+        | MintPermit
+        | { error?: string; code?: string };
+
+      if (!permitResponse.ok) {
+        const failure = permitData as { error?: string; code?: string };
+
+        if (failure.code === "already_minted") {
+          setIpBlocked(true);
+          toast.error("This network already minted", {
+            description:
+              "One NFT per network. Switching wallets won't unlock another mint.",
+          });
+          return;
+        }
+
+        throw new Error(failure.error || "Could not verify your network");
+      }
+
+      const { ipHash, signature } = permitData as MintPermit;
       let paymentValue = 0n;
 
       if (erc20Payment) {
@@ -411,7 +457,7 @@ export function LaunchpadMintCard({
         chainId: giwaSepolia.id,
         abi: AriwaNFTABI,
         functionName: "publicMint",
-        args: [BigInt(quantity)],
+        args: [1n, ipHash, signature],
         value: paymentValue,
       });
 
@@ -442,6 +488,7 @@ export function LaunchpadMintCard({
     values,
     soldOut,
     isClosed: Boolean(values) && !publicMintOpen,
+    ipBlocked: networkBlocked,
     isConnected,
     alsoWrongChain: isConnected && chainId !== giwaSepolia.id,
     isSwitching,
@@ -470,8 +517,9 @@ export function LaunchpadMintCard({
 
   const totalLabel = values === undefined ? "—" : formatCurrency(totalCost, currency);
 
-  const statusDetail =
-    status.tone === "live" && values
+  const statusDetail = networkBlocked
+    ? "This network has already minted its piece. One NFT per network — switching wallets won't unlock another mint."
+    : status.tone === "live" && values
       ? `${formatCount(remainingBySupply)} of ${formatCount(supply)} pieces remain. First come, first served.`
       : values && !values.publicMintOpen
         ? "The owner has not opened the public mint yet. Follow ARIWA for the announcement."
@@ -502,6 +550,7 @@ export function LaunchpadMintCard({
         onRetryEligibility={() => void checkEligibility()}
         statusDetail={statusDetail}
         contractAddress={contractAddress}
+        ipBlocked={networkBlocked}
       />
 
       <LaunchpadMintActions
@@ -527,6 +576,7 @@ function getPrimaryAction({
   values,
   soldOut,
   isClosed,
+  ipBlocked,
   isConnected,
   alsoWrongChain,
   isSwitching,
@@ -557,6 +607,7 @@ function getPrimaryAction({
   values?: MintValues;
   soldOut: boolean;
   isClosed: boolean;
+  ipBlocked: boolean;
   isConnected: boolean;
   alsoWrongChain: boolean;
   isSwitching: boolean;
@@ -623,6 +674,15 @@ function getPrimaryAction({
       label: "Public mint closed",
       disabled: true,
       icon: <AlertTriangle className="size-4" />,
+      onClick: onConnect,
+    };
+  }
+
+  if (ipBlocked) {
+    return {
+      label: "Network already minted",
+      disabled: true,
+      icon: <ShieldCheck className="size-4" />,
       onClick: onConnect,
     };
   }

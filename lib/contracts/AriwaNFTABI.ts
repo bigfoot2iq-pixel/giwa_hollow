@@ -18,6 +18,8 @@ export const AriwaNFTABI = parseAbi([
   "function paymentToken() view returns (address)",
   "function publicPrice() view returns (uint256)",
   "function publicMintOpen() view returns (bool)",
+  "function trustedSigner() view returns (address)",
+  "function usedIpHashes(bytes32 ipHash) view returns (bool)",
   "function totalMinted() view returns (uint256)",
   "function totalSupply() view returns (uint256)",
   "function minted(address wallet) view returns (uint256)",
@@ -27,13 +29,15 @@ export const AriwaNFTABI = parseAbi([
   "function getMintStats(address minter) view returns (uint256 minterNumMinted, uint256 currentTotalSupply, uint256 maxSupply)",
 
   // ---- Public write --------------------------------------------------------
-  // Payable only in native-ETH mode; ARIWA mode pulls `publicPrice * quantity`
-  // through transferFrom, so approve the collection first.
-  "function publicMint(uint256 quantity) payable",
+  // Payable only in native-ETH mode; ARIWA mode pulls `publicPrice` through
+  // transferFrom, so approve the collection first. `ipHash` + `signature` come
+  // from /api/launchpad/mint-permit: one permit per network, quantity is 1.
+  "function publicMint(uint256 quantity, bytes32 ipHash, bytes signature) payable",
 
   // ---- Owner writes --------------------------------------------------------
   "function ownerMint(address to, uint256 quantity)",
   "function setPublicMintOpen(bool value)",
+  "function setTrustedSigner(address signer)",
   "function setMaxPerWallet(uint256 newMax)",
   "function setPaymentToken(address token)",
   "function setPublicPrice(uint256 value)",
@@ -45,14 +49,17 @@ export const AriwaNFTABI = parseAbi([
 
   // ---- Events --------------------------------------------------------------
   "event PublicMinted(address indexed wallet, uint256 quantity)",
+  "event NetworkMinted(bytes32 indexed ipHash, address indexed wallet, uint256 quantity)",
   "event MaxPerWalletUpdated(uint256 maxPerWallet)",
   "event PaymentTokenUpdated(address indexed token)",
   "event PublicPriceUpdated(uint256 price)",
+  "event TrustedSignerUpdated(address indexed signer)",
   "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
 
   // ---- Errors --------------------------------------------------------------
   "error PublicClosed()",
   "error ZeroQuantity()",
+  "error InvalidQuantity()",
   "error ExceedsWalletCap()",
   "error ExceedsSupply()",
   "error WrongPayment()",
@@ -61,6 +68,11 @@ export const AriwaNFTABI = parseAbi([
   "error InvalidMaxPerWallet()",
   "error InvalidPaymentToken()",
   "error InsufficientTokenBalance()",
+  "error InvalidIpHash()",
+  "error IpAlreadyMinted()",
+  "error InvalidPermit()",
+  "error SignerNotSet()",
+  "error InvalidTrustedSigner()",
   "error OwnableUnauthorizedAccount(address account)",
   "error OwnableInvalidOwner(address owner)",
   "error URIQueryForNonexistentToken()",

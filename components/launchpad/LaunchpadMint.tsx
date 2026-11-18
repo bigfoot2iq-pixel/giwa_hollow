@@ -30,8 +30,11 @@ const serverHydrationSnapshot = () => false;
  * The launchpad's public shell. It owns the collection reads and the optimistic
  * supply floor, then hands the same values to the summary and the mint panel so
  * both surfaces always agree.
+ *
+ * `ipMinted` comes from the server render: if this network already handled its
+ * mint, the panel starts locked instead of flashing a live button.
  */
-export function LaunchpadMint() {
+export function LaunchpadMint({ ipMinted = false }: { ipMinted?: boolean }) {
   const configured = Boolean(LAUNCHPAD_ADDRESS);
 
   // React Query can hold launchpad data in its client cache, so the server and
@@ -247,6 +250,7 @@ export function LaunchpadMint() {
             status={status}
             currency={currency}
             contractAddress={LAUNCHPAD_ADDRESS}
+            ipMinted={ipMinted}
             onMinted={handleMinted}
             onRetryContract={() => void refetch()}
           />

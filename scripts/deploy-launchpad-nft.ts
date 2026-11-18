@@ -18,6 +18,8 @@ const { ethers } = pkg;
  *   LAUNCHPAD_MINT_PRICE — price per NFT in ARIWA (default 1)
  *   LAUNCHPAD_MAX_PER_WALLET — per-wallet cap (default 1)
  *   LAUNCHPAD_MINT_OPEN — open the public phase on deploy (default false)
+ *   LAUNCHPAD_PERMIT_SIGNER_PRIVATE_KEY — server-side key for the one-mint-
+ *     per-network EIP-712 permit (or LAUNCHPAD_PERMIT_SIGNER as an address)
  */
 
 const BASE_URI = process.env.LAUNCHPAD_BASE_URI || "";
@@ -42,6 +44,29 @@ const PUBLIC_PRICE = ethers.parseEther(process.env.LAUNCHPAD_MINT_PRICE || "1");
 const MAX_PER_WALLET = BigInt(process.env.LAUNCHPAD_MAX_PER_WALLET || "1");
 const MINT_OPEN =
   (process.env.LAUNCHPAD_MINT_OPEN || "false").toLowerCase() === "true";
+
+// The collection requires an EIP-712 permit for every public mint. The signer
+// address must match the key the app holds in
+// LAUNCHPAD_PERMIT_SIGNER_PRIVATE_KEY; one permit is issued per network.
+const PERMIT_SIGNER_PRIVATE_KEY =
+  process.env.LAUNCHPAD_PERMIT_SIGNER_PRIVATE_KEY || "";
+let PERMIT_SIGNER = process.env.LAUNCHPAD_PERMIT_SIGNER || "";
+
+if (PERMIT_SIGNER_PRIVATE_KEY) {
+  try {
+    PERMIT_SIGNER = new ethers.Wallet(PERMIT_SIGNER_PRIVATE_KEY).address;
+  } catch {
+    throw new Error(
+      "LAUNCHPAD_PERMIT_SIGNER_PRIVATE_KEY must be a 32-byte hex private key"
+    );
+  }
+}
+
+if (!PERMIT_SIGNER || !ethers.isAddress(PERMIT_SIGNER)) {
+  throw new Error(
+    "Set LAUNCHPAD_PERMIT_SIGNER_PRIVATE_KEY (or LAUNCHPAD_PERMIT_SIGNER) to the server-side mint permit signer"
+  );
+}
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -68,6 +93,7 @@ async function main() {
   console.log("Payment token:", PAYMENT_TOKEN, "(ARIWA)");
   console.log("Public price:", ethers.formatEther(PUBLIC_PRICE), "ARIWA");
   console.log("Max per wallet:", MAX_PER_WALLET.toString());
+  console.log("Permit signer:", PERMIT_SIGNER);
   console.log("Public mint open:", MINT_OPEN);
   console.log("");
 
@@ -91,6 +117,10 @@ async function main() {
     await tx.wait();
     console.log(`  publicPrice = ${ethers.formatEther(PUBLIC_PRICE)} ARIWA`);
   }
+
+  const signerTx = await contract.setTrustedSigner(PERMIT_SIGNER);
+  await signerTx.wait();
+  console.log(`  trustedSigner = ${PERMIT_SIGNER}`);
 
   if (MAX_PER_WALLET !== 1n) {
     const tx = await contract.setMaxPerWallet(MAX_PER_WALLET);
@@ -116,6 +146,9 @@ async function main() {
   console.log(`AriwaNFT: ${address}`);
   console.log(`\nUpdate your .env.local:`);
   console.log(`NEXT_PUBLIC_LAUNCHPAD_NFT_ADDRESS=${address}`);
+  console.log(
+    "\nKeep LAUNCHPAD_PERMIT_SIGNER_PRIVATE_KEY in sync with the deployed trustedSigner."
+  );
   console.log(`\nThen move the ARIWA supply into the pool so minters can buy it:`);
   console.log(
     "npx hardhat run scripts/fund-pool-with-ariwa.ts --network giwaSepolia"
