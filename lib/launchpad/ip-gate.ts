@@ -1,5 +1,6 @@
 import {
   createPublicClient,
+  fallback,
   http,
   isAddress,
   keccak256,
@@ -96,11 +97,23 @@ function getRpcUrl(): string {
   );
 }
 
+/**
+ * The official GIWA Sepolia endpoint is rate-limited and explicitly not meant
+ * for production. Pocket Network runs a free public GIWA Sepolia endpoint
+ * without an API key, so server reads fail over to it instead of dropping the
+ * mint. Override with GIWA_FALLBACK_RPC_URL when a dedicated provider is added.
+ */
+function getFallbackRpcUrl(): string {
+  return (
+    process.env.GIWA_FALLBACK_RPC_URL?.trim() ||
+    "https://giwa-sepolia-testnet.api.pocket.network"
+  );
+}
+
 let publicClient: ReturnType<typeof createPublicClient> | null = null;
 
-const TRUSTED_SIGNER_TTL_MS = 5 * 60_000;
-const USED_TRUE_TTL_MS = 5 * 60_000;
 const USED_FALSE_TTL_MS = 15_000;
+const TRUSTED_SIGNER_TTL_MS = 5 * 60_000;
 const MAX_USED_CACHE_ENTRIES = 5_000;
 
 let trustedSignerCache: { address: Address; fetchedAt: number } | null = null;
@@ -111,8 +124,9 @@ function readUsedCache(ipHash: Hex): boolean | null {
   const hit = usedCache.get(ipHash);
   if (!hit) return null;
 
-  const ttl = hit.used ? USED_TRUE_TTL_MS : USED_FALSE_TTL_MS;
-  if (Date.now() - hit.fetchedAt > ttl) {
+  // `used = true` is permanent on-chain, so keep it for the life of the
+  // isolate. Only a negative answer expires.
+  if (!hit.used && Date.now() - hit.fetchedAt > USED_FALSE_TTL_MS) {
     usedCache.delete(ipHash);
     return null;
   }
@@ -131,12 +145,22 @@ function writeUsedCache(ipHash: Hex, used: boolean) {
 
 function getPublicClient() {
   if (!publicClient) {
+    const primary = getRpcUrl();
+    const secondary = getFallbackRpcUrl();
+
     publicClient = createPublicClient({
       chain: giwaSepolia,
-      // The permit route must stay fast under load. These reads are
-      // best-effort, so keep the timeout short and retry once; the contract is
-      // the real authority and the client retries transient route failures.
-      transport: http(getRpcUrl(), { timeout: 4_000, retryCount: 1 }),
+      // Reads are best-effort: the first endpoint is tried, and a rate-limited
+      // answer falls through to the public Pocket endpoint instead of failing
+      // the permit. The contract remains the real authority.
+      transport: fallback(
+        [
+          http(primary, { timeout: 4_000, retryCount: 1 }),
+          ...(secondary && secondary !== primary
+            ? [http(secondary, { timeout: 4_000, retryCount: 1 })]
+            : []),
+        ],
+      ),
     });
   }
 

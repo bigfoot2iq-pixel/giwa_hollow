@@ -54,6 +54,7 @@ Copy `.env.example` → `.env.local` and fill in:
 | `NEXT_PUBLIC_SWAP_POOL_ADDRESS` | Constant-product ARIWA/ETH AMM pool (set after deploy) |
 | `SWAP_POOL_TOKENS_PER_ETH` / `SWAP_POOL_ETH_FUNDING` / `SWAP_POOL_TOKEN_FUNDING` / `SWAP_POOL_FEE_BPS` | Swap pool deploy inputs: opening price, seed liquidity, swap fee |
 | `ETHEREUM_RPC_URL` / `BNB_RPC_URL` / `BASE_RPC_URL` / `INK_RPC_URL` | Optional RPC overrides for the launchpad holder check |
+| `NEXT_PUBLIC_FALLBACK_RPC_URL` / `GIWA_FALLBACK_RPC_URL` | Optional browser/server fallback RPCs; both default to Pocket Network's public GIWA Sepolia endpoint |
 | `LAUNCHPAD_COLLECTION` / `LAUNCHPAD_ART_SUPPLY` | Launchpad R2 collection slug + expected token count |
 | `UPLOAD_TOKEN_SECRET` | HMAC secret for admin launchpad upload sessions (server-only) |
 | `LAUNCHPAD_BASE_URI` | Metadata base the contract appends `${tokenId}.json` to; the live ARIWA value is the direct Pinata gateway |
