@@ -1,11 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
-import { NFT_PIECES, type NftPiece } from "@/lib/art";
+import { HOME_HERO, type AriwaPiece } from "@/lib/art";
 
 const WALL = {
-  feature: NFT_PIECES[0],
-  tiles: [NFT_PIECES[1], NFT_PIECES[2], NFT_PIECES[3], NFT_PIECES[4]],
+  feature: HOME_HERO[0],
+  tiles: HOME_HERO.slice(1),
 };
 
 const ECOSYSTEM = ["NFTs", "Token", "Launchpad", "Community"];
@@ -73,7 +73,7 @@ export function Hero() {
                   <div className="flex items-end justify-between gap-3">
                     <div>
                       <p className="font-mono text-[8px] uppercase tracking-[0.18em] text-white/55">
-                        ARIWA #{String(WALL.feature.id).padStart(4, "0")}
+                        {WALL.feature.eyes}
                       </p>
                       <p className="mt-1.5 font-header text-xl font-extrabold tracking-[-0.03em] text-white sm:text-2xl">
                         {WALL.feature.name}
@@ -123,7 +123,7 @@ export function Hero() {
   );
 }
 
-function PortraitTile({ piece }: { piece: NftPiece }) {
+function PortraitTile({ piece }: { piece: AriwaPiece }) {
   return (
     <figure className="group relative aspect-square overflow-hidden rounded-[18px] border border-ink/10 bg-paper">
       <Image

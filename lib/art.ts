@@ -394,3 +394,31 @@ export const HOME_EYE_PIECES = [
   { ...ariwaById(2), label: "Left eye closed" },
   { ...ariwaById(27), label: "Right eye closed" },
 ];
+
+/**
+ * The residents shown in the home page's "NFT Collection" grid, ordered to mix
+ * the eye — the collection's signature trait — across its states: open stare,
+ * excited, left closed, wink, right closed, and hypnotic.
+ */
+export const HOME_COLLECTION = [
+  ariwaById(1), // Blue Stare — both open
+  ariwaById(2), // Closed Left Heart — left closed
+  ariwaById(3), // Excited — both open
+  ariwaById(5), // Closed Left Heart — left closed
+  ariwaById(7), // Red Wink
+  ariwaById(22), // Excited — both open
+  ariwaById(27), // Right Rainbow Wink — right closed
+  ariwaById(33), // Mono Right Hypno
+];
+
+/**
+ * The hero wall. A subset of the collection above (the hero footer says
+ * "Selected from the collection") with the same eye-mixing rule.
+ */
+export const HOME_HERO = [
+  ariwaById(1), // both open — the featured resident
+  ariwaById(2), // left closed
+  ariwaById(27), // right closed
+  ariwaById(7), // wink
+  ariwaById(22), // excited
+];

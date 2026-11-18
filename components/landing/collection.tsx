@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { NFT_PIECES } from "@/lib/art";
+import { HOME_COLLECTION } from "@/lib/art";
 
 export function CollectionSection() {
   return (
@@ -28,7 +28,7 @@ export function CollectionSection() {
       </div>
 
       <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-        {NFT_PIECES.map((piece) => (
+        {HOME_COLLECTION.map((piece) => (
           <figure
             key={piece.id}
             className="group relative aspect-square overflow-hidden rounded-[22px] border border-ink/10 bg-paper"
