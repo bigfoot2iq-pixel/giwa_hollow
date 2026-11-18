@@ -115,6 +115,12 @@ async function fetchOwnedInstances(
     });
 
     if (!response.ok) {
+      // Blockscout returns 404 for a collection it has not indexed yet (a
+      // freshly deployed contract with no tokens). That is an empty shelf, not
+      // an upstream failure.
+      if (response.status === 404) {
+        return { nfts: [], count: 0, contract };
+      }
       throw new Error(`GIWA explorer returned ${response.status}`);
     }
 
