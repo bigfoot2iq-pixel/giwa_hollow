@@ -14,6 +14,7 @@ import { ThemeToggle } from "./ThemeToggle";
 
 const NAV = [
   { label: "Home", href: "/home" },
+  { label: "Profile", href: "/profile" },
   { label: "Trade", href: "/trade" },
   { label: "Launchpad", href: "/launchpad" },
   { label: "Create", href: "/create" },
@@ -88,10 +89,15 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2">
           {address && balance !== undefined && (
-            <span className="hidden items-center gap-1.5 rounded-full border border-iris/15 bg-iris/[0.06] px-3 py-1.5 font-mono text-[10px] tracking-[0.04em] text-iris-deep xl:inline-flex">
+            <Link
+              href="/profile"
+              aria-label="View your profile"
+              title="View your profile"
+              className="hidden items-center gap-1.5 rounded-full border border-iris/15 bg-iris/[0.06] px-3 py-1.5 font-mono text-[10px] tracking-[0.04em] text-iris-deep transition hover:border-iris/30 hover:bg-iris/[0.1] xl:inline-flex"
+            >
               <span className="iris-dot size-1.5" />
               {formatCompactBalance(balance)} ARIWA
-            </span>
+            </Link>
           )}
 
           <XAccountLink className="hidden sm:inline-flex" />
@@ -142,14 +148,18 @@ export function SiteHeader() {
             })}
           </nav>
           <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-ink/[0.08] bg-paper/60 px-4 py-3">
-            <div>
+            <Link
+              href="/profile"
+              onClick={() => setOpenPath(null)}
+              className="min-w-0 flex-1"
+            >
               <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-mute">
                 Your nook
               </p>
-              <p className="mt-1 text-xs text-ink-soft">
+              <p className="mt-1 truncate text-xs text-ink-soft">
                 {address ? formatCompactBalance(balance) + " ARIWA" : "Connect to step inside"}
               </p>
-            </div>
+            </Link>
             <WalletButton compact />
           </div>
         </div>

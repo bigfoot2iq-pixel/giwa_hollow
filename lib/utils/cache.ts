@@ -79,6 +79,12 @@ export const CACHE = {
    */
   walletActivity: cacheControl({ browser: 30, cdn: 0, private: true }),
   /**
+   * A wallet's ARIWA NFT shelf, read from the GIWA explorer on the server.
+   * Private because it is keyed by wallet; the short browser window absorbs the
+   * repeat mounts while the profile is open without hiding a fresh mint for long.
+   */
+  walletNfts: cacheControl({ browser: 10, cdn: 0, private: true }),
+  /**
    * A wallet's entry count for one raffle. This was the only read route serving
    * no Cache-Control at all, so every mount of RaffleEntryForm reached Postgres
    * — at ~200k requests/day it was the single largest consumer of the Supabase

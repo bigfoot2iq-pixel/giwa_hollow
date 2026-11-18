@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
 const PRODUCT = [
+  { label: "Profile", href: "/profile" },
   { label: "Trade ARIWA", href: "/trade" },
   { label: "Launchpad", href: "/launchpad" },
   { label: "Create", href: "/create" },
