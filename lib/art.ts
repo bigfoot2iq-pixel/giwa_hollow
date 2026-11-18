@@ -268,3 +268,129 @@ export const ART_TONES: Record<
 };
 
 export const HERO_PIECE = NFT_PIECES[0];
+
+/**
+ * The real on-chain ARIWA residents.
+ *
+ * These are the actual token artworks referenced by the live collection (the
+ * same files the `LEGACY_IMAGE_CID` directory serves), mirrored into
+ * `/public/art/nft` so Cloudflare caches them instead of the Pinata gateway.
+ * Their names and traits come from the on-chain metadata, not the placeholder
+ * cast above.
+ */
+export interface AriwaPiece {
+  id: number;
+  src: string;
+  name: string;
+  alt: string;
+  hat: string;
+  eyes: string;
+}
+
+export const ARIWA_PIECES: AriwaPiece[] = [
+  {
+    id: 1,
+    src: "/art/nft/1.png",
+    name: "ARIWA #1",
+    hat: "Leaf Beanie",
+    eyes: "Blue Stare",
+    alt: "ARIWA #1, a white resident with Blue Stare eyes and a Leaf Beanie",
+  },
+  {
+    id: 2,
+    src: "/art/nft/2.png",
+    name: "ARIWA #2",
+    hat: "Flat Strawberry",
+    eyes: "Closed Left Heart",
+    alt: "ARIWA #2, a white resident with a Closed Left Heart eye and a Flat Strawberry hat",
+  },
+  {
+    id: 3,
+    src: "/art/nft/3.png",
+    name: "ARIWA #3",
+    hat: "Beret",
+    eyes: "Excited",
+    alt: "ARIWA #3, a light-purple resident with Excited eyes and a Beret",
+  },
+  {
+    id: 5,
+    src: "/art/nft/5.png",
+    name: "ARIWA #5",
+    hat: "Pink Strawberry Hat",
+    eyes: "Closed Left Heart",
+    alt: "ARIWA #5, a purple resident with a Closed Left Heart eye and a Pink Strawberry Hat",
+  },
+  {
+    id: 6,
+    src: "/art/nft/6.png",
+    name: "ARIWA #6",
+    hat: "Sunflower",
+    eyes: "Blue Right",
+    alt: "ARIWA #6, a white resident with a Blue Right eye and a Sunflower hat",
+  },
+  {
+    id: 7,
+    src: "/art/nft/7.png",
+    name: "ARIWA #7",
+    hat: "Floral",
+    eyes: "Red Wink",
+    alt: "ARIWA #7, a shade-purple resident with a Red Wink and a Floral hat",
+  },
+  {
+    id: 12,
+    src: "/art/nft/12.png",
+    name: "ARIWA #12",
+    hat: "Pumpkin",
+    eyes: "Blue Stare",
+    alt: "ARIWA #12, a light-purple resident with Blue Stare eyes and a Pumpkin hat",
+  },
+  {
+    id: 22,
+    src: "/art/nft/22.png",
+    name: "ARIWA #22",
+    hat: "Pink Strawberry Hat",
+    eyes: "Excited",
+    alt: "ARIWA #22, a shade-purple resident with Excited eyes and a Pink Strawberry Hat",
+  },
+  {
+    id: 27,
+    src: "/art/nft/27.png",
+    name: "ARIWA #27",
+    hat: "Floral",
+    eyes: "Right Rainbow Wink",
+    alt: "ARIWA #27, a green resident with a Right Rainbow Wink and a Floral hat",
+  },
+  {
+    id: 32,
+    src: "/art/nft/32.png",
+    name: "ARIWA #32",
+    hat: "Cloud Beanie",
+    eyes: "Right Rainbow Wink",
+    alt: "ARIWA #32, a baby-pink resident with a Right Rainbow Wink and a Cloud Beanie",
+  },
+  {
+    id: 33,
+    src: "/art/nft/33.png",
+    name: "ARIWA #33",
+    hat: "Pink Strawberry Hat",
+    eyes: "Mono Right Hypno",
+    alt: "ARIWA #33, a pink resident with a Mono Right Hypno eye and a Pink Strawberry Hat",
+  },
+];
+
+function ariwaById(id: number): AriwaPiece {
+  const piece = ARIWA_PIECES.find((candidate) => candidate.id === id);
+  if (!piece) throw new Error(`Unknown ARIWA piece ${id}`);
+  return piece;
+}
+
+/**
+ * A compact three-resident set used on the home page to show how the eye —
+ * the collection's defining trait — varies. Picked for the cleanest, most
+ * distinct states: both open, left closed, right closed.
+ */
+export const HOME_EYE_PIECES = [
+  { ...ariwaById(1), label: "Both eyes open" },
+  { ...ariwaById(2), label: "Left eye closed" },
+  { ...ariwaById(27), label: "Right eye closed" },
+];

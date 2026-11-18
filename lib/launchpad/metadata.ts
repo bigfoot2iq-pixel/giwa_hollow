@@ -7,10 +7,10 @@ import type { Metadata } from "next";
 export const launchpadMetadata: Metadata = {
   title: "Launchpad",
   description:
-    "Mint ARIWA Genesis on GIWA Sepolia. On-chain supply, holder-gated access, and instant delivery to your wallet.",
+    "Mint ARIWA on GIWA Sepolia. On-chain supply, holder-gated access, and instant delivery to your wallet.",
   keywords: [
     "ARIWA launchpad",
-    "ARIWA Genesis",
+    "ARIWA",
     "GIWA NFT",
     "mint NFT",
     "GIWA Sepolia",
@@ -18,7 +18,7 @@ export const launchpadMetadata: Metadata = {
   openGraph: {
     title: "ARIWA Launchpad",
     description:
-      "Mint ARIWA Genesis on GIWA Sepolia. On-chain supply and instant delivery.",
+      "Mint ARIWA on GIWA Sepolia. On-chain supply and instant delivery.",
     type: "website",
   },
 };

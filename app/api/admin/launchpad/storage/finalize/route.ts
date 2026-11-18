@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
       name:
         body && typeof body.name === "string" && body.name.trim()
           ? body.name.trim().slice(0, 120)
-          : "ARIWA Genesis",
+          : "ARIWA",
       description:
         body && typeof body.description === "string" && body.description.trim()
           ? body.description.trim().slice(0, 2000)

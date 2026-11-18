@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { About } from "@/components/landing/about";
 import { CollectionSection } from "@/components/landing/collection";
+import { EyeDiversity } from "@/components/landing/eye-diversity";
 import { FinalCta } from "@/components/landing/final-cta";
 import { Hero } from "@/components/landing/hero";
 import { LaunchpadSection } from "@/components/landing/launchpad";
@@ -23,6 +24,7 @@ export default function HomePage() {
     <div className="relative">
       <Hero />
       <CollectionSection />
+      <EyeDiversity />
       <About />
       <TokenSection />
       <LaunchpadSection />

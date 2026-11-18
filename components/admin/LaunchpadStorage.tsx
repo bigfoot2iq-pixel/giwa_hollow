@@ -182,7 +182,7 @@ export function LaunchpadStorage() {
   const [generateMetadata, setGenerateMetadata] = useState(false);
   const [readingFiles, setReadingFiles] = useState(false);
 
-  const [collectionName, setCollectionName] = useState("ARIWA Genesis");
+  const [collectionName, setCollectionName] = useState("ARIWA");
   const [collectionDescription, setCollectionDescription] = useState(
     "The first collection on Giwa chain"
   );

@@ -68,7 +68,7 @@ export const metadata: Metadata = {
     title: "ARIWA — The First PFP Collection on GIWA",
     description:
       "2,222 unique NFTs on GIWA. Trade the token and launch a collection in one ecosystem.",
-    images: ["/art/nft/1.webp"],
+    images: ["/art/nft/1.png"],
   },
   twitter: {
     card: "summary_large_image",
@@ -77,7 +77,7 @@ export const metadata: Metadata = {
     title: "ARIWA — The First PFP Collection on GIWA",
     description:
       "2,222 unique NFTs on GIWA. Trade the token and launch a collection in one ecosystem.",
-    images: ["/art/nft/1.webp"],
+    images: ["/art/nft/1.png"],
   },
   robots: {
     index: true,

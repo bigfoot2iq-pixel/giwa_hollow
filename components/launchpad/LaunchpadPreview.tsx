@@ -3,12 +3,10 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
-import { GALLERY_PIECES } from "@/lib/art";
+import { ARIWA_PIECES } from "@/lib/art";
 import { cn } from "@/lib/utils/cn";
 
-const PREVIEW_ITEMS = GALLERY_PIECES.filter(
-  (piece) => piece.id !== 1 && piece.id !== 2112 && piece.id !== 314,
-).slice(0, 10);
+const PREVIEW_ITEMS = ARIWA_PIECES;
 
 const SLIDE_MS = 6_000;
 
@@ -27,7 +25,7 @@ function serverReducedMotionSnapshot() {
 }
 
 /**
- * The genesis set showcase. A fixed description sits above the artwork, the
+ * The collection showcase. A fixed description sits above the artwork, the
  * piece itself fills the frame edge to edge, and the set is paged with arrows,
  * dots, and a quiet auto-rotation instead of a strip of thumbnails.
  */
@@ -68,7 +66,7 @@ export function LaunchpadPreview() {
     <div className="ui-container self-start overflow-hidden rounded-[30px]">
       <div className="border-b border-ink/[0.07] bg-paper/35 p-4 sm:p-5">
         <div className="flex items-center justify-between gap-2">
-          <p className="eyebrow">The genesis set</p>
+          <p className="eyebrow">The collection</p>
           <span className="font-mono text-[7px] uppercase tracking-[0.16em] text-ink-faint">
             GIWA Sepolia
           </span>
@@ -76,12 +74,12 @@ export function LaunchpadPreview() {
 
         <div className="mt-3 flex flex-col gap-2.5 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
           <h2 className="font-header text-[30px] font-extrabold leading-none tracking-[-0.04em] text-ink sm:text-[34px]">
-            Ten faces from ARIWA
+            Eleven faces from ARIWA
           </h2>
 
           <p className="text-[11.5px] leading-5 text-ink-soft sm:max-w-[340px] sm:border-l sm:border-ink/[0.08] sm:pl-5">
-            Every resident is one eye, one wink, and a hat they will not take
-            off. The rest is personality.
+            Every resident is a wink, a stare, and a hat they will not take off.
+            The rest is personality.
           </p>
         </div>
       </div>

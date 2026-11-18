@@ -80,7 +80,7 @@ export function Hero() {
                       </p>
                     </div>
                     <span className="hidden rounded-full border border-white/15 bg-white/10 px-2.5 py-1 font-mono text-[7px] uppercase tracking-[0.14em] text-white/75 backdrop-blur sm:inline-flex">
-                      Genesis
+                      ARIWA
                     </span>
                   </div>
                 </figcaption>

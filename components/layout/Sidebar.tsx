@@ -59,9 +59,6 @@ export function Sidebar() {
             <span className="block font-display text-lg font-bold tracking-tight text-text-primary">
               ARIWA
             </span>
-            <span className="block text-[9px] font-bold uppercase tracking-[0.22em] text-iris">
-              Genesis
-            </span>
           </span>
         </Link>
 

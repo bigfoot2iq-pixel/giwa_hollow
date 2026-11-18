@@ -1,13 +1,13 @@
 /**
  * Shared launchpad storage constants.
  *
- * The public launchpad is a single ARIWA Genesis collection. Artwork and
+ * The public launchpad is a single ARIWA collection. Artwork and
  * metadata are stored in a private R2 bucket and served exclusively through
  * the /api/launchpad routes, so the storage origin is never exposed.
  */
 
 export const LAUNCHPAD_COLLECTION =
-  process.env.LAUNCHPAD_COLLECTION || "ariwa-genesis";
+  process.env.LAUNCHPAD_COLLECTION || "ariwa";
 
 export const DEFAULT_ART_SUPPLY = 2222;
 

@@ -73,7 +73,7 @@ export function LaunchpadSummary({
               <span className="relative flex size-12 shrink-0 rounded-2xl border border-ink/10 bg-butter p-[3px] shadow-[0_12px_26px_-18px_rgba(39,33,50,0.8)] sm:size-[52px]">
                 <span className="relative flex-1 overflow-hidden rounded-[12px] bg-cream-2">
                   <Image
-                    src="/art/nft/1.webp"
+                    src="/art/nft/1.png"
                     alt=""
                     fill
                     sizes="52px"
@@ -90,7 +90,7 @@ export function LaunchpadSummary({
                   <DropStatusPill status={status} />
                 </div>
                 <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-5 text-ink-mute">
-                  <span>ARIWA&apos;s genesis drop. Soft residents, on-chain supply.</span>
+                  <span>ARIWA&apos;s first drop. Soft residents, on-chain supply.</span>
                   <span aria-hidden="true" className="size-1 rounded-full bg-iris/35" />
                   <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-ink-faint">
                     {symbol} · {giwaSepolia.name}
@@ -173,8 +173,8 @@ function ShareButton() {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: "ARIWA Genesis",
-          text: "Mint ARIWA Genesis on GIWA.",
+          title: "ARIWA",
+          text: "Mint ARIWA on GIWA.",
           url,
         });
         return;

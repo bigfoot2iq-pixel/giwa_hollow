@@ -19,7 +19,7 @@ const DARK_COLOR = "#0c0a11";
 const LIGHT_COLOR = "#FBF7EF";
 
 /** Runs before paint in the document head so the first frame is already dark. */
-export const THEME_INIT_SCRIPT = `(function(){try{var k="${THEME_STORAGE_KEY}";var s=localStorage.getItem(k);var m=window.matchMedia("(prefers-color-scheme: dark)").matches;var d=s==="dark"||((s===null||s==="system")&&m);var r=document.documentElement;r.classList.toggle("dark",d);r.style.colorScheme=d?"dark":"light";}catch(e){}})();`;
+export const THEME_INIT_SCRIPT = `(function(){try{var k="${THEME_STORAGE_KEY}";var s=localStorage.getItem(k);var m=window.matchMedia("(prefers-color-scheme: dark)").matches;var d=s==="dark"||s===null||(s==="system"&&m);var r=document.documentElement;r.classList.toggle("dark",d);r.style.colorScheme=d?"dark":"light";}catch(e){}})();`;
 
 /** Viewport point the theme reveal should radiate from (the toggle's centre). */
 export type ThemeRevealOrigin = { x: number; y: number };
@@ -43,9 +43,9 @@ const themeListeners = new Set<() => void>();
 let cachedTheme: Theme | null = null;
 
 function readStoredTheme(): Theme {
-  if (typeof window === "undefined") return "system";
+  if (typeof window === "undefined") return "dark";
   const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-  return stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+  return stored === "light" || stored === "dark" || stored === "system" ? stored : "dark";
 }
 
 function getThemeSnapshot(): Theme {
@@ -54,7 +54,7 @@ function getThemeSnapshot(): Theme {
 }
 
 function getThemeServerSnapshot(): Theme {
-  return "system";
+  return "dark";
 }
 
 function subscribeTheme(callback: () => void): () => void {

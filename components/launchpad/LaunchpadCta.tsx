@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Send } from "lucide-react";
-import { ART_LIST } from "@/lib/art";
+import { ARIWA_PIECES } from "@/lib/art";
 
 export function LaunchpadCta() {
   return (
@@ -19,7 +19,7 @@ export function LaunchpadCta() {
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <div className="hidden -space-x-3 sm:flex">
-              {ART_LIST.map((art) => (
+              {ARIWA_PIECES.slice(0, 3).map((art) => (
                 <span
                   key={art.src}
                   className="relative size-11 overflow-hidden rounded-full border-2 border-paper bg-cream-2 shadow-[0_8px_18px_-14px_rgba(39,33,50,0.7)] dark:border-white/15"

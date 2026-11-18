@@ -72,18 +72,6 @@ export function GlobalLoader() {
       >
         ARIWA
       </p>
-      <p
-        style={{
-          marginTop: 6,
-          fontFamily: "var(--font-geist-mono), monospace",
-          fontSize: 8,
-          letterSpacing: "0.22em",
-          textTransform: "uppercase",
-          color: "var(--ariwa-iris)",
-        }}
-      >
-        genesis
-      </p>
 
       <style
         dangerouslySetInnerHTML={{

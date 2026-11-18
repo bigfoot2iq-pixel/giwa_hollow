@@ -37,9 +37,6 @@ export function SiteFooter() {
                 <span className="font-header text-[14px] font-extrabold tracking-[0.2em] text-ink">
                   ARIWA
                 </span>
-                <span className="mt-1 font-mono text-[8px] uppercase tracking-[0.26em] text-iris">
-                  genesis
-                </span>
               </span>
             </Link>
 

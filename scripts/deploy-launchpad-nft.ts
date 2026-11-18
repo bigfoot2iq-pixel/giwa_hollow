@@ -60,8 +60,8 @@ async function main() {
     ethers.formatEther(await ethers.provider.getBalance(deployer.address)),
     "ETH"
   );
-  console.log("Name: ARIWA Genesis (hard-coded)");
-  console.log("Symbol: ARIGEN (hard-coded)");
+  console.log("Name: ARIWA NFT (hard-coded)");
+  console.log("Symbol: ARIWA (hard-coded)");
   console.log("Max supply: 2222 (immutable)");
   console.log("Owner:", owner);
   console.log("Base URI:", BASE_URI || "(not set — owner can set later)");

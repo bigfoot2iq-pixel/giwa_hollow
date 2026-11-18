@@ -264,7 +264,7 @@ export function LaunchpadRequestForm({
                 maxLength={120}
                 value={form.collection_name}
                 onChange={(event) => update("collection_name", event.target.value)}
-                placeholder="ARIWA Genesis"
+                placeholder="ARIWA"
                 className={inputClass}
               />
             </Field>

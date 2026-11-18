@@ -9,7 +9,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 /**
  * @title AriwaNFT
- * @notice 2,222 ARIWA Genesis on GIWA.
+ * @notice 2,222 ARIWA NFT on GIWA.
  *
  *   - Public — anyone mints for {publicPrice} of {paymentToken} each while
  *     {publicMintOpen}, up to {maxPerWallet} tokens per wallet.
@@ -84,7 +84,7 @@ contract AriwaNFT is ERC721A, Ownable, ReentrancyGuard {
     /// @param baseURI_ Base metadata URI. Token URIs resolve to
     ///        `{baseURI_}{tokenId}.json`.
     constructor(address initialOwner, string memory baseURI_)
-        ERC721A("ARIWA Genesis", "ARIGEN")
+        ERC721A("ARIWA NFT", "ARIWA")
         Ownable(initialOwner)
     {
         _baseTokenURI = baseURI_;

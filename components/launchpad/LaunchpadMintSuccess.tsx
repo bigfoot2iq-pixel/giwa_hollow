@@ -57,7 +57,16 @@ export function LaunchpadMintSuccess({
   if (!open) return null;
   if (typeof document === "undefined") return null;
 
-  const shareText = `Just minted ${quantity} ${quantity === 1 ? "NFT" : "NFTs"} from ARIWA Genesis on GIWA.`;
+  const shareText = `Just minted my ARIWA @ARIWA_on_Giwa NFT!
+
+Proud to be part of the first NFT collection on @GIWA_by_Upbit Chain Testnet.
+
+Want to be part of it too?
+
+Mint yours here:
+https://ariwa.xyz/launchpad
+
+The beginning of something special. `;
   const shareHref = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
 
   function trapFocus(event: ReactKeyboardEvent<HTMLDivElement>) {
@@ -136,14 +145,14 @@ export function LaunchpadMintSuccess({
 
           <div className="relative mt-4 aspect-square overflow-hidden rounded-[22px] border border-ink/10 bg-cream-2">
             <Image
-              src="/art/nft/1.webp"
-              alt="ARIWA Genesis resident artwork"
+              src="/art/nft/1.png"
+              alt="ARIWA resident artwork"
               fill
               sizes="(max-width: 640px) 90vw, 390px"
               className="object-cover"
             />
             <div className="absolute left-3 top-3 rounded-full border border-ink/10 bg-cream/85 px-2.5 py-1 font-mono text-[8.5px] uppercase tracking-[0.16em] text-ink-soft backdrop-blur">
-              ARIWA Genesis
+              ARIWA
             </div>
             <div className="absolute bottom-3 right-3 rounded-full border border-ink/10 bg-cream/85 px-2.5 py-1 font-mono text-[8.5px] uppercase tracking-[0.16em] text-ink-mute backdrop-blur">
               GIWA

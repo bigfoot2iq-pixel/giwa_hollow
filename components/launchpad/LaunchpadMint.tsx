@@ -219,11 +219,11 @@ export function LaunchpadMint() {
   const displayName =
     hydrated && typeof collectionName === "string" && collectionName.trim()
       ? collectionName
-      : "ARIWA Genesis";
+      : "ARIWA";
   const displaySymbol =
     hydrated && typeof collectionSymbol === "string" && collectionSymbol.trim()
       ? collectionSymbol
-      : "ARIGEN";
+      : "ARIWA";
 
   return (
     <>
