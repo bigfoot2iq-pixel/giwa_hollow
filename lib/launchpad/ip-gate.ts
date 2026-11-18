@@ -278,6 +278,20 @@ export async function createMintPermit(
     };
   }
 
+  // The IP hash must come from a stable secret. Falling back to the public
+  // default in production would silently change every user's hash (and reset
+  // their limit) the day the secret is finally set, so refuse instead.
+  if (!process.env.LAUNCHPAD_IP_HASH_SECRET?.trim()) {
+    console.error(
+      "[launchpad] LAUNCHPAD_IP_HASH_SECRET is not set - refusing to issue a permit with the public fallback",
+    );
+    return {
+      ok: false,
+      code: "not_configured",
+      error: "The mint gate is not configured. Please try again later.",
+    };
+  }
+
   const account = privateKeyToAccount(privateKey);
   const ipHash = hashRequestIp(getRequestIp(headersList));
 
