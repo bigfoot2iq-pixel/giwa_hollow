@@ -8,8 +8,9 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { ArrowUpRight, Check, Share2, X } from "lucide-react";
+import { ArrowUpRight, Check, Loader2, Share2, X } from "lucide-react";
 import type { Hash } from "viem";
+import { ARIWA_PIECES } from "@/lib/art";
 import { giwaSepolia } from "@/lib/contracts";
 
 /**
@@ -22,14 +23,32 @@ export function LaunchpadMintSuccess({
   onClose,
   hash,
   quantity,
+  tokenId,
 }: {
   open: boolean;
   onClose: () => void;
   hash?: Hash;
   quantity: number;
+  /** The token the minter actually received, read from the mint receipt. */
+  tokenId?: bigint;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+
+  // Prefer the local copy of a known piece so it paints immediately; the
+  // image proxy covers every other id without exposing the storage origin.
+  const localPiece =
+    tokenId === undefined
+      ? undefined
+      : ARIWA_PIECES.find((piece) => BigInt(piece.id) === tokenId);
+  // Never substitute token #1 for an unknown id: a neutral tile is honest,
+  // while the wrong resident would be exactly the bug this card fixes.
+  const imageSrc = localPiece
+    ? localPiece.src
+    : tokenId === undefined
+      ? undefined
+      : `/api/launchpad/image/${tokenId}.png`;
+  const pieceLabel = tokenId === undefined ? "ARIWA" : `ARIWA #${tokenId}`;
 
   const handleClose = useCallback(() => {
     onClose();
@@ -144,15 +163,25 @@ The beginning of something special. `;
           </div>
 
           <div className="relative mt-4 aspect-square overflow-hidden rounded-[22px] border border-ink/10 bg-cream-2">
-            <Image
-              src="/art/nft/1.png"
-              alt="ARIWA resident artwork"
-              fill
-              sizes="(max-width: 640px) 90vw, 390px"
-              className="object-cover"
-            />
+            {imageSrc ? (
+              <Image
+                key={imageSrc}
+                src={imageSrc}
+                alt={localPiece ? localPiece.alt : `${pieceLabel} artwork`}
+                fill
+                sizes="(max-width: 640px) 90vw, 390px"
+                className="object-cover"
+              />
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center gap-2 text-ink-mute">
+                <Loader2 className="size-5 animate-spin" aria-hidden="true" />
+                <p className="font-mono text-[8.5px] uppercase tracking-[0.18em]">
+                  Reading your piece…
+                </p>
+              </div>
+            )}
             <div className="absolute left-3 top-3 rounded-full border border-ink/10 bg-cream/85 px-2.5 py-1 font-mono text-[8.5px] uppercase tracking-[0.16em] text-ink-soft backdrop-blur">
-              ARIWA
+              {pieceLabel}
             </div>
             <div className="absolute bottom-3 right-3 rounded-full border border-ink/10 bg-cream/85 px-2.5 py-1 font-mono text-[8.5px] uppercase tracking-[0.16em] text-ink-mute backdrop-blur">
               GIWA

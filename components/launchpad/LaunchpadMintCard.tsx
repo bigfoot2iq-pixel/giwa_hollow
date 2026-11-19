@@ -12,7 +12,13 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
-import type { Hash } from "viem";
+import {
+  parseEventLogs,
+  zeroAddress,
+  type Hash,
+  type Log,
+  type PublicClient,
+} from "viem";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -50,6 +56,111 @@ function shortError(error: unknown): string {
 }
 
 const PERMIT_RETRY_DELAYS_MS = [350, 900];
+
+/**
+ * Read the token id the minter actually received from the mint receipt.
+ *
+ * A mined transaction does not "return" the minted id to the caller: the write
+ * call only yields a hash. ERC721A publishes the id in the standard `Transfer`
+ * event from the zero address, and the receipt we already wait for contains
+ * exactly that log. Decoding it locally costs no extra RPC request and is the
+ * only exact source — `totalMinted + 1` is a guess that breaks when two
+ * wallets mint around the same time.
+ *
+ * The log must come from this collection, belong to this transaction, start at
+ * the zero address, and land in the connected wallet. Logs from other
+ * contracts in the transaction (for example the ERC20 payment) are ignored.
+ */
+function findMintedTokenId({
+  logs,
+  contractAddress,
+  wallet,
+  transactionHash,
+}: {
+  logs?: readonly Log[];
+  contractAddress?: `0x${string}`;
+  wallet?: `0x${string}`;
+  transactionHash?: Hash;
+}): bigint | undefined {
+  if (
+    !logs ||
+    logs.length === 0 ||
+    !contractAddress ||
+    !wallet ||
+    !transactionHash
+  ) {
+    return undefined;
+  }
+
+  const transfers = parseEventLogs({
+    abi: AriwaNFTABI,
+    eventName: "Transfer",
+    logs: logs.filter(
+      (log) =>
+        log.address.toLowerCase() === contractAddress.toLowerCase() &&
+        log.transactionHash?.toLowerCase() === transactionHash.toLowerCase(),
+    ),
+  });
+
+  const mint = transfers.find(
+    (log) =>
+      log.args.from === zeroAddress &&
+      log.args.to?.toLowerCase() === wallet.toLowerCase(),
+  );
+
+  return mint?.args.tokenId;
+}
+
+/**
+ * Fallback for an RPC that returns a receipt without logs: read the mint
+ * events in the receipt's own block, scoped to this collection, this wallet,
+ * and this transaction. It can only return a piece minted to this wallet.
+ */
+async function findMintedTokenIdInBlock({
+  publicClient,
+  contractAddress,
+  wallet,
+  transactionHash,
+  blockNumber,
+}: {
+  publicClient?: PublicClient;
+  contractAddress?: `0x${string}`;
+  wallet?: `0x${string}`;
+  transactionHash?: Hash;
+  blockNumber?: bigint;
+}): Promise<bigint | undefined> {
+  if (
+    !publicClient ||
+    !contractAddress ||
+    !wallet ||
+    !transactionHash ||
+    blockNumber === undefined
+  ) {
+    return undefined;
+  }
+
+  try {
+    const mints = await publicClient.getContractEvents({
+      address: contractAddress,
+      abi: AriwaNFTABI,
+      eventName: "Transfer",
+      args: { from: zeroAddress, to: wallet },
+      fromBlock: blockNumber,
+      toBlock: blockNumber,
+    });
+
+    return mints.find(
+      (event) =>
+        event.transactionHash?.toLowerCase() === transactionHash.toLowerCase(),
+    )?.args.tokenId;
+  } catch (error) {
+    console.error(
+      "Could not locate the minted token id in its block:",
+      error,
+    );
+    return undefined;
+  }
+}
 
 type PermitFetchResult =
   | { ok: true; permit: MintPermit }
@@ -155,6 +266,7 @@ export function LaunchpadMintCard({
   const [confirmed, setConfirmed] = useState<{
     hash: Hash;
     quantity: number;
+    tokenId?: bigint;
   } | null>(null);
   const [successOpen, setSuccessOpen] = useState(false);
   const [eligibility, setEligibility] = useState<EligibilityResponse | null>(
@@ -371,10 +483,37 @@ export function LaunchpadMintCard({
 
     handledSuccess.current = hash;
     const mintedQuantity = lastQuantity.current;
+    const mintedTokenId = findMintedTokenId({
+      logs: receipt.data?.logs,
+      contractAddress,
+      wallet: address,
+      transactionHash: hash,
+    });
 
     setQuantity(1);
     setIpBlocked(true);
-    setConfirmed({ hash, quantity: mintedQuantity });
+    setConfirmed({ hash, quantity: mintedQuantity, tokenId: mintedTokenId });
+
+    // Some RPCs return a receipt without logs. Ask for this wallet's mint in
+    // the receipt's block instead of guessing the next sequential id, which
+    // could belong to another wallet that minted first. The success card
+    // shows a neutral tile until this resolves.
+    if (mintedTokenId === undefined) {
+      void findMintedTokenIdInBlock({
+        publicClient,
+        contractAddress,
+        wallet: address,
+        transactionHash: hash,
+        blockNumber: receipt.data?.blockNumber,
+      }).then((resolvedTokenId) => {
+        if (resolvedTokenId === undefined) return;
+        setConfirmed((current) =>
+          current && current.hash === hash
+            ? { ...current, tokenId: resolvedTokenId }
+            : current,
+        );
+      });
+    }
     if (address) {
       setWalletMintedFloor((current) => {
         const base =
@@ -401,8 +540,11 @@ export function LaunchpadMintCard({
     onMinted?.(mintedQuantity, mintedAtSubmit.current);
   }, [
     address,
+    contractAddress,
     erc20Payment,
     hash,
+    publicClient,
+    receipt.data,
     receipt.isSuccess,
     refetchAllowance,
     refetchPaymentBalance,
@@ -625,6 +767,7 @@ export function LaunchpadMintCard({
         onClose={closeSuccess}
         hash={confirmed?.hash}
         quantity={confirmed?.quantity ?? 1}
+        tokenId={confirmed?.tokenId}
       />
     </div>
   );

@@ -48,6 +48,9 @@ export const AriwaNFTABI = parseAbi([
   "function renounceOwnership()",
 
   // ---- Events --------------------------------------------------------------
+  // Standard ERC-721 transfer, emitted by ERC721A on every mint. The launchpad
+  // reads the mint receipt to learn which token id the minter received.
+  "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)",
   "event PublicMinted(address indexed wallet, uint256 quantity)",
   "event NetworkMinted(bytes32 indexed ipHash, address indexed wallet, uint256 quantity)",
   "event MaxPerWalletUpdated(uint256 maxPerWallet)",
